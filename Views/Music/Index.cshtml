@@ -1,0 +1,35 @@
+﻿<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+<h2 class="mb-4">Music Library</h2>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    @foreach (var item in ViewBag.MusicList)
+    {
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <img src="@item.BannerImagePath" class="card-img-top" style="height: 200px; object-fit: cover;" />
+
+                <div class="card-body">
+                    <h5 class="card-title">@item.Title</h5>
+                    <p class="card-text"><strong>Artist:</strong> @item.ArtistName</p>
+                    <p class="card-text text-muted"><small>Uploaded: @item.CreatedAt?.ToString("yyyy-MM-dd")</small></p>
+                </div>
+
+                <div class="card-footer d-flex flex-wrap gap-2">
+                    <a href="@item.MusicFilePath" class="btn btn-primary btn-sm" download>Download Music</a>
+                    @if (!string.IsNullOrEmpty(item.LyricsFilePath))
+                    {
+                        <a href="@item.LyricsFilePath" class="btn btn-secondary btn-sm" download>Lyrics</a>
+                    }
+                    @if (!string.IsNullOrEmpty(item.CoverImagePath))
+                    {
+                        <a href="@item.CoverImagePath" class="btn btn-info btn-sm text-white" download>Cover</a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+</body>
