@@ -415,3 +415,7 @@ FodyWeavers.xsd
 *.msp
 
 *.http
+/wwwroot/uploads/banner
+/wwwroot/uploads/cover
+/wwwroot/uploads/lyrics
+/wwwroot/uploads/music
