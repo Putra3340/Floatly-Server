@@ -1,32 +1,52 @@
 ﻿using Floaty_Music.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace Floaty_Music.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class MusicController : Controller
     {
-        private readonly FloatlyLibContext _context;
-        public MusicController(FloatlyLibContext context)
+        private readonly FloatlyContext _context;
+        public MusicController(FloatlyContext context)
         {
             _context = context;
         }
         public IActionResult Index()
         {
-            ViewBag.MusicList = _context.Library.ToList();
+            ViewBag.MusicList = _context.Songs.ToList();
             return View();
+        }
+        [HttpGet("api/info")]
+        public IActionResult Check()
+        {
+            var response = new
+            {
+                status = "Active",
+                message = "Floaty Music is running smoothly.",
+                version = "1.0.0",
+                uptime = DateTime.Now - Process.GetCurrentProcess().StartTime,
+                serverTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                serverName = Environment.MachineName,
+                serverdetail = "Development Server",
+                totalsong = _context.Songs.Count(),
+            };
+            return Json(response);
         }
 
         [HttpGet("api/library/{id}")]
         public IActionResult GetLibrary(int id)
         {
-            var lib = _context.Library.FirstOrDefault(x => x.Id == id);
+            var lib = _context.Songs.Include(a => a.Album).ThenInclude(a=>a.Artist).FirstOrDefault(x => x.Id == id);
             if (lib == null)
                 return NotFound(new { message = "Not found" });
 
             return Json(new
             {
                 title = lib.Title,
-                artist = lib.ArtistName,
+                artist = lib.Album.Artist.Name,
                 downloadUrls = new
                 {
                     music = lib.MusicFilePath,
@@ -40,13 +60,13 @@ namespace Floaty_Music.Controllers
         [HttpGet("api/library")]
         public IActionResult GetLibraries([FromQuery] string? title, [FromQuery] string? artist)
         {
-            var query = _context.Library.AsQueryable();
+            var query = _context.Songs.Include(a=>a.Album).ThenInclude(a=>a.Artist).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(title))
                 query = query.Where(x => x.Title.ToUpper().Contains(title.ToUpper()));
 
             if (!string.IsNullOrWhiteSpace(artist))
-                query = query.Where(x => x.ArtistName.ToUpper().Contains(artist.ToUpper()));
+                query = query.Where(x => x.Album.Artist.Name.ToUpper().Contains(artist.ToUpper()));
 
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
@@ -54,7 +74,7 @@ namespace Floaty_Music.Controllers
             {
                 id = lib.Id,
                 title = lib.Title,
-                artist = lib.ArtistName,
+                artist = lib.Album.Artist.Name,
                 downloadUrls = new
                 {
                     music = baseUrl + lib.MusicFilePath,
@@ -67,84 +87,6 @@ namespace Floaty_Music.Controllers
 
             return Json(result);
         }
-        [HttpGet]
-        public IActionResult Upload()
-        {
-            return View();
-        }
-        [HttpPost]
-        public async Task<IActionResult> Upload(MusicUploadViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-
-            // Ensure directories exist
-            Directory.CreateDirectory(GlobalConfiguration.MusicFilePath);
-            Directory.CreateDirectory(GlobalConfiguration.LyricsFilePath);
-            Directory.CreateDirectory(GlobalConfiguration.CoverImagePath);
-            Directory.CreateDirectory(GlobalConfiguration.BannerImagePath);
-
-            // Music
-            string musicUrl = null;
-            if (model.MusicFile != null)
-            {
-                var fileName = Path.GetRandomFileName() + Path.GetExtension(model.MusicFile.FileName);
-                var fullPath = Path.Combine(GlobalConfiguration.MusicFilePath, fileName);
-                using var stream = new FileStream(fullPath, FileMode.Create);
-                await model.MusicFile.CopyToAsync(stream);
-                musicUrl = $"/uploads/music/{fileName}";
-            }
-
-            // Lyrics
-            string lyricsUrl = null;
-            if (model.LyricsFile != null)
-            {
-                var fileName = Path.GetRandomFileName() + Path.GetExtension(model.LyricsFile.FileName);
-                var fullPath = Path.Combine(GlobalConfiguration.LyricsFilePath, fileName);
-                using var stream = new FileStream(fullPath, FileMode.Create);
-                await model.LyricsFile.CopyToAsync(stream);
-                lyricsUrl = $"/uploads/lyrics/{fileName}";
-            }
-
-            // Cover
-            string coverUrl = null;
-            if (model.CoverImage != null)
-            {
-                var fileName = Path.GetRandomFileName() + Path.GetExtension(model.CoverImage.FileName);
-                var fullPath = Path.Combine(GlobalConfiguration.CoverImagePath, fileName);
-                using var stream = new FileStream(fullPath, FileMode.Create);
-                await model.CoverImage.CopyToAsync(stream);
-                coverUrl = $"/uploads/cover/{fileName}";
-            }
-
-            // Banner
-            string bannerUrl = null;
-            if (model.BannerImage != null)
-            {
-                var fileName = Path.GetRandomFileName() + Path.GetExtension(model.BannerImage.FileName);
-                var fullPath = Path.Combine(GlobalConfiguration.BannerImagePath, fileName);
-                using var stream = new FileStream(fullPath, FileMode.Create);
-                await model.BannerImage.CopyToAsync(stream);
-                bannerUrl = $"/uploads/banner/{fileName}";
-            }
-
-            // Save to DB
-            var library = new Library
-            {
-                Title = model.Title,
-                ArtistName = model.ArtistName,
-                MusicFilePath = musicUrl,
-                LyricsFilePath = lyricsUrl,
-                CoverImagePath = coverUrl,
-                BannerImagePath = bannerUrl,
-                CreatedAt = DateTime.Now
-            };
-
-            _context.Library.Add(library);
-            await _context.SaveChangesAsync();
-
-            ViewBag.Message = "Upload successful!";
-            return View();
-        }
+        
     }
 }

@@ -1,4 +1,5 @@
 using Floaty_Music.Models;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,11 +9,23 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddDbContext<FloatlyLibContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("FloatlyLibConnection")));
+builder.Services.AddDbContext<FloatlyContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("FloatlyConnection")));
 builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAuthentication("MyCookie")
+    .AddCookie("MyCookie", options =>
+    {
+        options.LoginPath = "/auth/login";
+        options.AccessDeniedPath = "/auth/denied";
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+});
+
 
 var app = builder.Build();
 
@@ -23,8 +36,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    ServeUnknownFileTypes = true,
+    ContentTypeProvider = new FileExtensionContentTypeProvider
+    {
+        Mappings = {
+            [".srt"] = "application/x-subrip",
+            [".mp3"] = "audio/mpeg"
+        }
+    }
+});
+
 app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAuthorization();
 
 app.MapControllerRoute(

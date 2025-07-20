@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace Floaty_Music.Models;
 
-public partial class Library
+public partial class Songs
 {
     public long Id { get; set; }
 
-    public string? Title { get; set; }
+    public string Title { get; set; } = null!;
 
-    public string? ArtistName { get; set; }
+    public long? AlbumId { get; set; }
 
     public string? MusicFilePath { get; set; }
 
@@ -22,4 +22,8 @@ public partial class Library
     public string? UploadedBy { get; set; }
 
     public DateTime? CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
+
+    public virtual Albums? Album { get; set; }
 }

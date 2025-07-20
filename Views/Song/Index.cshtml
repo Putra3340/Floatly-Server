@@ -1,0 +1,153 @@
+﻿@model IEnumerable<Floaty_Music.Models.Songs>
+@{
+    var albums = ViewBag.Albums as List<Floaty_Music.Models.Albums>;
+    var artists = ViewBag.Artists as List<Floaty_Music.Models.Artists>;
+}
+<!-- HEAD -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<div class="container mt-4">
+    <h2>Songs</h2>
+    <button class="btn btn-primary mb-3" onclick="openSongModal()">+ Add Song</button>
+    <div id="songsTable">
+        @* @Html.Partial("_SongsTable", Model) *@
+
+        <table class="table table-bordered">
+            <thead><tr><th>ID</th><th>Title</th><th>Album</th><th>Actions</th></tr></thead>
+            <tbody>
+                @foreach (var s in Model)
+                {
+                    <tr>
+                        <td>@s.Id</td>
+                        <td>@s.Title</td>
+                        <td>@s.Album?.Title</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="openSongModal(@s.Id, '@s.Title', @s.AlbumId, '@s.Album?.ArtistId')">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteSong(@s.Id)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="songModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="songForm" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Song</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="Id" id="songId" />
+                    <div class="mb-2">
+                        <label>Title</label>
+                        <input type="text" name="Title" class="form-control" id="songTitle" required />
+                    </div>
+                    <div class="mb-2">
+                        <label>Artist</label>
+                        <select id="artistSelect" class="form-select" onchange="filterAlbums()">
+                            <option value="">-- Select --</option>
+                            @foreach (var a in artists)
+                            {
+                                <option value="@a.Id">@a.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label>Album</label>
+                        <select name="AlbumId" class="form-select" id="albumSelect">
+                            <option value="">-- Select --</option>
+                            @foreach (var a in albums)
+                            {
+                                <option value="@a.Id" data-artist="@a.ArtistId">@a.Title</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label>Music</label>
+                        <input type="file" name="MusicFile" class="form-control" />
+                    </div>
+                    <div class="mb-2">
+                        <label>Lyrics</label>
+                        <input type="file" name="LyricsFile" class="form-control" />
+                    </div>
+                    <div class="mb-2">
+                        <label>Cover</label>
+                        <input type="file" name="CoverImage" class="form-control" />
+                    </div>
+                    <div class="mb-2">
+                        <label>Banner</label>
+                        <input type="file" name="BannerImage" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    const modal = new bootstrap.Modal(document.getElementById("songModal"));
+
+    function openSongModal(id = '', title = '', albumId = '', artistId = '') {
+        $('#songId').val(id);
+        $('#songTitle').val(title);
+        $('#artistSelect').val(artistId);
+        filterAlbums();
+        $('#albumSelect').val(albumId);
+        $('#songForm').attr('action', id ? '/Song/Edit' : '/Song/Upload');
+        $(".modal-title").text(id ? "Edit Song" : "Add Song");
+        modal.show();
+    }
+
+    $('#songForm').on('submit', function (e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        var url = $(this).attr('action');
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function () {
+                modal.hide();
+                loadSongs();
+            }
+        });
+    });
+
+    function deleteSong(id) {
+        if (!confirm("Are you sure?")) return;
+        $.post('/Song/Delete', { id }, function () {
+            loadSongs();
+        });
+    }
+
+    function loadSongs() {
+        $.get('/Song', function (data) {
+            const html = $(data).find('#songsTable').html();
+            $('#songsTable').html(html);
+        });
+    }
+
+    function filterAlbums() {
+        const artistId = $('#artistSelect').val();
+        $('#albumSelect option').each(function () {
+            const aId = $(this).data('artist');
+            $(this).toggle(!artistId || aId == artistId || $(this).val() == "");
+        });
+        $('#albumSelect').val('');
+    }
+</script>
