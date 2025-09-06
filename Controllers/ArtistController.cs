@@ -35,7 +35,7 @@ namespace Floaty_Music.Controllers
             {
                 _context.Artists.Add(artist);
                 _context.SaveChanges();
-                return RedirectToAction(nameof(Index));
+                return Redirect("/Song/Dashboard#artists");
             }
             return View(artist);
         }
@@ -56,7 +56,7 @@ namespace Floaty_Music.Controllers
             {
                 _context.Artists.Update(artist);
                 _context.SaveChanges();
-                return RedirectToAction(nameof(Index));
+                return Redirect("/Song/Dashboard#artists");
             }
             return View(artist);
         }
@@ -79,7 +79,7 @@ namespace Floaty_Music.Controllers
                 _context.Artists.Remove(artist);
                 _context.SaveChanges();
             }
-            return RedirectToAction(nameof(Index));
+            return Redirect("/Song/Dashboard#artists");
         }
     }
 }

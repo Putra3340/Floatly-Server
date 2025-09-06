@@ -5,7 +5,7 @@ namespace Floaty_Music.Models;
 
 public partial class Albums
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
     public string Title { get; set; } = null!;
 

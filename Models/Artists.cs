@@ -11,5 +11,7 @@ public partial class Artists
 
     public string? Bio { get; set; }
 
+    public string? ProfileUrl { get; set; }
+
     public virtual ICollection<Albums> Albums { get; set; } = new List<Albums>();
 }

@@ -18,19 +18,27 @@ namespace Floaty_Music.Controllers
         {
             _context.Albums.Add(album);
             _context.SaveChanges();
-            return RedirectToAction("Index");
+            return Redirect("/Song/Dashboard#albums");
+
         }
 
         [HttpPost]
         public IActionResult Edit(Albums album)
         {
-            _context.Albums.Update(album);
+            var albumbak = _context.Albums.Find(album.Id);
+            if (albumbak == null)
+                return NotFound();
+            //_context.Albums.Update(album);
+            albumbak.Title = album.Title ?? albumbak.Title;
+            albumbak.Artist = album.Artist ?? albumbak.Artist;
+            albumbak.ReleaseDate = album.ReleaseDate ?? albumbak.ReleaseDate;
+            albumbak.CoverUrl = album.CoverUrl ?? albumbak.CoverUrl;
             _context.SaveChanges();
-            return RedirectToAction("Index");
+            return Redirect("/Song/Dashboard#albums");
         }
 
         [HttpPost]
-        public IActionResult Delete(int id)
+        public IActionResult Delete(long id)
         {
             var album = _context.Albums.Find(id);
             if (album != null)
@@ -38,7 +46,7 @@ namespace Floaty_Music.Controllers
                 _context.Albums.Remove(album);
                 _context.SaveChanges();
             }
-            return RedirectToAction("Index");
+            return Redirect("/Song/Dashboard#albums");
         }
         public IActionResult Index()
         {

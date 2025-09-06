@@ -5,15 +5,15 @@ namespace Floaty_Music.Models;
 
 public partial class Playlists
 {
-    public int PlaylistId { get; set; }
+    public int Id { get; set; }
 
     public int? UserId { get; set; }
 
     public string Name { get; set; } = null!;
 
-    public DateTime? CreatedAt { get; set; }
+    public string? SongList { get; set; }
 
-    public virtual ICollection<PlaylistSongs> PlaylistSongs { get; set; } = new List<PlaylistSongs>();
+    public DateTime? CreatedAt { get; set; }
 
     public virtual Users? User { get; set; }
 }

@@ -1,7 +1,10 @@
+using Floaty_Music;
 using Floaty_Music.Models;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 
+DotNetEnv.Env.Load();
+GlobalConfiguration.LoadConfig();
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -10,7 +13,7 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddDbContext<FloatlyContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("FloatlyConnection")));
+    options.UseSqlServer(GlobalConfiguration.ConnectionString));
 builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -36,17 +39,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseStaticFiles(new StaticFileOptions
-{
-    ServeUnknownFileTypes = true,
-    ContentTypeProvider = new FileExtensionContentTypeProvider
-    {
-        Mappings = {
-            [".srt"] = "application/x-subrip",
-            [".mp3"] = "audio/mpeg"
-        }
-    }
-});
+//app.UseStaticFiles(new StaticFileOptions
+//{
+//    ServeUnknownFileTypes = true,
+//    ContentTypeProvider = new FileExtensionContentTypeProvider
+//    {
+//        Mappings = {
+//            [".srt"] = "application/x-subrip",
+//            [".mp3"] = "audio/mpeg"
+//        }
+//    }
+//});
+app.UseStaticFiles();
 
 app.UseRouting();
 app.UseAuthentication();

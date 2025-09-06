@@ -21,13 +21,15 @@ public partial class FloatlyContext : DbContext
 
     public virtual DbSet<Likes> Likes { get; set; }
 
-    public virtual DbSet<PlaylistSongs> PlaylistSongs { get; set; }
-
     public virtual DbSet<Playlists> Playlists { get; set; }
+
+    public virtual DbSet<SongCounter> SongCounter { get; set; }
 
     public virtual DbSet<Songs> Songs { get; set; }
 
     public virtual DbSet<Users> Users { get; set; }
+
+    public virtual DbSet<VerifiedEmail> VerifiedEmail { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -54,48 +56,44 @@ public partial class FloatlyContext : DbContext
 
             entity.Property(e => e.Bio).HasColumnType("text");
             entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.ProfileUrl).HasMaxLength(200);
         });
 
         modelBuilder.Entity<Likes>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.SongId }).HasName("PK__Likes__76A6F1C310EF151B");
-
-            entity.Property(e => e.UserId).HasColumnName("UserID");
-            entity.Property(e => e.SongId).HasColumnName("SongID");
+            entity.Property(e => e.SongList).HasColumnType("text");
 
             entity.HasOne(d => d.User).WithMany(p => p.Likes)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Likes__UserID__49C3F6B7");
-        });
-
-        modelBuilder.Entity<PlaylistSongs>(entity =>
-        {
-            entity.HasKey(e => new { e.PlaylistId, e.SongId }).HasName("PK__Playlist__D22F5AEF4B0329E6");
-
-            entity.Property(e => e.PlaylistId).HasColumnName("PlaylistID");
-            entity.Property(e => e.SongId).HasColumnName("SongID");
-
-            entity.HasOne(d => d.Playlist).WithMany(p => p.PlaylistSongs)
-                .HasForeignKey(d => d.PlaylistId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__PlaylistS__Playl__45F365D3");
+                .HasConstraintName("FK_Likes_Users");
         });
 
         modelBuilder.Entity<Playlists>(entity =>
         {
-            entity.HasKey(e => e.PlaylistId).HasName("PK__Playlist__B3016780AC87D4F8");
+            entity.HasKey(e => e.Id).HasName("PK__Playlist__B3016780AC87D4F8");
 
-            entity.Property(e => e.PlaylistId).HasColumnName("PlaylistID");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.Name).HasMaxLength(100);
-            entity.Property(e => e.UserId).HasColumnName("UserID");
+            entity.Property(e => e.SongList).HasColumnType("text");
 
             entity.HasOne(d => d.User).WithMany(p => p.Playlists)
                 .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK__Playlists__UserI__4222D4EF");
+                .HasConstraintName("FK_Playlists_Users");
+        });
+
+        modelBuilder.Entity<SongCounter>(entity =>
+        {
+            entity.HasNoKey();
+
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.SongId).HasColumnName("SongID");
+
+            entity.HasOne(d => d.Song).WithMany()
+                .HasForeignKey(d => d.SongId)
+                .HasConstraintName("FK_SongCounter_Songs");
         });
 
         modelBuilder.Entity<Songs>(entity =>
@@ -119,14 +117,19 @@ public partial class FloatlyContext : DbContext
 
         modelBuilder.Entity<Users>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CCAC7A3CD2E1");
+            entity.HasKey(e => e.Id).HasName("PK__Users__1788CCAC7A3CD2E1");
 
-            entity.Property(e => e.UserId).HasColumnName("UserID");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.Username).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<VerifiedEmail>(entity =>
+        {
+            entity.Property(e => e.Email).HasMaxLength(100);
+            entity.Property(e => e.VerifiedAt).HasColumnType("datetime");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -1,4 +1,6 @@
-﻿namespace Floaty_Music
+﻿using DotNetEnv;
+
+namespace Floaty_Music
 {
     public static class GlobalConfiguration
     {
@@ -10,7 +12,24 @@
         public static string CoverImagePath { get; set; } = Path.Combine(WebRootPath, UploadsFolder, "cover");
         public static string BannerImagePath { get; set; } = Path.Combine(WebRootPath, UploadsFolder, "banner");
 
+        public static string ADMIN_USERNAME;
+        public static string ADMIN_PASSWORD;
+        public static string SMTP_SERVER;
+        public static string SMTP_PORT;
+        public static string SMTP_EMAIL;
+        public static string SMTP_PASSWORD;
 
+        public static void LoadConfig()
+        {
+            Env.Load();
+            ConnectionString = Env.GetString("FLOATLY_CONNECTION", ConnectionString);
+            ADMIN_USERNAME = Env.GetString("ADMIN_USERNAME", "admin");
+            ADMIN_PASSWORD = Env.GetString("ADMIN_PASSWORD", "password");
+            SMTP_SERVER = Env.GetString("SMTP_SERVER", "smtp.gmail.com");
+            SMTP_PORT = Env.GetString("SMTP_PORT", "587");
+            SMTP_EMAIL = Env.GetString("SMTP_EMAIL", "");
+            SMTP_PASSWORD = Env.GetString("SMTP_PASSWORD", "");
+        }
         public static string SaveFile(IFormFile file, string folder)
         {
             if (file == null) return null;

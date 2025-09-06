@@ -5,13 +5,15 @@ namespace Floaty_Music.Models;
 
 public partial class Users
 {
-    public int UserId { get; set; }
+    public int Id { get; set; }
 
     public string Username { get; set; } = null!;
 
     public string Email { get; set; } = null!;
 
     public string PasswordHash { get; set; } = null!;
+
+    public string? Token { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 

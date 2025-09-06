@@ -2,9 +2,9 @@
 {
     public class SongUploadModel
     {
-        public long? Id { get; set; }
+        public int? Id { get; set; }
         public string Title { get; set; } = null!;
-        public long? AlbumId { get; set; }
+        public int? AlbumId { get; set; }
 
         public IFormFile? MusicFile { get; set; }
         public IFormFile? LyricsFile { get; set; }

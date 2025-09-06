@@ -5,11 +5,11 @@ namespace Floaty_Music.Models;
 
 public partial class Songs
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
     public string Title { get; set; } = null!;
 
-    public long? AlbumId { get; set; }
+    public int? AlbumId { get; set; }
 
     public string? MusicFilePath { get; set; }
 

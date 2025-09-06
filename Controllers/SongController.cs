@@ -87,8 +87,6 @@ namespace Floaty_Music.Controllers
             await _context.SaveChangesAsync();
             return Ok();
         }
-
-
         [HttpPost]
         public async Task<IActionResult> Delete(long id)
         {
@@ -98,6 +96,21 @@ namespace Floaty_Music.Controllers
             _context.Songs.Remove(song);
             await _context.SaveChangesAsync();
             return RedirectToAction("Index");
+        }
+        
+        public IActionResult Dashboard()
+        {
+            var totalSongs = _context.Songs.Count();
+            var totalAlbums = _context.Albums.Count();
+            var totalArtists = _context.Artists.Count();
+            ViewBag.TotalSongs = totalSongs;
+            ViewBag.TotalAlbums = totalAlbums;
+            ViewBag.TotalArtists = totalArtists;
+
+            ViewBag.Albums = _context.Albums.OrderDescending().Include(a => a.Artist).ToList();
+            ViewBag.Artists = _context.Artists.OrderDescending().ToList(); // for dropdown
+            ViewBag.Songs = _context.Songs.OrderDescending().Include(x => x.Album).ThenInclude(x => x.Artist).ToList();
+            return View();
         }
     }
 }
