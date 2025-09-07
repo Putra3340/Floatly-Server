@@ -432,7 +432,7 @@
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h1 class="h2">Music Management</h1>
                         <div class="btn-toolbar mb-2 mb-md-0">
-                            <button type="button" class="btn btn-primary">
+                            <button type="button" class="btn btn-primary" onclick="openSongModal()">
                                 <i class="bi bi-plus-circle me-1"></i>
                                 Add Song
                             </button>
@@ -472,6 +472,7 @@
                                             <th>Album</th>
                                             <th>Duration</th>
                                             <th>Plays</th>
+                                            <th>Likes</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -491,13 +492,14 @@
                                             </td>
                                             <td>@music.Album.Artist.Name</td>
                                             <td>@music.Album.Title</td>
-                                            <td>3:42</td>
-                                            <td>2,847</td>
+                                            <td>@music.SongCounter.MusicLength</td>
+                                            <td>@music.SongCounter.TotalPlayed</td>
+                                            <td>@music.SongCounter.TotalLikes</td>
                                             <td>
-                                                <button class="btn btn-sm btn-outline-primary me-1">
+                                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="openSongModal(@music.Id, '@music.Title', @music.AlbumId, '@music.Album?.ArtistId')">
                                                     <i class="bi bi-pencil"></i>
                                                 </button>
-                                                <button class="btn btn-sm btn-outline-danger">
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteSong(@music.Id)">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </td>
@@ -583,12 +585,73 @@
                         </div>
                     </div>
                 </div>
+                <!-- Music Modal -->
+                <div class="modal fade" id="songModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form id="songForm" enctype="multipart/form-data">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Add Song</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="Id" id="songId" />
+                                    <div class="mb-2">
+                                        <label>Title</label>
+                                        <input type="text" name="Title" class="form-control" id="songTitle" required />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label>Artist</label>
+                                        <select id="artistSelect" class="form-select" onchange="filterAlbums()">
+                                            <option value="">-- Select --</option>
+                                            @foreach (var a in ViewBag.Artists)
+                                            {
+                                                <option value="@a.Id">@a.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label>Album</label>
+                                        <select name="AlbumId" class="form-select" id="albumSelect">
+                                            <option value="">-- Select --</option>
+                                            @foreach (var a in ViewBag.Albums)
+                                            {
+                                                <option value="@a.Id" data-artist="@a.ArtistId">@a.Title</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label>Music</label>
+                                        <input type="file" name="MusicFile" class="form-control" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label>Lyrics</label>
+                                        <input type="file" name="LyricsFile" class="form-control" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label>Cover</label>
+                                        <input type="file" name="CoverImage" class="form-control" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label>Banner</label>
+                                        <input type="file" name="BannerImage" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-success">Save</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
     
 
     <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/jquery/jquery.min.js"></script>
     <script>
         function openAlbumModal(id = 0, title = '', artistId = '', releaseDate = '', coverUrl = '') {
             document.getElementById('albumId').value = id;
@@ -604,6 +667,62 @@
             document.getElementById('artistName').value = name;
             document.getElementById('artistBio').value = bio;
             document.getElementById('artistForm').action = id == 0 ? '/Artist/Create' : '/Artist/Edit';
+        }
+    </script>
+    <script>
+        const modal = new bootstrap.Modal(document.getElementById("songModal"));
+
+        function openSongModal(id = '', title = '', albumId = '', artistId = '') {
+            $('#songId').val(id);
+            $('#songTitle').val(title);
+            $('#artistSelect').val(artistId);
+            filterAlbums();
+            $('#albumSelect').val(albumId);
+            $('#songForm').attr('action', id ? '/Song/Edit' : '/Song/Upload');
+            $(".modal-title").text(id ? "Edit Song" : "Add Song");
+            modal.show();
+        }
+
+        $('#songForm').on('submit', function (e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            var url = $(this).attr('action');
+            $.ajax({
+                type: 'POST',
+                url: url,
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function () {
+                    modal.hide();
+                    loadSongs();
+                    location.reload();
+                }
+            });
+        });
+
+        function deleteSong(id) {
+            if (!confirm("Are you sure?")) return;
+            $.post('/Song/Delete', { id }, function () {
+                loadSongs();
+            });
+        }
+
+        function loadSongs() {
+            location.reload();
+            $.get('/Song', function (data) {
+                const html = $(data).find('#songsTable').html();
+                $('#songsTable').html(html);
+            });
+        }
+
+        function filterAlbums() {
+            const artistId = $('#artistSelect').val();
+            $('#albumSelect option').each(function () {
+                const aId = $(this).data('artist');
+                $(this).toggle(!artistId || aId == artistId || $(this).val() == "");
+            });
+            $('#albumSelect').val('');
         }
     </script>
     <script>

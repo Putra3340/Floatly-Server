@@ -1,7 +1,10 @@
 ﻿using Floaty_Music.Models;
+using Floaty_Music.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
+using TagLib;
 
 namespace Floaty_Music.Controllers
 {
@@ -32,13 +35,13 @@ namespace Floaty_Music.Controllers
 
             string SaveFile(IFormFile file, string folder)
             {
-                var fileName = Path.GetRandomFileName() + Path.GetExtension(file.FileName);
+                var fileName = Path.GetRandomFileName() + Guid.NewGuid().ToString() + Path.GetExtension(file.FileName); // 4.59 x 10^-43% Chance for collisions
                 var fullPath = Path.Combine(folder, fileName);
                 using var stream = new FileStream(fullPath, FileMode.Create);
                 file.CopyTo(stream);
                 return $"/uploads/{Path.GetFileName(folder)}/{fileName}";
             }
-
+            double musiclength = 0;
             var song = new Songs
             {
                 Title = model.Title,
@@ -51,6 +54,19 @@ namespace Floaty_Music.Controllers
                 UpdatedAt = DateTime.Now
             };
 
+            // Extract duration from MP3 file
+            if (!Path.GetExtension(model.MusicFile.FileName).Equals(".mp3", StringComparison.OrdinalIgnoreCase))
+                return BadRequest("Only MP3 allowed");
+            using var stream = model.MusicFile.OpenReadStream();
+            var tagFile = TagLib.File.Create(new StreamFileAbstraction(model.MusicFile.FileName, stream));
+            musiclength = tagFile.Properties.Duration.TotalSeconds;
+
+            song.SongCounter = new SongCounter
+            {
+                TotalLikes = 0,
+                TotalPlayed = 0,
+                MusicLength = (int)musiclength
+            };
             _context.Songs.Add(song);
             await _context.SaveChangesAsync();
             return RedirectToAction("Index");
@@ -63,8 +79,8 @@ namespace Floaty_Music.Controllers
             if (song == null) return NotFound();
             async Task<string> SaveFile(IFormFile file, string folder)
             {
-                var fileName = Path.GetRandomFileName() + Path.GetExtension(file.FileName);
-                var fullPath = Path.Combine(folder, fileName);
+                var fileName = Path.GetRandomFileName() + Guid.NewGuid().ToString() + Path.GetExtension(file.FileName); // 4.59 x 10^-43% Chance for collisions
+                var fullPath = Path.Combine(GlobalConfiguration.WebRootPath,GlobalConfiguration.UploadsFolder,folder, fileName);
                 using var stream = new FileStream(fullPath, FileMode.Create);
                 file.CopyTo(stream);
                 return $"/uploads/{Path.GetFileName(folder)}/{fileName}";
@@ -72,9 +88,19 @@ namespace Floaty_Music.Controllers
             song.Title = model.Title;
             song.AlbumId = model.AlbumId;
 
-            if (model.MusicFile != null)
-                song.MusicFilePath = await SaveFile(model.MusicFile, "music");
+            double musiclength = 0;
 
+            if (model.MusicFile != null)
+            {
+                // Extract duration from MP3 file
+                if (!Path.GetExtension(model.MusicFile.FileName).Equals(".mp3", StringComparison.OrdinalIgnoreCase))
+                    return BadRequest("Only MP3 allowed");
+                using var stream = model.MusicFile.OpenReadStream();
+                var tagFile = TagLib.File.Create(new StreamFileAbstraction(model.MusicFile.FileName, stream));
+                musiclength = tagFile.Properties.Duration.TotalSeconds;
+                // Save
+                song.MusicFilePath = await SaveFile(model.MusicFile, "music");
+            }
             if (model.LyricsFile != null)
                 song.LyricsFilePath = await SaveFile(model.LyricsFile, "lyrics");
 
@@ -85,14 +111,23 @@ namespace Floaty_Music.Controllers
                 song.BannerImagePath = await SaveFile(model.BannerImage, "banner");
 
             await _context.SaveChangesAsync();
+
+            var songcounter = await _context.SongCounter.FirstOrDefaultAsync(x => x.SongId == song.Id);
+            if (songcounter != null)
+            {
+                songcounter.MusicLength = (int)musiclength;
+                await _context.SaveChangesAsync();
+            }
             return Ok();
         }
         [HttpPost]
-        public async Task<IActionResult> Delete(long id)
+        public async Task<IActionResult> Delete(int id)
         {
             var song = await _context.Songs.FindAsync(id);
+            var songcount = await _context.SongCounter.FindAsync(id);
             if (song == null) return NotFound();
 
+            _context.SongCounter.Remove(songcount);
             _context.Songs.Remove(song);
             await _context.SaveChangesAsync();
             return RedirectToAction("Index");
@@ -109,7 +144,12 @@ namespace Floaty_Music.Controllers
 
             ViewBag.Albums = _context.Albums.OrderDescending().Include(a => a.Artist).ToList();
             ViewBag.Artists = _context.Artists.OrderDescending().ToList(); // for dropdown
-            ViewBag.Songs = _context.Songs.OrderDescending().Include(x => x.Album).ThenInclude(x => x.Artist).ToList();
+            ViewBag.Songs = _context.Songs
+    .OrderByDescending(x => x.Id)
+    .Include(x => x.Album)
+        .ThenInclude(a => a.Artist)
+    .Include(x => x.SongCounter)
+    .ToList();
             return View();
         }
     }

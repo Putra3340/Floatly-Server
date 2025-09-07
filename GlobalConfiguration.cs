@@ -18,6 +18,7 @@ namespace Floaty_Music
         public static string SMTP_PORT;
         public static string SMTP_EMAIL;
         public static string SMTP_PASSWORD;
+        public static string TOKEN_EXPIRED_IN_DAYS;
 
         public static void LoadConfig()
         {
@@ -29,6 +30,7 @@ namespace Floaty_Music
             SMTP_PORT = Env.GetString("SMTP_PORT", "587");
             SMTP_EMAIL = Env.GetString("SMTP_EMAIL", "");
             SMTP_PASSWORD = Env.GetString("SMTP_PASSWORD", "");
+            TOKEN_EXPIRED_IN_DAYS = Env.GetString("TOKEN_EXPIRED_IN_DAYS", "");
         }
         public static string SaveFile(IFormFile file, string folder)
         {

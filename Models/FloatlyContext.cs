@@ -61,7 +61,16 @@ public partial class FloatlyContext : DbContext
 
         modelBuilder.Entity<Likes>(entity =>
         {
-            entity.Property(e => e.SongList).HasColumnType("text");
+            entity.HasKey(e => new { e.UserId, e.SongId });
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Song).WithMany(p => p.Likes)
+                .HasForeignKey(d => d.SongId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Likes_Songs");
 
             entity.HasOne(d => d.User).WithMany(p => p.Likes)
                 .HasForeignKey(d => d.UserId)
@@ -77,23 +86,40 @@ public partial class FloatlyContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.Name).HasMaxLength(100);
-            entity.Property(e => e.SongList).HasColumnType("text");
 
             entity.HasOne(d => d.User).WithMany(p => p.Playlists)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK_Playlists_Users");
+
+            entity.HasMany(d => d.Song).WithMany(p => p.Playlist)
+                .UsingEntity<Dictionary<string, object>>(
+                    "PlaylistSongs",
+                    r => r.HasOne<Songs>().WithMany()
+                        .HasForeignKey("SongId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_PlaylistSongs_Songs"),
+                    l => l.HasOne<Playlists>().WithMany()
+                        .HasForeignKey("PlaylistId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_PlaylistSongs_Playlists"),
+                    j =>
+                    {
+                        j.HasKey("PlaylistId", "SongId");
+                    });
         });
 
         modelBuilder.Entity<SongCounter>(entity =>
         {
-            entity.HasNoKey();
+            entity.HasKey(e => e.SongId).HasName("PK_SongCounter_1");
 
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.Property(e => e.SongId).HasColumnName("SongID");
+            entity.Property(e => e.SongId)
+                .ValueGeneratedNever()
+                .HasColumnName("SongID");
 
-            entity.HasOne(d => d.Song).WithMany()
-                .HasForeignKey(d => d.SongId)
-                .HasConstraintName("FK_SongCounter_Songs");
+            entity.HasOne(d => d.Song).WithOne(p => p.SongCounter)
+                .HasForeignKey<SongCounter>(d => d.SongId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SongCounter_Songs1");
         });
 
         modelBuilder.Entity<Songs>(entity =>

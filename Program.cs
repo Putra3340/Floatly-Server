@@ -17,8 +17,8 @@ builder.Services.AddDbContext<FloatlyContext>(options =>
 builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddAuthentication("MyCookie")
-    .AddCookie("MyCookie", options =>
+builder.Services.AddAuthentication("MyAuth")
+    .AddCookie("MyAuth", options =>
     {
         options.LoginPath = "/auth/login";
         options.AccessDeniedPath = "/auth/denied";
@@ -64,4 +64,8 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 app.MapControllers();
+
+// Check DB
+using var db = new FloatlyContext();
+db.Database.EnsureCreated();
 app.Run();

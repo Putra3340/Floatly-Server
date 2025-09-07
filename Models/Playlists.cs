@@ -11,9 +11,9 @@ public partial class Playlists
 
     public string Name { get; set; } = null!;
 
-    public string? SongList { get; set; }
-
     public DateTime? CreatedAt { get; set; }
 
     public virtual Users? User { get; set; }
+
+    public virtual ICollection<Songs> Song { get; set; } = new List<Songs>();
 }

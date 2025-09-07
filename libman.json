@@ -11,35 +11,9 @@
       "destination": "wwwroot/lib/bootstrap-icons/"
     },
     {
-      "library": "tailwindcss@4.1.13",
-      "destination": "wwwroot/tailwindcss/",
-      "files": [
-        "chunk-G32FJCSR.mjs",
-        "chunk-HTB5LLOP.mjs",
-        "chunk-U5SIPDGO.mjs",
-        "colors-b_6i0Oi7.d.ts",
-        "colors.d.ts",
-        "colors.js",
-        "colors.min.js",
-        "colors.mjs",
-        "default-theme.d.ts",
-        "default-theme.js",
-        "default-theme.min.js",
-        "default-theme.mjs",
-        "flatten-color-palette.d.ts",
-        "flatten-color-palette.js",
-        "flatten-color-palette.min.js",
-        "flatten-color-palette.mjs",
-        "lib.d.ts",
-        "lib.js",
-        "lib.min.js",
-        "lib.mjs",
-        "plugin.d.ts",
-        "plugin.js",
-        "plugin.min.js",
-        "plugin.mjs",
-        "resolve-config-BIFUA2FY.d.ts"
-      ]
+      "provider": "cdnjs",
+      "library": "jquery@3.7.1",
+      "destination": "wwwroot/jquery/"
     }
   ]
 }

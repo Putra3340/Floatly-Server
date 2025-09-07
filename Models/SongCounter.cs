@@ -5,9 +5,7 @@ namespace Floaty_Music.Models;
 
 public partial class SongCounter
 {
-    public int Id { get; set; }
-
-    public int? SongId { get; set; }
+    public int SongId { get; set; }
 
     public int? TotalLikes { get; set; }
 
@@ -15,5 +13,5 @@ public partial class SongCounter
 
     public int? MusicLength { get; set; }
 
-    public virtual Songs? Song { get; set; }
+    public virtual Songs Song { get; set; } = null!;
 }

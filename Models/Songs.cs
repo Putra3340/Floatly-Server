@@ -26,4 +26,10 @@ public partial class Songs
     public DateTime? UpdatedAt { get; set; }
 
     public virtual Albums? Album { get; set; }
+
+    public virtual ICollection<Likes> Likes { get; set; } = new List<Likes>();
+
+    public virtual SongCounter? SongCounter { get; set; }
+
+    public virtual ICollection<Playlists> Playlist { get; set; } = new List<Playlists>();
 }

@@ -18,9 +18,24 @@ namespace Floaty_Music.Utils
         }
         public static string GenerateLoginToken()
         {
-            return (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString()
-            + "-" + Guid.NewGuid().ToString("N").Substring(0, 6)) + Guid.NewGuid() + (DateTimeOffset.UtcNow.ToUnixTimeSeconds()).ToString();
+            var now = DateTimeOffset.UtcNow;
+            var exp = DateTimeOffset.UtcNow.AddDays(int.Parse(GlobalConfiguration.TOKEN_EXPIRED_IN_DAYS));
+            var rnd = new Random();
+
+            string raw = string.Join("|", new[]
+            {
+        now.ToUnixTimeMilliseconds().ToString(),
+        Guid.NewGuid().ToString("N").Substring(0, 8),
+        rnd.Next(100000, 999999).ToString(),
+        Guid.NewGuid().ToString("N"),
+        exp.ToUnixTimeSeconds().ToString()
+    });
+
+            // Encode to Base64 for obfuscation
+            var bytes = System.Text.Encoding.UTF8.GetBytes(raw);
+            return Convert.ToBase64String(bytes);
         }
+
         public static bool TryDecodeBase64(string token, out string? email)
         {
             try
