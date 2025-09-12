@@ -67,11 +67,24 @@ You can run it privately on your own machine or server, or make it publicly acce
 
 ### Windows
 #### Windows Prerequisites
-#### Windows Installation
-#### Windows Configuration
-#### Windows Running the Server
 
----
+- Microsoft Visual Studio 2022 or later (with .NET workload).
+- SQL Server or SQLITE.
+#### Windows Installation
+1. **Clone the repository on Visual Studio:**
+   `https://github.com/Putra3340/Floatly-Server.git`.
+2. **Restore dependencies:**
+   - Open the solution in Visual Studio.
+   - Right-click the solution in Solution Explorer and select `Restore NuGet Packages`.
+   - Right-click the solution in Solution Explorer and select `Restore Client-Side Libraries`.
+#### Windows Configuration
+- Copy `.env.example` to `.env` and adjust settings as needed.
+- Set up your database connection string in the configuration file.
+- Configure authentication secrets and other environment variables.
+#### Windows Running the Server
+- Press `F5` in Visual Studio to build and run the server.
+- The server will start on the port specified in `Properties/launchSettings.json` (default: `http://localhost:5178`).
+
 ### Linux & Other Platforms
 #### Linux Prerequisites
 
@@ -81,7 +94,7 @@ You can run it privately on your own machine or server, or make it publicly acce
   Install via:
   ```bash
   dotnet tool install -g Microsoft.Web.LibraryManager.Cli
-- (Optional) SQL Server or another supported database if you want persistent storage
+- SQL Server or SQLITE
 
 Ensure the .NET global tools path `~/.dotnet/tools` is included in your PATH environment variable.
 For example, in Fish shell (persistent):
