@@ -1,6 +1,11 @@
 # Floatly-Server
 
-Floatly-Server is the backend server for the Floatly online music library. It provides a RESTful API for managing, searching, and streaming music content, including albums, artists, and songs. This project is built with ASP.NET Core and is designed to be scalable, secure, and easy to deploy.
+Floatly-Server is the backend server for the Floatly online music library.  
+It provides a RESTful API for managing, searching, and streaming music content, including albums, artists, and songs.  
+Built with ASP.NET Core, the server is designed to be scalable, secure, and easy to deploy.  
+
+This project is intended for **self-hosting**, giving users full control over their own music library.  
+You can run it privately on your own machine or server, or make it publicly accessible for shared access.
 
 ---
 
@@ -9,12 +14,18 @@ Floatly-Server is the backend server for the Floatly online music library. It pr
 - [Features](#features)
 - [Architecture](#architecture)
 - [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
-  - [Running the Server](#running-the-server)
+  - [Windows](#windows)
+    - [Prerequisites](#windows-prerequisites)
+    - [Installation](#windows-installation)
+    - [Configuration](#windows-configuration)
+    - [Running the Server](#windows-running-the-server)
+  - [Linux & Other Platforms](#linux--other-platforms)
+    - [Prerequisites](#linux-prerequisites)
+    - [Installation](#linux-installation)
+    - [Configuration](#linux-configuration)
+    - [Running the Server](#linux-running-the-server)
 - [API Overview](#api-overview)
-  - [Authentication](#authentication)
+  - [Desktop Authentication](#desktop-authentication)
   - [Endpoints](#endpoints)
 - [Project Structure](#project-structure)
 - [Testing](#testing)
@@ -26,39 +37,59 @@ Floatly-Server is the backend server for the Floatly online music library. It pr
 
 ## Features
 
-- User authentication and authorization (JWT-based)
-- CRUD operations for albums, artists, and songs
-- Music streaming endpoints
-- Search functionality for music library
-- RESTful API with Swagger/OpenAPI documentation
-- Configurable settings via `appsettings.json`
-- MVC architecture with Razor views for admin/management
-- Logging and error handling
-- Caching support for improved performance
+- Full CRUD support for albums, artists, and songs through a web interface  
+- Powerful search across the music library  
+- Music streaming endpoints for seamless playback  
+- Custom user authentication and authorization system  
+- Automatic login support for the desktop client  
+- RESTful API with integrated Swagger/OpenAPI documentation  
+- MVC architecture with Razor views for administration and management  
+- Configurable settings via `.env` file  
+- SMTP integration for email notifications and account registration  
+- Built-in logging and structured error handling  
+
 
 ---
 
 ## Architecture
 
 - **Backend Framework:** ASP.NET Core
-- **API:** RESTful, documented with Swagger
+- **API:** RESTful, documented with Swagger, and OpenAPI
 - **Views:** Razor Pages (for admin/management)
 - **Data Models:** Album, Artist, Song, User, etc.
 - **Controllers:** Handle API and view requests
-- **Authentication:** JWT tokens
-- **Configuration:** `appsettings.json` and environment-specific overrides
+- **Authentication:** Custom desktop client authentication
+- **Configuration:** `.env` and environment-specific overrides
 
 ---
 
 ## Getting Started
 
-### Prerequisites
+### Windows
+#### Windows Prerequisites
+#### Windows Installation
+#### Windows Configuration
+#### Windows Running the Server
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download)
+---
+### Linux & Other Platforms
+#### Linux Prerequisites
+
+- [.NET 9+ SDK](https://dotnet.microsoft.com/download)
 - [Git](https://git-scm.com/)
+- [LibMan CLI](https://learn.microsoft.com/aspnet/core/client-side/libman/libman-cli)  
+  Install via:
+  ```bash
+  dotnet tool install -g Microsoft.Web.LibraryManager.Cli
 - (Optional) SQL Server or another supported database if you want persistent storage
 
-### Installation
+Ensure the .NET global tools path `~/.dotnet/tools` is included in your PATH environment variable.
+For example, in Fish shell (persistent):
+```bash
+set -U fish_user_paths $fish_user_paths $HOME/.dotnet/tools
+```
+
+#### Linux Installation
 
 1. **Clone the repository:**
    ```sh
@@ -69,71 +100,78 @@ Floatly-Server is the backend server for the Floatly online music library. It pr
 2. **Restore dependencies:**
    ```sh
    dotnet restore
+   libman restore
    ```
 
-### Configuration
+#### Linux Configuration
 
-- Copy `appsettings.json` to `appsettings.Development.json` and adjust settings as needed.
+- Copy `.env.example` to `.env` and adjust settings as needed.
 - Set up your database connection string in the configuration file.
-- (Optional) Configure authentication secrets and other environment variables.
+- Configure authentication secrets and other environment variables.
 
-### Running the Server
+#### Linux Running the Server
 
 ```sh
 dotnet build
 dotnet run
 ```
 
-The server will start on the port specified in `appsettings.json` (default: `http://localhost:5000`).
+The server will start on the port specified in `Properties/launchSettings.json` (default: `http://localhost:5178`).
 
 ---
 
 ## API Overview
 
-### Authentication
+### Desktop Authentication
 
-- **Login:** `POST /auth/login`  
-  Returns a JWT token for authenticated requests.
+- **Login:** `POST /auth/desktop/login`  
+  Authenticate a user and return a custom token for authorized requests.  
 
-- **Register:** `POST /auth/register`  
-  Create a new user account.
+- **AutoLogin:** `POST /auth/desktop/autologin`  
+  Authenticate a user automatically using a stored token.   
+
+- **Register:** `POST /auth/desktop/register`  
+  Create a new user account.  
+
+- **Request Email Verification:** `POST /auth/desktop/verify-email`  
+  Send a verification email using SMTP.  
+
+- **Confirm Email Verification:** `GET /auth/desktop/verify-token`  
+  Validate the verification token and confirm the user’s email address.  
+
 
 ### Endpoints
 
-#### Albums
+#### Library V1
 
-- `GET /albums` — List all albums
-- `GET /albums/{id}` — Get album details
-- `POST /albums` — Create a new album (admin)
-- `PUT /albums/{id}` — Update album (admin)
-- `DELETE /albums/{id}` — Delete album (admin)
+- `GET /api/library/v1/{id}` — Get library item by ID  
+- `GET /api/library/v1` — Get all library items  
 
-#### Artists
+#### Library V2
 
-- `GET /artists` — List all artists
-- `GET /artists/{id}` — Get artist details
-- `POST /artists` — Create a new artist (admin)
-- `PUT /artists/{id}` — Update artist (admin)
-- `DELETE /artists/{id}` — Delete artist (admin)
+- `GET /api/library/v2` — Get all library items
+- `GET /api/library/v3/{id}` — Get library item by ID  
+- `GET /api/library/v2/artist/{id}` — Get artist details  
+- `GET /api/library/v2/album/{id}` — Get album details  
 
-#### Songs
+#### Likes
 
-- `GET /music` — List all songs
-- `GET /music/{id}` — Get song details
-- `POST /music` — Add a new song (admin)
-- `PUT /music/{id}` — Update song (admin)
-- `DELETE /music/{id}` — Delete song (admin)
-- `GET /music/stream/{id}` — Stream a song
+- `POST /api/likes` — Get user liked song list
+- `POST /api/likesong` — Like a song  
+- `POST /api/unlikesong` — Unlike a song  
 
-#### Search
+#### Playlists
 
-- `GET /search?query=...` — Search albums, artists, and songs
+- `POST /api/playlist` — Get user playlists  
+- `POST /api/createplaylist` — Create a new playlist  
+- `POST /api/deleteplaylist` — Delete an existing playlist  
+- `POST /api/addplaylistsong` — Add a song to a playlist  
+- `POST /api/removeplaylistsong` — Remove a song from a playlist  
+- `POST /api/editplaylist` — Edit playlist details  
+- `POST /api/getplaylistsongs` — Get all songs in a playlist  
 
-#### Home
 
-- `GET /` — Home page or API status
-
-> **Note:** All admin endpoints require authentication.
+> **Note:** All admin endpoints require web authentication.
 
 ### API Documentation
 
@@ -142,16 +180,20 @@ The server will start on the port specified in `appsettings.json` (default: `htt
 ---
 
 ## Project Structure
-
 ```
 Floatly-Server/
-├── Controllers/         # API and MVC controllers
-├── Models/              # Data models (Album, Artist, Song, User, etc.)
-├── Views/               # Razor views for admin/management
-├── Properties/
-├── Program.cs           # Main entry point
-├── GlobalConfiguration.cs
-├── appsettings.json     # Main configuration file
+├── Controllers/             # API and MVC controllers
+│   └── LibraryController/   # API for searching the song library
+├── Models/                  # Database context & data models (Album, Artist, Song, User, etc.)
+├── Services/                # Third-party services (e.g., email, auth)
+├── Utils/                   # Utility/helper classes
+├── Views/                   # Razor views for admin/management
+├── Properties/              # Project metadata & launch settings
+├── Program.cs               # Main entry point
+├── GlobalConfiguration.cs   # Reads configuration from `.env`
+├── wwwroot/                 # Public web root
+│   └── uploads/             # Uploaded music, lyrics, covers, banners
+├── .env                     # Main configuration file
 ├── README.md
 ├── LICENSE
 └── ...
@@ -161,12 +203,7 @@ Floatly-Server/
 
 ## Testing
 
-- Unit and integration tests can be added using xUnit or NUnit.
-- To run tests (if present):
-
-  ```sh
-  dotnet test
-  ```
+Soon
 
 ---
 

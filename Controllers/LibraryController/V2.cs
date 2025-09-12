@@ -59,7 +59,30 @@ namespace Floaty_Music.Controllers
             };
             return Ok(result);
         }
+        
+[HttpGet("{id}")]
+        public IActionResult GetSong(int id)
+        {
+            var lib = _context.Songs.Include(a => a.Album).ThenInclude(a => a.Artist)
+                                    .FirstOrDefault(x => x.Id == id);
+            if (lib == null)
+                return NotFound(new { message = "Not found" });
 
+            return Ok(new
+            {
+                id = lib.Id,
+                title = lib.Title,
+                artist = lib.Album.Artist.Name,
+                downloadUrls = new
+                {
+                    music = lib.MusicFilePath,
+                    lyrics = lib.LyricsFilePath,
+                    cover = lib.CoverImagePath,
+                    banner = lib.BannerImagePath
+                },
+                createdAt = lib.CreatedAt
+            });
+        }
         [HttpGet("artist/{id}")]
         public IActionResult SearchArtist(int id)
         {
