@@ -12,8 +12,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddDbContext<FloatlyContext>(options =>
-    options.UseSqlServer(GlobalConfiguration.ConnectionString));
+
+if (GlobalConfiguration.isSQLITE)
+{
+    builder.Services.AddDbContext<FloatlyContext>(options =>
+    options.UseSqlite(GlobalConfiguration.ConnectionString));
+}
+else
+{
+    builder.Services.AddDbContext<FloatlyContext>(options =>
+        options.UseSqlServer(GlobalConfiguration.ConnectionString));
+}
 builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -65,7 +74,11 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
-// Check DB
-using var db = new FloatlyContext();
-db.Database.EnsureCreated();
+if(GlobalConfiguration.isSQLITE)
+{
+    // For SQLite, ensure database file and tables are created
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<FloatlyContext>();
+    db.Database.EnsureCreated();
+}
 app.Run();

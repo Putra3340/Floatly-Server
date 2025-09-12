@@ -32,8 +32,16 @@ public partial class FloatlyContext : DbContext
     public virtual DbSet<VerifiedEmail> VerifiedEmail { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Data Source=DESKTOP-86R216N;Initial Catalog=Floatly;Integrated Security=True;Encrypt=True;Trust Server Certificate=True");
+    {
+        if (GlobalConfiguration.isSQLITE)
+        {
+            optionsBuilder.UseSqlite(GlobalConfiguration.ConnectionString);
+        }
+        else
+        {
+            optionsBuilder.UseSqlServer(GlobalConfiguration.ConnectionString);
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -131,6 +139,7 @@ public partial class FloatlyContext : DbContext
             entity.Property(e => e.CoverImagePath).HasMaxLength(255);
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
             entity.Property(e => e.LyricsFilePath).HasMaxLength(200);
+            entity.Property(e => e.MoviePath).HasMaxLength(255);
             entity.Property(e => e.MusicFilePath).HasMaxLength(255);
             entity.Property(e => e.Title).HasMaxLength(100);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");

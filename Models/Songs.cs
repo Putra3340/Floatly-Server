@@ -19,6 +19,8 @@ public partial class Songs
 
     public string? BannerImagePath { get; set; }
 
+    public string? MoviePath { get; set; }
+
     public string? UploadedBy { get; set; }
 
     public DateTime? CreatedAt { get; set; }

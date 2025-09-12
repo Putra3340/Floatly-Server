@@ -20,6 +20,7 @@ namespace Floaty_Music
         public static string SMTP_PASSWORD;
         public static string TOKEN_EXPIRED_IN_DAYS;
 
+        public static bool isSQLITE = false; // set true if using remote database
         public static void LoadConfig()
         {
             Env.Load();
@@ -31,6 +32,15 @@ namespace Floaty_Music
             SMTP_EMAIL = Env.GetString("SMTP_EMAIL", "");
             SMTP_PASSWORD = Env.GetString("SMTP_PASSWORD", "");
             TOKEN_EXPIRED_IN_DAYS = Env.GetString("TOKEN_EXPIRED_IN_DAYS", "");
+            string dbtype = Env.GetString("DATABASE_TYPE", "SQLSERVER");
+            if (dbtype.ToUpper() == "SQLITE")
+            {
+                isSQLITE = true;
+            }
+            else
+            {
+                isSQLITE = false;
+            }
         }
         public static string SaveFile(IFormFile file, string folder)
         {
