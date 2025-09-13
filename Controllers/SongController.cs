@@ -28,11 +28,6 @@ namespace Floaty_Music.Controllers
             if (!ModelState.IsValid)
                 return RedirectToAction("Index");
 
-            Directory.CreateDirectory(GlobalConfiguration.MusicFilePath);
-            Directory.CreateDirectory(GlobalConfiguration.LyricsFilePath);
-            Directory.CreateDirectory(GlobalConfiguration.CoverImagePath);
-            Directory.CreateDirectory(GlobalConfiguration.BannerImagePath);
-
             string SaveFile(IFormFile file, string folder)
             {
                 var fileName = Path.GetRandomFileName() + Guid.NewGuid().ToString() + Path.GetExtension(file.FileName); // 4.59 x 10^-43% Chance for collisions
@@ -115,7 +110,7 @@ namespace Floaty_Music.Controllers
             var songcounter = await _context.SongCounter.FirstOrDefaultAsync(x => x.SongId == song.Id);
             if (songcounter != null)
             {
-                songcounter.MusicLength = (int)musiclength;
+                songcounter.MusicLength = (int)musiclength==0?songcounter.MusicLength:(int)musiclength;
                 await _context.SaveChangesAsync();
             }
             return Ok();
@@ -141,7 +136,15 @@ namespace Floaty_Music.Controllers
             ViewBag.TotalSongs = totalSongs;
             ViewBag.TotalAlbums = totalAlbums;
             ViewBag.TotalArtists = totalArtists;
-
+            ViewBag.TotalPlayed = _context.SongCounter.Sum(x => x.TotalPlayed);
+            ViewBag.TotalLikes = _context.SongCounter.Sum(x => x.TotalLikes);
+            ViewBag.TopSongs = _context.SongCounter
+                .OrderByDescending(x => x.TotalPlayed)
+                .Take(5)
+                .Include(x => x.Song)
+                    .ThenInclude(s => s.Album)
+                        .ThenInclude(a => a.Artist)
+                .ToList();
             ViewBag.Albums = _context.Albums.OrderDescending().Include(a => a.Artist).ToList();
             ViewBag.Artists = _context.Artists.OrderDescending().ToList(); // for dropdown
             ViewBag.Songs = _context.Songs
@@ -150,6 +153,9 @@ namespace Floaty_Music.Controllers
         .ThenInclude(a => a.Artist)
     .Include(x => x.SongCounter)
     .ToList();
+
+            ViewBag.RecentlyAddedSongs = _context.Songs
+    .OrderByDescending(x => x.CreatedAt).ToList();
             return View();
         }
     }

@@ -13,63 +13,55 @@ namespace Floaty_Music.Controllers
         {
             _context = context;
         }
-
-        // GET: /Artist
-        public IActionResult Index()
-        {
-            var artists = _context.Artists.OrderDescending().ToList();
-            return View(artists);
-        }
-
-        // GET: /Artist/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: /Artist/Create
         [HttpPost]
-        public IActionResult Create(Artists artist)
+        public async Task<IActionResult> Create(ArtistFormModel model)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Artists.Add(artist);
-                _context.SaveChanges();
+            if (!ModelState.IsValid)
                 return Redirect("/Song/Dashboard#artists");
+            async Task<string> SaveFile(IFormFile file, string folder)
+            {
+                var fileName = Path.GetRandomFileName() + Guid.NewGuid().ToString() + Path.GetExtension(file.FileName); // 4.59 x 10^-43% Chance for collisions
+                var fullPath = Path.Combine(GlobalConfiguration.WebRootPath, GlobalConfiguration.UploadsFolder, folder, fileName);
+                using var stream = new FileStream(fullPath, FileMode.Create);
+                file.CopyTo(stream);
+                return $"/uploads/{Path.GetFileName(folder)}/{fileName}";
             }
-            return View(artist);
+            var artist = new Artists
+            {
+                Name = model.Name,
+                Bio = model.Bio,
+                ProfileUrl = model.ProfileUrl != null ? await SaveFile(model.ProfileUrl, GlobalConfiguration.ArtistProfilePath) : null,
+                // CreatedAt = DateTime.Now,
+                // UpdatedAt = DateTime.Now
+            };
+            _context.Artists.Add(artist);
+            _context.SaveChanges();
+            return Redirect("/Song/Dashboard#artists");
         }
-
-        // GET: /Artist/Edit/5
-        public IActionResult Edit(int id)
-        {
-            var artist = _context.Artists.Find(id);
-            if (artist == null) return NotFound();
-            return View(artist);
-        }
-
-        // POST: /Artist/Edit/5
         [HttpPost]
-        public IActionResult Edit(Artists artist)
+        public async Task<IActionResult> Edit(ArtistFormModel model)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Artists.Update(artist);
-                _context.SaveChanges();
+            var artist = await _context.Artists.FindAsync(model.Id);
+            if (artist == null)
                 return Redirect("/Song/Dashboard#artists");
+            async Task<string> SaveFile(IFormFile file, string folder)
+            {
+                var fileName = Path.GetRandomFileName() + Guid.NewGuid().ToString() + Path.GetExtension(file.FileName); // 4.59 x 10^-43% Chance for collisions
+                var fullPath = Path.Combine(GlobalConfiguration.WebRootPath, GlobalConfiguration.UploadsFolder, folder, fileName);
+                using var stream = new FileStream(fullPath, FileMode.Create);
+                file.CopyTo(stream);
+                return $"/uploads/{Path.GetFileName(folder)}/{fileName}";
             }
-            return View(artist);
+            artist.Name = model.Name;
+            artist.Bio = model.Bio;
+            if (model.ProfileUrl != null)
+                artist.ProfileUrl = await SaveFile(model.ProfileUrl, GlobalConfiguration.ArtistProfilePath);
+            // artist.UpdatedAt = DateTime.Now;
+            _context.Artists.Update(artist);
+            await _context.SaveChangesAsync();
+            return Redirect("/Song/Dashboard#artists");
         }
 
-        // GET: /Artist/Delete/5
-        public IActionResult Delete(int id)
-        {
-            var artist = _context.Artists.Find(id);
-            if (artist == null) return NotFound();
-            return View(artist);
-        }
-
-        // POST: /Artist/Delete/5
         [HttpPost, ActionName("Delete")]
         public IActionResult DeleteConfirmed(int id)
         {

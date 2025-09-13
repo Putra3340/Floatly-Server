@@ -12,6 +12,9 @@ namespace Floaty_Music
         public static string CoverImagePath { get; set; } = Path.Combine(WebRootPath, UploadsFolder, "cover");
         public static string BannerImagePath { get; set; } = Path.Combine(WebRootPath, UploadsFolder, "banner");
 
+        public static string ArtistProfilePath { get; set; } = Path.Combine(WebRootPath, UploadsFolder, "artist");
+        public static string AlbumCoverPath { get; set; } = Path.Combine(WebRootPath, UploadsFolder, "album");
+
         public static string ADMIN_USERNAME;
         public static string ADMIN_PASSWORD;
         public static string SMTP_SERVER;
@@ -41,6 +44,23 @@ namespace Floaty_Music
             {
                 isSQLITE = false;
             }
+
+            if(!Directory.Exists(WebRootPath))
+                Directory.CreateDirectory(WebRootPath);
+            if (!Directory.Exists(Path.Combine(WebRootPath, UploadsFolder)))
+                Directory.CreateDirectory(Path.Combine(WebRootPath, UploadsFolder));
+            if (!Directory.Exists(MusicFilePath))
+                Directory.CreateDirectory(MusicFilePath);
+            if (!Directory.Exists(LyricsFilePath))
+                Directory.CreateDirectory(LyricsFilePath);
+            if (!Directory.Exists(CoverImagePath))
+                Directory.CreateDirectory(CoverImagePath);
+            if (!Directory.Exists(BannerImagePath))
+                Directory.CreateDirectory(BannerImagePath);
+            if (!Directory.Exists(ArtistProfilePath))
+                Directory.CreateDirectory(ArtistProfilePath);
+            if (!Directory.Exists(AlbumCoverPath))
+                Directory.CreateDirectory(AlbumCoverPath);
         }
         public static string SaveFile(IFormFile file, string folder)
         {

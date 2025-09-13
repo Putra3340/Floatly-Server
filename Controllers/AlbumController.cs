@@ -14,31 +14,63 @@ namespace Floaty_Music.Controllers
             _context = context;
         }
         [HttpPost]
-        public IActionResult Create(Albums album)
+        public async Task<IActionResult> Create(AlbumFormModel model)
         {
+            if (!ModelState.IsValid)
+                return Redirect("/Song/Dashboard#albums");
+
+            async Task<string> SaveFile(IFormFile file, string folder)
+            {
+                var fileName = Path.GetRandomFileName() + Guid.NewGuid().ToString() + Path.GetExtension(file.FileName); // 4.59 x 10^-43% Chance for collisions
+                var fullPath = Path.Combine(GlobalConfiguration.WebRootPath, GlobalConfiguration.UploadsFolder, folder, fileName);
+                using var stream = new FileStream(fullPath, FileMode.Create);
+                file.CopyTo(stream);
+                return $"/uploads/{Path.GetFileName(folder)}/{fileName}";
+            }
+
+            var album = new Albums
+            {
+                Title = model.Title,
+                ArtistId = model.ArtistId,
+                ReleaseDate = model.ReleaseDate,
+                CoverUrl = model.CoverImage != null ? SaveFile(model.CoverImage, GlobalConfiguration.AlbumCoverPath).Result : null,
+                // CreatedAt = DateTime.Now,
+                // UpdatedAt = DateTime.Now
+            };
             _context.Albums.Add(album);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return Redirect("/Song/Dashboard#albums");
-
+        
         }
 
         [HttpPost]
-        public IActionResult Edit(Albums album)
+        public async Task<IActionResult> Edit(AlbumFormModel model)
         {
-            var albumbak = _context.Albums.Find(album.Id);
-            if (albumbak == null)
-                return NotFound();
-            //_context.Albums.Update(album);
-            albumbak.Title = album.Title ?? albumbak.Title;
-            albumbak.Artist = album.Artist ?? albumbak.Artist;
-            albumbak.ReleaseDate = album.ReleaseDate ?? albumbak.ReleaseDate;
-            albumbak.CoverUrl = album.CoverUrl ?? albumbak.CoverUrl;
-            _context.SaveChanges();
+            var album = await _context.Albums.FindAsync(model.Id);
+            if (album == null)
+                return Redirect("/Song/Dashboard#albums");
+            async Task<string> SaveFile(IFormFile file, string folder)
+            {
+                var fileName = Path.GetRandomFileName() + Guid.NewGuid().ToString() + Path.GetExtension(file.FileName); // 4.59 x 10^-43% Chance for collisions
+                var fullPath = Path.Combine(GlobalConfiguration.WebRootPath, GlobalConfiguration.UploadsFolder, folder, fileName);
+                using var stream = new FileStream(fullPath, FileMode.Create);
+                file.CopyTo(stream);
+                return $"/uploads/{Path.GetFileName(folder)}/{fileName}";
+            }
+            album.Title = model.Title;
+            album.ArtistId = model.ArtistId;
+            if(model.ReleaseDate != null)
+                album.ReleaseDate = model.ReleaseDate;
+            if (model.CoverImage != null)
+                album.CoverUrl = await SaveFile(model.CoverImage, GlobalConfiguration.AlbumCoverPath);
+            // album.UpdatedAt = DateTime.Now;
+            _context.Albums.Update(album);
+            await _context.SaveChangesAsync();
             return Redirect("/Song/Dashboard#albums");
         }
 
         [HttpPost]
-        public IActionResult Delete(long id)
+        public IActionResult Delete(int id)
         {
             var album = _context.Albums.Find(id);
             if (album != null)
@@ -48,12 +80,5 @@ namespace Floaty_Music.Controllers
             }
             return Redirect("/Song/Dashboard#albums");
         }
-        public IActionResult Index()
-        {
-            var albums = _context.Albums.OrderDescending().Include(a => a.Artist).ToList();
-            ViewBag.Artists = _context.Artists.ToList(); // for dropdown
-            return View(albums);
-        }
-
     }
 }

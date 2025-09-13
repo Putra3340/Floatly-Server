@@ -419,6 +419,8 @@ FodyWeavers.xsd
 /wwwroot/uploads/cover
 /wwwroot/uploads/lyrics
 /wwwroot/uploads/music
+/wwwroot/uploads/artist
+/wwwroot/uploads/album
 /wwwroot/lib
 /wwwroot/jquery
 /database.db

@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,10 +29,10 @@
             transition: all 0.3s ease;
         }
 
-            .form-control:focus {
-                border-color: #0d6efd;
-                box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-            }
+        .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
 
         .btn-primary {
             border-radius: 8px;
@@ -40,10 +41,10 @@
             transition: all 0.3s ease;
         }
 
-            .btn-primary:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
-            }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+        }
 
         .form-label {
             font-weight: 500;
@@ -62,41 +63,38 @@
             color: transparent;
         }
 
-            .btn-loading::after {
-                content: "";
-                position: absolute;
-                width: 16px;
-                height: 16px;
-                top: 50%;
-                left: 50%;
-                margin-left: -8px;
-                margin-top: -8px;
-                border: 2px solid #ffffff;
-                border-radius: 50%;
-                border-top-color: transparent;
-                animation: spin 1s linear infinite;
-            }
+        .btn-loading::after {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-left: -8px;
+            margin-top: -8px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
 
         @@keyframes spin {
-            to
-
-        {
-            transform: rotate(360deg);
-        }
+            to {
+                transform: rotate(360deg);
+            }
 
         }
 
         /* Responsive adjustments */
         @@media (max-width: 576px) {
-            .card-body
-
-        {
-            padding: 1.5rem;
-        }
+            .card-body {
+                padding: 1.5rem;
+            }
 
         }
     </style>
 </head>
+
 <body class="bg-light">
     <div class="container">
         <div class="row justify-content-center align-items-center min-vh-100">
@@ -124,7 +122,10 @@
                             </div>
                         </form>
                         <div class="text-center mt-3">
-                            <a href="#" class="text-decoration-none">Forgot your password?</a>
+                            <a href="#" class="text-decoration-none"
+                                onclick="alert('Read about configuring the server!'); return false;">
+                                Whats the password?
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -135,4 +136,5 @@
     <!-- Bootstrap JS -->
     <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
