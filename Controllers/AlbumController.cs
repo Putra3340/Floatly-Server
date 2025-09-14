@@ -1,4 +1,5 @@
 ﻿using Floaty_Music.Models;
+using Floaty_Music.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,29 +19,19 @@ namespace Floaty_Music.Controllers
         {
             if (!ModelState.IsValid)
                 return Redirect("/Song/Dashboard#albums");
-
-            async Task<string> SaveFile(IFormFile file, string folder)
-            {
-                var fileName = Path.GetRandomFileName() + Guid.NewGuid().ToString() + Path.GetExtension(file.FileName); // 4.59 x 10^-43% Chance for collisions
-                var fullPath = Path.Combine(GlobalConfiguration.WebRootPath, GlobalConfiguration.UploadsFolder, folder, fileName);
-                using var stream = new FileStream(fullPath, FileMode.Create);
-                file.CopyTo(stream);
-                return $"/uploads/{Path.GetFileName(folder)}/{fileName}";
-            }
-
             var album = new Albums
             {
                 Title = model.Title,
                 ArtistId = model.ArtistId,
                 ReleaseDate = model.ReleaseDate,
-                CoverUrl = model.CoverImage != null ? SaveFile(model.CoverImage, GlobalConfiguration.AlbumCoverPath).Result : null,
-                // CreatedAt = DateTime.Now,
-                // UpdatedAt = DateTime.Now
+                CoverImagePath = model.CoverImage != null ? await FileHelper.SaveFileAsync(model.CoverImage, GlobalConfiguration.AlbumCoverPath) : null,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
-            _context.Albums.Add(album);
+            await _context.Albums.AddAsync(album);
             await _context.SaveChangesAsync();
             return Redirect("/Song/Dashboard#albums");
-        
+
         }
 
         [HttpPost]
@@ -49,36 +40,32 @@ namespace Floaty_Music.Controllers
             var album = await _context.Albums.FindAsync(model.Id);
             if (album == null)
                 return Redirect("/Song/Dashboard#albums");
-            async Task<string> SaveFile(IFormFile file, string folder)
-            {
-                var fileName = Path.GetRandomFileName() + Guid.NewGuid().ToString() + Path.GetExtension(file.FileName); // 4.59 x 10^-43% Chance for collisions
-                var fullPath = Path.Combine(GlobalConfiguration.WebRootPath, GlobalConfiguration.UploadsFolder, folder, fileName);
-                using var stream = new FileStream(fullPath, FileMode.Create);
-                file.CopyTo(stream);
-                return $"/uploads/{Path.GetFileName(folder)}/{fileName}";
-            }
             album.Title = model.Title;
             album.ArtistId = model.ArtistId;
-            if(model.ReleaseDate != null)
+            if (model.ReleaseDate != null)
                 album.ReleaseDate = model.ReleaseDate;
             if (model.CoverImage != null)
-                album.CoverUrl = await SaveFile(model.CoverImage, GlobalConfiguration.AlbumCoverPath);
-            // album.UpdatedAt = DateTime.Now;
-            _context.Albums.Update(album);
+                album.CoverImagePath = await FileHelper.SaveFileAsync(model.CoverImage, GlobalConfiguration.AlbumCoverPath);
+            album.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
             return Redirect("/Song/Dashboard#albums");
         }
 
         [HttpPost]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var album = _context.Albums.Find(id);
-            if (album != null)
-            {
-                _context.Albums.Remove(album);
-                _context.SaveChanges();
-            }
+            var album = await _context.Albums.FindAsync(id);
+            if (album == null)
+                return NotFound();
+
+            bool hasSongs = await _context.Songs.AnyAsync(s => s.AlbumId == id);
+            if (hasSongs)
+                return BadRequest("Cannot delete this album. Delete all songs assigned to it first.");
+
+            _context.Albums.Remove(album);
+            await _context.SaveChangesAsync();
             return Redirect("/Song/Dashboard#albums");
         }
+
     }
 }

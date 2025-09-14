@@ -47,20 +47,20 @@ namespace Floaty_Music.Controllers
                 {
                     id = x.Id,
                     name = x.Name,
-                    profileUrl = baseUrl + x.ProfileUrl,
+                    profileUrl = baseUrl + x.CoverImagePath,
                 }).Take(3).ToList(),
                 albums = albumlist.Select(x => new
                 {
                     id = x.Id,
                     title = x.Title,
                     artistName = x.Artist.Name,
-                    coverUrl = baseUrl + x.CoverUrl
+                    coverUrl = baseUrl + x.CoverImagePath
                 }).Take(3).ToList()
             };
             return Ok(result);
         }
-        
-[HttpGet("{id}")]
+
+        [HttpGet("{id}")]
         public IActionResult GetSong(int id)
         {
             var lib = _context.Songs.Include(a => a.Album).ThenInclude(a => a.Artist)

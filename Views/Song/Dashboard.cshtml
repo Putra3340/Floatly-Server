@@ -9,7 +9,7 @@
     <title>Music Management Dashboard</title>
     <link href="~/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
     <link href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" rel="stylesheet" />
-    
+
     <style>
         :root {
             --bs-primary: #0d6efd;
@@ -169,6 +169,7 @@
 
             <!-- Main content -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+
                 <!-- Dashboard Section -->
                 <div id="dashboard" class="content-section active">
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -221,21 +222,84 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-8">
+                        <div class="col-md-4">
                             <div class="card">
                                 <div class="card-header">
-                                    <h5 class="mb-0">Recent Activity</h5>
+                                    <h5 class="mb-0">Disk Usage Information</h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-music-note-beamed me-2"></i>
+                                                Music Files (@ViewBag.StorageStats.Music.FileCount)
+                                            </span>
+                                            <span class="badge bg-primary">@((ViewBag.StorageStats.Music.TotalSize / 1024 / 1024).ToString("N2")) MB</span>
+                                        </li>
+
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-file-text me-2"></i>
+                                                Lyrics (@ViewBag.StorageStats.Lyrics.FileCount)
+                                            </span>
+                                            <span class="badge bg-primary">@((ViewBag.StorageStats.Lyrics.TotalSize / 1024 / 1024).ToString("N2")) MB</span>
+                                        </li>
+
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-image me-2"></i>
+                                                Cover Images (@ViewBag.StorageStats.Cover.FileCount)
+                                            </span>
+                                            <span class="badge bg-primary">@((ViewBag.StorageStats.Cover.TotalSize / 1024 / 1024).ToString("N2")) MB</span>
+                                        </li>
+
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-card-image me-2"></i>
+                                                Banners (@ViewBag.StorageStats.Banner.FileCount)
+                                            </span>
+                                            <span class="badge bg-primary">@((ViewBag.StorageStats.Banner.TotalSize / 1024 / 1024).ToString("N2")) MB</span>
+                                        </li>
+
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-disc me-2"></i>
+                                                Album Covers (@ViewBag.StorageStats.Album.FileCount)
+                                            </span>
+                                            <span class="badge bg-primary">@((ViewBag.StorageStats.Album.TotalSize / 1024 / 1024).ToString("N2")) MB</span>
+                                        </li>
+
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-person-circle me-2"></i>
+                                                Artist Profiles (@ViewBag.StorageStats.Artist.FileCount)
+                                            </span>
+                                            <span class="badge bg-primary">@((ViewBag.StorageStats.Artist.TotalSize / 1024 / 1024).ToString("N2")) MB</span>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                                <div class="card-footer text-muted small">
+                                    Total: <strong>@ViewBag.TotalFiles</strong> files,
+                                    <strong>@((ViewBag.TotalSize / 1024 / 1024).ToString("N2")) MB</strong> used
+                                    <br />
+                                    Last updated: @ViewBag.LastUpdate
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Top 10 Most Liked Songs</h5>
                                 </div>
                                 <div class="card-body">
                                     <div class="list-group list-group-flush">
-                                    @foreach (var item in ViewBag.RecentlyAddedSongs){
-                                        <div class="list-group-item bg-transparent border-0">
-                                            <div class="d-flex w-100 justify-content-between">
-                                                <h6 class="mb-1">New Music "@item.Title" added</h6>
-                                                <small>2 hours ago</small>
+                                        @foreach (var item in ViewBag.TopSongsLikes)
+                                        {
+                                            <div class="list-group-item bg-transparent border-0 d-flex justify-content-between">
+                                                <span>@item.Song.Title</span>
+                                                <span class="badge bg-primary">@item.TotalLikes Likes</span>
                                             </div>
-                                            <p class="mb-1">Artist: @item.Album.Artist.Name</p>
-                                        </div>
                                         }
                                     </div>
                                 </div>
@@ -244,16 +308,17 @@
                         <div class="col-md-4">
                             <div class="card">
                                 <div class="card-header">
-                                    <h5 class="mb-0">Top 10 Music</h5>
+                                    <h5 class="mb-0">Top 10 Most Played Music</h5>
                                 </div>
                                 <div class="card-body">
                                     <div class="list-group list-group-flush">
-                                    @foreach (var item in ViewBag.TopSongs){
-                                        <div class="list-group-item bg-transparent border-0 d-flex justify-content-between">
-                                            <span>@item.Song.Title</span>
-                                            <span class="badge bg-primary">@item.TotalPlayed Plays</span>
-                                        </div>
-                                    }
+                                        @foreach (var item in ViewBag.TopSongs)
+                                        {
+                                            <div class="list-group-item bg-transparent border-0 d-flex justify-content-between">
+                                                <span>@item.Song.Title</span>
+                                                <span class="badge bg-primary">@item.TotalPlayed Plays</span>
+                                            </div>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -277,7 +342,7 @@
                         <div class="col-md-12">
                             <input type="text" class="form-control search-box" placeholder="Search albums..." id="albumSearch">
                         </div>
-                        
+
                     </div>
 
                     <div class="card">
@@ -293,19 +358,20 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach(var album in ViewBag.Albums)
+                                        @foreach (var album in ViewBag.Albums)
                                         {
                                             <tr>
                                                 <td>
                                                     <div class="d-flex ">
                                                         <div class="bg-primary rounded me-3" style="width: 128px; height: 128px;">
-                                                            @if (!string.IsNullOrEmpty(album.CoverUrl))
+                                                            @if (!string.IsNullOrEmpty(album.CoverImagePath))
                                                             {
-                                                                <img src="@album.CoverUrl" class="rounded" style="width: 128px; height: 128px; object-fit: cover;" />
+                                                                <img src="@album.CoverImagePath" class="rounded" style="width: 128px; height: 128px; object-fit: cover;" />
                                                             }
                                                             else
                                                             {
-                                                                <i class="bi bi-disc fs-2 text-white" style="width: 128px; height: 128px;"></i>}
+                                                                <i class="bi bi-disc fs-2 text-white" style="width: 128px; height: 128px;"></i>
+                                                            }
                                                         </div>
                                                         <div>
                                                             <strong>@album.Title</strong>
@@ -329,7 +395,7 @@
                                                 </td>
                                             </tr>
                                         }
-                                        
+
                                     </tbody>
                                 </table>
                             </div>
@@ -351,60 +417,60 @@
                     </div>
 
                     <div class="row mb-3">
-    <div class="col-md-12">
-        <input type="text" class="form-control search-box" placeholder="Search artists..." id="artistSearch">
-    </div>
-</div>
+                        <div class="col-md-12">
+                            <input type="text" class="form-control search-box" placeholder="Search artists..." id="artistSearch">
+                        </div>
+                    </div>
 
-<div class="row" id="artistContainer">
-    @foreach (var artist in ViewBag.Artists)  // assuming Model is IEnumerable<Artists>
-    {
-        <div class="col-md-4 mb-4 artist-card">
-            <div class="card">
-                <div class="card-body text-center">
-                    <div class="bg-primary rounded-circle mx-auto mb-3"
-                         style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
-                        @if (!string.IsNullOrEmpty(artist.ProfileUrl))
+                    <div class="row" id="artistContainer">
+                        @foreach (var artist in ViewBag.Artists)  // assuming Model is IEnumerable<Artists>
                         {
-                            <img src="@artist.ProfileUrl" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;" />
-                        }
-                        else
-                        {
-                            <i class="bi bi-person fs-1 text-white"></i>
-                        }
+                            <div class="col-md-4 mb-4 artist-card">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <div class="bg-primary rounded-circle mx-auto mb-3"
+                                             style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
+                                            @if (!string.IsNullOrEmpty(artist.CoverImagePath))
+                                            {
+                                                <img src="@artist.CoverImagePath" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;" />
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-person fs-1 text-white"></i>
+                                            }
+                                    </div>
+                                    <h5 class="card-title">@artist.Name</h5>
+                                    <p class="card-text text-muted">
+                                        @(artist.Bio?.Length > 50
+                                                                                ? artist.Bio.Substring(0, 100) + "..."
+                                                                                : artist.Bio)
+                                    </p>
+                                    <div class="d-flex justify-content-center mb-3">
+                                        <small class="me-3"><strong>@artist.Albums.Count</strong> Albums</small>
+                                        @* <small><strong>@artist.Albums.Sum(a => a.Songs.Count)</strong> Songs</small> *@
+                                    </div>
+                                    <div class="btn-group" role="group">
+                                        <a class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#artistModal"
+                                           onclick="openArtistModal(@artist.Id, '@artist.Name', '@artist.Bio')">Edit</a>
+                                        <a asp-action="Details" asp-controller="Artists" asp-route-id="@artist.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                                        <form action="/Artist/Delete" method="post" class="d-inline">
+                                            <input type="hidden" name="id" value="@artist.Id" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                    onclick="return confirm('Delete @artist.Name?')">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                                                }
+
                     </div>
-                    <h5 class="card-title">@artist.Name</h5>
-                    <p class="card-text text-muted">
-                        @(artist.Bio?.Length > 50
-                            ? artist.Bio.Substring(0, 100) + "..."
-                            : artist.Bio)
-                    </p>
-                    <div class="d-flex justify-content-center mb-3">
-                        <small class="me-3"><strong>@artist.Albums.Count</strong> Albums</small>
-                        @* <small><strong>@artist.Albums.Sum(a => a.Songs.Count)</strong> Songs</small> *@
-                    </div>
-                    <div class="btn-group" role="group">
-                        <a class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#artistModal"
-                           onclick="openArtistModal(@artist.Id, '@artist.Name', '@artist.Bio')">Edit</a>
-                        <a asp-action="Details" asp-controller="Artists" asp-route-id="@artist.Id" class="btn btn-sm btn-outline-secondary">View</a>
-                        <form action="/Artist/Delete" method="post" class="d-inline">
-                            <input type="hidden" name="id" value="@artist.Id" />
-                            <button type="submit" class="btn btn-outline-danger btn-sm"
-                                    onclick="return confirm('Delete @artist.Name?')">
-                                Delete
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-    
-</div>
-<!-- Pagination placeholder -->
-<nav>
-    <ul class="pagination justify-content-center" id="artistPagination"></ul>
-</nav>
+                    <!-- Pagination placeholder -->
+                    <nav>
+                        <ul class="pagination justify-content-center" id="artistPagination"></ul>
+                    </nav>
 
 
                 </div>
@@ -423,24 +489,24 @@
 
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <input type="text" class="form-control search-box" id="searchTitle"  placeholder="Search songs...">
+                            <input type="text" class="form-control search-box" id="searchTitle" placeholder="Search songs...">
                         </div>
                         <div class="col-md-4">
                             <select class="form-select search-box" id="searchArtist" onchange="filterAlbumsSongs()">
-                            <option value="">All Artists</option>
+                                <option value="">All Artists</option>
                                 @foreach (var a in ViewBag.Artists)
-                                            {
-                                                <option value="@a.Id">@a.Name</option>
-                                            }
+                                {
+                                    <option value="@a.Id">@a.Name</option>
+                                }
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <select class="form-select search-box"  id="searchAlbum">
+                            <select class="form-select search-box" id="searchAlbum">
                                 <option value="">All Albums</option>
                                 @foreach (var a in ViewBag.Albums)
-                                            {
-                                                <option value="@a.Id" data-artist="@a.ArtistId">@a.Title</option>
-                                            }
+                                {
+                                    <option value="@a.Id" data-artist="@a.ArtistId">@a.Title</option>
+                                }
                             </select>
                         </div>
                     </div>
@@ -465,29 +531,29 @@
                                         {
                                             <tr>
                                                 <td>
-                                                <div class="d-flex align-items-center">
-                                                    <button class="btn btn-sm btn-outline-primary me-3" data-music="@music.MusicFilePath">
-                                                        <i class="bi bi-play-fill"></i>
-                                                    </button>
-                                                    <div>
-                                                        <strong>@music.Title</strong>
+                                                    <div class="d-flex align-items-center">
+                                                        <button class="btn btn-sm btn-outline-primary me-3" data-music="@music.MusicFilePath">
+                                                            <i class="bi bi-play-fill"></i>
+                                                        </button>
+                                                        <div>
+                                                            <strong>@music.Title</strong>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td>@music.Album.Artist.Name</td>
-                                            <td>@music.Album.Title</td>
-                                            <td>@TimeSpan.FromSeconds(music.SongCounter.MusicLength).ToString(@"m\:ss")</td>
-                                            <td>@music.SongCounter.TotalPlayed</td>
-                                            <td>@music.SongCounter.TotalLikes</td>
-                                            <td>
+                                                </td>
+                                                <td>@music.Album.Artist.Name</td>
+                                                <td>@music.Album.Title</td>
+                                                <td>@TimeSpan.FromSeconds(music.SongCounter.MusicLength).ToString(@"m\:ss")</td>
+                                                <td>@music.SongCounter.TotalPlayed</td>
+                                                <td>@music.SongCounter.TotalLikes</td>
+                                                <td>
                                                     <button class="btn btn-sm btn-outline-primary me-1" onclick="openSongModal(@music.Id, '@music.Title', @music.AlbumId, '@music.Album?.ArtistId')">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteSong(@music.Id)">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteSong(@music.Id)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
                                         }
                                     </tbody>
                                 </table>
@@ -636,381 +702,381 @@
             </main>
         </div>
     </div>
-    
+
 
     <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/jquery/jquery.min.js"></script>
-    
 
-<script>
-$(document).ready(function () {
-    /* -------------------------
-       Album & Artist Modals
-    ------------------------- */
-    window.openAlbumModal = function (id = 0, title = '', artistId = '', releaseDate = '', coverUrl = '') {
-        $("#albumId").val(id);
-        $("#albumTitle").val(title);
-        $("#albumArtistId").val(artistId);
-        $("#albumReleaseDate").val(releaseDate);
-        $("#albumCoverUrl").val(coverUrl);
-        $("#albumForm").attr("action", id === 0 ? "/Album/Create" : "/Album/Edit");
-    };
 
-    window.openArtistModal = function (id = 0, name = '', bio = '') {
-        $("#artistId").val(id);
-        $("#artistName").val(name);
-        $("#artistBio").val(bio);
-        $("#artistForm").attr("action", id === 0 ? "/Artist/Create" : "/Artist/Edit");
-    };
+    <script>
+        $(document).ready(function () {
+            /* -------------------------
+               Album & Artist Modals
+            ------------------------- */
+            window.openAlbumModal = function (id = 0, title = '', artistId = '', releaseDate = '', coverUrl = '') {
+                $("#albumId").val(id);
+                $("#albumTitle").val(title);
+                $("#albumArtistId").val(artistId);
+                $("#albumReleaseDate").val(releaseDate);
+                $("#albumCoverUrl").val(coverUrl);
+                $("#albumForm").attr("action", id === 0 ? "/Album/Create" : "/Album/Edit");
+            };
 
-    /* -------------------------
-       Song Modal (Bootstrap)
-    ------------------------- */
-    const songModal = new bootstrap.Modal(document.getElementById("songModal"));
+            window.openArtistModal = function (id = 0, name = '', bio = '') {
+                $("#artistId").val(id);
+                $("#artistName").val(name);
+                $("#artistBio").val(bio);
+                $("#artistForm").attr("action", id === 0 ? "/Artist/Create" : "/Artist/Edit");
+            };
 
-    window.openSongModal = function (id = '', title = '', albumId = '', artistId = '') {
-        $("#songId").val(id);
-        $("#songTitle").val(title);
-        $("#artistSelect").val(artistId);
-        filterAlbums();
-        $("#albumSelect").val(albumId);
+            /* -------------------------
+               Song Modal (Bootstrap)
+            ------------------------- */
+            const songModal = new bootstrap.Modal(document.getElementById("songModal"));
 
-        $("#songForm").attr("action", id ? "/Song/Edit" : "/Song/Upload");
-        $("#modaltitlesong").text(id ? "Edit Song" : "Add Song");
+            window.openSongModal = function (id = '', title = '', albumId = '', artistId = '') {
+                $("#songId").val(id);
+                $("#songTitle").val(title);
+                $("#artistSelect").val(artistId);
+                filterAlbums();
+                $("#albumSelect").val(albumId);
 
-        songModal.show();
-    }
+                $("#songForm").attr("action", id ? "/Song/Edit" : "/Song/Upload");
+                $("#modaltitlesong").text(id ? "Edit Song" : "Add Song");
 
-    $("#songForm").on("submit", function (e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const url = $(this).attr("action");
-
-        $.ajax({
-            type: "POST",
-            url: url,
-            data: formData,
-            contentType: false,
-            processData: false,
-            success: function () {
-                songModal.hide();
-                location.reload();
+                songModal.show();
             }
-        });
-    });
 
-    window.deleteSong = function (id) {
-        if (!confirm("Are you sure?")) return;
-        $.post("/Song/Delete", { id }, function () {
-            loadSongs();
-        });
-    }
-    window.filterAlbums = function () {
-        const artistId = $("#artistSelect").val();
-        $("#albumSelect option").each(function () {
-            const aId = $(this).data("artist");
-            $(this).toggle(!artistId || aId == artistId || $(this).val() === "");
-        });
-        $("#albumSelect").val("");
-    }
+            $("#songForm").on("submit", function (e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const url = $(this).attr("action");
 
-    window.filterAlbumsSongs = function () {
-        const artistId = $("#searchArtist").val();
-
-        if ($("#searchAlbum option[value='']").length === 0) {
-            $("#searchAlbum").prepend('<option value="">All Albums</option>');
-        }
-
-        $("#searchAlbum option").each(function () {
-            const aId = $(this).data("artist");
-            if (!artistId || $(this).val() === "") {
-                $(this).show();
-            } else {
-                $(this).toggle(aId == artistId);
-            }
-        });
-
-        $("#searchAlbum").val('');
-    }
-
-    /* -------------------------
-       Section Navigation
-    ------------------------- */
-    function openSectionFromHash() {
-        const hash = window.location.hash.substring(1);
-        if (!hash) return;
-
-        $(".content-section").removeClass("active");
-        $(`#${hash}`).addClass("active");
-
-        $(".sidebar .nav-link").removeClass("active");
-        $(`.sidebar .nav-link[data-section="${hash}"]`).addClass("active");
-    }
-
-    openSectionFromHash();
-    $(window).on("hashchange", openSectionFromHash);
-
-    $(document).on("click", ".sidebar .nav-link[data-section]", function (e) {
-        e.preventDefault();
-        const target = $(this).data("section");
-        window.location.hash = target;
-    });
-
-    /* -------------------------
-       Audio Player
-    ------------------------- */
-    let currentAudio = null;
-
-    $(document).on("click", ".btn[data-music]", function () {
-        const btn = $(this);
-        const icon = btn.find("i");
-        const musicUrl = btn.data("music");
-
-        if (currentAudio && !currentAudio.paused && currentAudio.src.includes(musicUrl)) {
-            currentAudio.pause();
-            icon.removeClass("bi-pause-fill").addClass("bi-play-fill");
-            btn.removeClass("btn-primary").addClass("btn-outline-primary");
-            return;
-        }
-
-        if (currentAudio) {
-            currentAudio.pause();
-            const prevBtn = $(".btn.btn-primary");
-            prevBtn.removeClass("btn-primary").addClass("btn-outline-primary")
-                   .find("i").removeClass("bi-pause-fill").addClass("bi-play-fill");
-        }
-
-        currentAudio = new Audio(musicUrl);
-        currentAudio.play();
-
-        icon.removeClass("bi-play-fill").addClass("bi-pause-fill");
-        btn.removeClass("btn-outline-primary").addClass("btn-primary");
-
-        currentAudio.addEventListener("ended", function () {
-            icon.removeClass("bi-pause-fill").addClass("bi-play-fill");
-            btn.removeClass("btn-primary").addClass("btn-outline-primary");
-        });
-    });
-
-    /* -------------------------
-       Song Filter
-    ------------------------- */
-    function filterSongs() {
-        const title = $("#searchTitle").val().toLowerCase();
-        const artist = $("#searchArtist option:selected").text().toLowerCase();
-        const album = $("#searchAlbum option:selected").text().toLowerCase();
-
-        $("#songsTable tbody tr").each(function () {
-            const songTitle = $(this).find("td:nth-child(1)").text().toLowerCase();
-            const songArtist = $(this).find("td:nth-child(2)").text().toLowerCase();
-            const songAlbum = $(this).find("td:nth-child(3)").text().toLowerCase();
-
-            const matchTitle = !title || songTitle.includes(title);
-            const matchArtist = artist === "all artists" || songArtist.includes(artist);
-            const matchAlbum = album === "all albums" || songAlbum.includes(album);
-
-            $(this).toggle(matchTitle && matchArtist && matchAlbum);
-        });
-    }
-
-    $(".search-box").on("keyup change", filterSongs);
-
-    /* -------------------------
-       Songs Table Pagination
-    ------------------------- */
-    const rowsPerPage = 20;
-    const $rows = $("#songsTable tbody tr");
-    const rowsCount = $rows.length;
-    const pageCount = Math.ceil(rowsCount / rowsPerPage);
-
-    if (pageCount > 1) {
-    let paginationHtml = '<nav><ul class="pagination justify-content-center" id="songsPagination">';
-    for (let i = 1; i <= pageCount; i++) {
-        paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-    }
-    paginationHtml += '</ul></nav>';
-    $("#songsTable").after(paginationHtml);
-}
-
-function showSongPage(page) {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    $rows.hide().slice(start, end).show();
-
-    $("#songsPagination li").removeClass("active");
-    $(`#songsPagination a[data-page='${page}']`).parent().addClass("active");
-}
-
-$(document).on("click", "#songsPagination a", function (e) {
-    e.preventDefault();
-    const page = parseInt($(this).data("page"));
-    showSongPage(page);
-});
-
-
-    showSongPage(1);
-});
-</script>
-<script>
-/*
-  Robust Artist Pagination + Search
-  - Place this AFTER the #artistContainer HTML and after jQuery.
-  - Adjust itemsPerPage as needed.
-*/
-$(function () {
-    const $allCards = $("#artistContainer .artist-card");    // all artist card elements
-    const $pagination = $("#artistPagination");              // <ul id="artistPagination">
-    const $paginationNav = $pagination.closest("nav");       // nav wrapper (so we can hide it)
-    const itemsPerPage = 9;                                 // change if you want more/less per page
-
-    let filteredCards = $allCards;  // jQuery collection with the currently filtered cards
-    let currentPage = 1;
-
-    function renderPagination() {
-        $pagination.empty();
-
-        const totalItems = filteredCards.length;
-        const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-        // hide pagination when 0 or 1 page
-        if (totalPages <= 1) {
-            $paginationNav.hide();
-            return;
-        }
-
-        $paginationNav.show();
-        for (let i = 1; i <= totalPages; i++) {
-            const activeClass = (i === currentPage) ? " active" : "";
-            $pagination.append(
-                `<li class="page-item${activeClass}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`
-            );
-        }
-    }
-
-    function showPage(page) {
-        // clamp page to valid range
-        const totalItems = filteredCards.length;
-        const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
-        if (page < 1) page = 1;
-        if (page > totalPages) page = totalPages;
-
-        currentPage = page;
-
-        // hide ALL cards, then show only the ones in the filtered slice
-        $allCards.hide();
-        const $toShow = filteredCards.slice((page - 1) * itemsPerPage, page * itemsPerPage);
-        $toShow.show();
-
-        // update active class on pagination without rebuilding it
-        $pagination.find(".page-item").removeClass("active");
-        $pagination.find(`.page-link[data-page="${page}"]`).parent().addClass("active");
-    }
-
-    function applyFilter() {
-        const q = $("#artistSearch").val().toLowerCase().trim();
-
-        if (!q) {
-            // no filter -> all cards
-            filteredCards = $allCards;
-        } else {
-            filteredCards = $allCards.filter(function () {
-                const name = $(this).find(".card-title").text().toLowerCase();
-                const bio = $(this).find(".card-text").text().toLowerCase();
-                return name.indexOf(q) !== -1 || bio.indexOf(q) !== -1;
+                $.ajax({
+                    type: "POST",
+                    url: url,
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function () {
+                        songModal.hide();
+                        location.reload();
+                    }
+                });
             });
+
+            window.deleteSong = function (id) {
+                if (!confirm("Are you sure?")) return;
+                $.post("/Song/Delete", { id }, function () {
+                    location.reload();
+                });
+            }
+            window.filterAlbums = function () {
+                const artistId = $("#artistSelect").val();
+                $("#albumSelect option").each(function () {
+                    const aId = $(this).data("artist");
+                    $(this).toggle(!artistId || aId == artistId || $(this).val() === "");
+                });
+                $("#albumSelect").val("");
+            }
+
+            window.filterAlbumsSongs = function () {
+                const artistId = $("#searchArtist").val();
+
+                if ($("#searchAlbum option[value='']").length === 0) {
+                    $("#searchAlbum").prepend('<option value="">All Albums</option>');
+                }
+
+                $("#searchAlbum option").each(function () {
+                    const aId = $(this).data("artist");
+                    if (!artistId || $(this).val() === "") {
+                        $(this).show();
+                    } else {
+                        $(this).toggle(aId == artistId);
+                    }
+                });
+
+                $("#searchAlbum").val('');
+            }
+
+            /* -------------------------
+               Section Navigation
+            ------------------------- */
+            function openSectionFromHash() {
+                const hash = window.location.hash.substring(1);
+                if (!hash) return;
+
+                $(".content-section").removeClass("active");
+                $(`#${hash}`).addClass("active");
+
+                $(".sidebar .nav-link").removeClass("active");
+                $(`.sidebar .nav-link[data-section="${hash}"]`).addClass("active");
+            }
+
+            openSectionFromHash();
+            $(window).on("hashchange", openSectionFromHash);
+
+            $(document).on("click", ".sidebar .nav-link[data-section]", function (e) {
+                e.preventDefault();
+                const target = $(this).data("section");
+                window.location.hash = target;
+            });
+
+            /* -------------------------
+               Audio Player
+            ------------------------- */
+            let currentAudio = null;
+
+            $(document).on("click", ".btn[data-music]", function () {
+                const btn = $(this);
+                const icon = btn.find("i");
+                const musicUrl = btn.data("music");
+
+                if (currentAudio && !currentAudio.paused && currentAudio.src.includes(musicUrl)) {
+                    currentAudio.pause();
+                    icon.removeClass("bi-pause-fill").addClass("bi-play-fill");
+                    btn.removeClass("btn-primary").addClass("btn-outline-primary");
+                    return;
+                }
+
+                if (currentAudio) {
+                    currentAudio.pause();
+                    const prevBtn = $(".btn.btn-primary");
+                    prevBtn.removeClass("btn-primary").addClass("btn-outline-primary")
+                           .find("i").removeClass("bi-pause-fill").addClass("bi-play-fill");
+                }
+
+                currentAudio = new Audio(musicUrl);
+                currentAudio.play();
+
+                icon.removeClass("bi-play-fill").addClass("bi-pause-fill");
+                btn.removeClass("btn-outline-primary").addClass("btn-primary");
+
+                currentAudio.addEventListener("ended", function () {
+                    icon.removeClass("bi-pause-fill").addClass("bi-play-fill");
+                    btn.removeClass("btn-primary").addClass("btn-outline-primary");
+                });
+            });
+
+            /* -------------------------
+               Song Filter
+            ------------------------- */
+            function filterSongs() {
+                const title = $("#searchTitle").val().toLowerCase();
+                const artist = $("#searchArtist option:selected").text().toLowerCase();
+                const album = $("#searchAlbum option:selected").text().toLowerCase();
+
+                $("#songsTable tbody tr").each(function () {
+                    const songTitle = $(this).find("td:nth-child(1)").text().toLowerCase();
+                    const songArtist = $(this).find("td:nth-child(2)").text().toLowerCase();
+                    const songAlbum = $(this).find("td:nth-child(3)").text().toLowerCase();
+
+                    const matchTitle = !title || songTitle.includes(title);
+                    const matchArtist = artist === "all artists" || songArtist.includes(artist);
+                    const matchAlbum = album === "all albums" || songAlbum.includes(album);
+
+                    $(this).toggle(matchTitle && matchArtist && matchAlbum);
+                });
+            }
+
+            $(".search-box").on("keyup change", filterSongs);
+
+            /* -------------------------
+               Songs Table Pagination
+            ------------------------- */
+            const rowsPerPage = 20;
+            const $rows = $("#songsTable tbody tr");
+            const rowsCount = $rows.length;
+            const pageCount = Math.ceil(rowsCount / rowsPerPage);
+
+            if (pageCount > 1) {
+            let paginationHtml = '<nav><ul class="pagination justify-content-center" id="songsPagination">';
+            for (let i = 1; i <= pageCount; i++) {
+                paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+            }
+            paginationHtml += '</ul></nav>';
+            $("#songsTable").after(paginationHtml);
         }
 
-        // always go back to page 1 after filter change
-        currentPage = 1;
-        renderPagination();
-        showPage(1);
-    }
+        function showSongPage(page) {
+            const start = (page - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            $rows.hide().slice(start, end).show();
 
-    // handle page clicks (delegated)
-    $(document).on("click", "#artistPagination .page-link", function (e) {
-        e.preventDefault();
-        const page = parseInt($(this).data("page"), 10) || 1;
-        showPage(page);
-    });
-
-    // handle search input
-    $("#artistSearch").on("input", function () {
-        applyFilter();
-    });
-
-    // initialize
-    applyFilter();
-});
-</script>
-
-<script>
-$(document).ready(function () {
-    const rowsPerPage = 10; // adjust pagination limit
-    const $rows = $("#albumsTable tbody tr");
-
-    function renderPagination(filteredRows) {
-        $("#albumsPagination").remove();
-
-        const rowsCount = filteredRows.length;
-        const pageCount = Math.ceil(rowsCount / rowsPerPage);
-
-        if (pageCount <= 1) return; // no need for pagination
-
-        let paginationHtml = '<nav id="albumsPagination"><ul class="pagination justify-content-center">';
-        for (let i = 1; i <= pageCount; i++) {
-            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+            $("#songsPagination li").removeClass("active");
+            $(`#songsPagination a[data-page='${page}']`).parent().addClass("active");
         }
-        paginationHtml += '</ul></nav>';
 
-        $("#albumsTable").after(paginationHtml);
-
-        // Default show page 1
-        showPage(1, filteredRows);
-    }
-
-    function showPage(page, filteredRows) {
-        const start = (page - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-
-        $rows.hide();
-        filteredRows.slice(start, end).show();
-
-        $("#albumsPagination li").removeClass("active");
-        $(`#albumsPagination a[data-page='${page}']`).parent().addClass("active");
-    }
-
-    function applySearchAndPagination() {
-        const query = $("#albumSearch").val().toLowerCase();
-        const filteredRows = $rows.filter(function () {
-            return $(this).text().toLowerCase().indexOf(query) > -1;
+        $(document).on("click", "#songsPagination a", function (e) {
+            e.preventDefault();
+            const page = parseInt($(this).data("page"));
+            showSongPage(page);
         });
 
-        $rows.hide();
-        filteredRows.show();
 
-        renderPagination(filteredRows);
-    }
-
-    // Event: search
-    $("#albumSearch").on("keyup", function () {
-        applySearchAndPagination();
-    });
-
-    // Event: pagination click
-    $(document).on("click", "#albumsPagination a", function (e) {
-        e.preventDefault();
-        const page = parseInt($(this).data("page"));
-        const query = $("#albumSearch").val().toLowerCase();
-        const filteredRows = $rows.filter(function () {
-            return $(this).text().toLowerCase().indexOf(query) > -1;
+            showSongPage(1);
         });
-        showPage(page, filteredRows);
-    });
+    </script>
+    <script>
+        /*
+          Robust Artist Pagination + Search
+          - Place this AFTER the #artistContainer HTML and after jQuery.
+          - Adjust itemsPerPage as needed.
+        */
+        $(function () {
+            const $allCards = $("#artistContainer .artist-card");    // all artist card elements
+            const $pagination = $("#artistPagination");              // <ul id="artistPagination">
+            const $paginationNav = $pagination.closest("nav");       // nav wrapper (so we can hide it)
+            const itemsPerPage = 9;                                 // change if you want more/less per page
 
-    // Initialize first load
-    applySearchAndPagination();
-});
-</script>
+            let filteredCards = $allCards;  // jQuery collection with the currently filtered cards
+            let currentPage = 1;
+
+            function renderPagination() {
+                $pagination.empty();
+
+                const totalItems = filteredCards.length;
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+                // hide pagination when 0 or 1 page
+                if (totalPages <= 1) {
+                    $paginationNav.hide();
+                    return;
+                }
+
+                $paginationNav.show();
+                for (let i = 1; i <= totalPages; i++) {
+                    const activeClass = (i === currentPage) ? " active" : "";
+                    $pagination.append(
+                        `<li class="page-item${activeClass}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`
+                    );
+                }
+            }
+
+            function showPage(page) {
+                // clamp page to valid range
+                const totalItems = filteredCards.length;
+                const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+                if (page < 1) page = 1;
+                if (page > totalPages) page = totalPages;
+
+                currentPage = page;
+
+                // hide ALL cards, then show only the ones in the filtered slice
+                $allCards.hide();
+                const $toShow = filteredCards.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+                $toShow.show();
+
+                // update active class on pagination without rebuilding it
+                $pagination.find(".page-item").removeClass("active");
+                $pagination.find(`.page-link[data-page="${page}"]`).parent().addClass("active");
+            }
+
+            function applyFilter() {
+                const q = $("#artistSearch").val().toLowerCase().trim();
+
+                if (!q) {
+                    // no filter -> all cards
+                    filteredCards = $allCards;
+                } else {
+                    filteredCards = $allCards.filter(function () {
+                        const name = $(this).find(".card-title").text().toLowerCase();
+                        const bio = $(this).find(".card-text").text().toLowerCase();
+                        return name.indexOf(q) !== -1 || bio.indexOf(q) !== -1;
+                    });
+                }
+
+                // always go back to page 1 after filter change
+                currentPage = 1;
+                renderPagination();
+                showPage(1);
+            }
+
+            // handle page clicks (delegated)
+            $(document).on("click", "#artistPagination .page-link", function (e) {
+                e.preventDefault();
+                const page = parseInt($(this).data("page"), 10) || 1;
+                showPage(page);
+            });
+
+            // handle search input
+            $("#artistSearch").on("input", function () {
+                applyFilter();
+            });
+
+            // initialize
+            applyFilter();
+        });
+    </script>
+
+    <script>
+        $(document).ready(function () {
+            const rowsPerPage = 10; // adjust pagination limit
+            const $rows = $("#albumsTable tbody tr");
+
+            function renderPagination(filteredRows) {
+                $("#albumsPagination").remove();
+
+                const rowsCount = filteredRows.length;
+                const pageCount = Math.ceil(rowsCount / rowsPerPage);
+
+                if (pageCount <= 1) return; // no need for pagination
+
+                let paginationHtml = '<nav id="albumsPagination"><ul class="pagination justify-content-center">';
+                for (let i = 1; i <= pageCount; i++) {
+                    paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+                }
+                paginationHtml += '</ul></nav>';
+
+                $("#albumsTable").after(paginationHtml);
+
+                // Default show page 1
+                showPage(1, filteredRows);
+            }
+
+            function showPage(page, filteredRows) {
+                const start = (page - 1) * rowsPerPage;
+                const end = start + rowsPerPage;
+
+                $rows.hide();
+                filteredRows.slice(start, end).show();
+
+                $("#albumsPagination li").removeClass("active");
+                $(`#albumsPagination a[data-page='${page}']`).parent().addClass("active");
+            }
+
+            function applySearchAndPagination() {
+                const query = $("#albumSearch").val().toLowerCase();
+                const filteredRows = $rows.filter(function () {
+                    return $(this).text().toLowerCase().indexOf(query) > -1;
+                });
+
+                $rows.hide();
+                filteredRows.show();
+
+                renderPagination(filteredRows);
+            }
+
+            // Event: search
+            $("#albumSearch").on("keyup", function () {
+                applySearchAndPagination();
+            });
+
+            // Event: pagination click
+            $(document).on("click", "#albumsPagination a", function (e) {
+                e.preventDefault();
+                const page = parseInt($(this).data("page"));
+                const query = $("#albumSearch").val().toLowerCase();
+                const filteredRows = $rows.filter(function () {
+                    return $(this).text().toLowerCase().indexOf(query) > -1;
+                });
+                showPage(page, filteredRows);
+            });
+
+            // Initialize first load
+            applySearchAndPagination();
+        });
+    </script>
 
 </body>
 </html>

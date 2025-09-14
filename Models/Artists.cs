@@ -11,7 +11,11 @@ public partial class Artists
 
     public string? Bio { get; set; }
 
-    public string? ProfileUrl { get; set; }
+    public string? CoverImagePath { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual ICollection<Albums> Albums { get; set; } = new List<Albums>();
 }

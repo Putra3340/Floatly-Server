@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Floaty_Music.Controllers
+namespace Floaty_Music.Controllers.ClientController
 {
     public class LikeController : ControllerBase
     {

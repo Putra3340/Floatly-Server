@@ -1,14 +1,14 @@
 ﻿using Floaty_Music.Models;
+using Floaty_Music.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+using Microsoft.EntityFrameworkCore;
 namespace Floaty_Music.Controllers
 {
     [Authorize(Roles = "Admin")]
     public class ArtistController : Controller
     {
         private readonly FloatlyContext _context;
-
         public ArtistController(FloatlyContext context)
         {
             _context = context;
@@ -18,24 +18,16 @@ namespace Floaty_Music.Controllers
         {
             if (!ModelState.IsValid)
                 return Redirect("/Song/Dashboard#artists");
-            async Task<string> SaveFile(IFormFile file, string folder)
-            {
-                var fileName = Path.GetRandomFileName() + Guid.NewGuid().ToString() + Path.GetExtension(file.FileName); // 4.59 x 10^-43% Chance for collisions
-                var fullPath = Path.Combine(GlobalConfiguration.WebRootPath, GlobalConfiguration.UploadsFolder, folder, fileName);
-                using var stream = new FileStream(fullPath, FileMode.Create);
-                file.CopyTo(stream);
-                return $"/uploads/{Path.GetFileName(folder)}/{fileName}";
-            }
             var artist = new Artists
             {
                 Name = model.Name,
                 Bio = model.Bio,
-                ProfileUrl = model.ProfileUrl != null ? await SaveFile(model.ProfileUrl, GlobalConfiguration.ArtistProfilePath) : null,
-                // CreatedAt = DateTime.Now,
-                // UpdatedAt = DateTime.Now
+                CoverImagePath = model.ProfileUrl != null ? await FileHelper.SaveFileAsync(model.ProfileUrl, GlobalConfiguration.ArtistProfilePath) : null,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
-            _context.Artists.Add(artist);
-            _context.SaveChanges();
+            await _context.Artists.AddAsync(artist);
+            await _context.SaveChangesAsync();
             return Redirect("/Song/Dashboard#artists");
         }
         [HttpPost]
@@ -44,34 +36,31 @@ namespace Floaty_Music.Controllers
             var artist = await _context.Artists.FindAsync(model.Id);
             if (artist == null)
                 return Redirect("/Song/Dashboard#artists");
-            async Task<string> SaveFile(IFormFile file, string folder)
-            {
-                var fileName = Path.GetRandomFileName() + Guid.NewGuid().ToString() + Path.GetExtension(file.FileName); // 4.59 x 10^-43% Chance for collisions
-                var fullPath = Path.Combine(GlobalConfiguration.WebRootPath, GlobalConfiguration.UploadsFolder, folder, fileName);
-                using var stream = new FileStream(fullPath, FileMode.Create);
-                file.CopyTo(stream);
-                return $"/uploads/{Path.GetFileName(folder)}/{fileName}";
-            }
             artist.Name = model.Name;
             artist.Bio = model.Bio;
             if (model.ProfileUrl != null)
-                artist.ProfileUrl = await SaveFile(model.ProfileUrl, GlobalConfiguration.ArtistProfilePath);
-            // artist.UpdatedAt = DateTime.Now;
-            _context.Artists.Update(artist);
+                artist.CoverImagePath = await FileHelper.SaveFileAsync(model.ProfileUrl, GlobalConfiguration.ArtistProfilePath);
+            artist.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
             return Redirect("/Song/Dashboard#artists");
         }
 
         [HttpPost, ActionName("Delete")]
-        public IActionResult DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var artist = _context.Artists.Find(id);
-            if (artist != null)
-            {
-                _context.Artists.Remove(artist);
-                _context.SaveChanges();
-            }
+            var artist = await _context.Artists.FindAsync(id);
+            if (artist == null)
+                return NotFound("Artist not found.");
+
+            bool hasAlbums = await _context.Albums.AnyAsync(a => a.ArtistId == id);
+            if (hasAlbums)
+                return BadRequest("Cannot delete this artist. Delete all albums assigned to this artist first.");
+
+            _context.Artists.Remove(artist);
+            await _context.SaveChangesAsync();
+
             return Redirect("/Song/Dashboard#artists");
         }
+
     }
 }

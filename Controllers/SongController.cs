@@ -11,60 +11,45 @@ namespace Floaty_Music.Controllers
     [Authorize(Roles = "Admin")]
     public class SongController : Controller
     {
+        private static (DateTime LastUpdate, DashboardStats Stats) _cache;
         private readonly FloatlyContext _context;
         public SongController(FloatlyContext context) => _context = context;
-
-        public IActionResult Index()
-        {
-            ViewBag.Artists = _context.Artists.ToList();
-            ViewBag.Albums = _context.Albums.ToList();
-            var songs = _context.Songs.Include(s => s.Album).ToList();
-            return View(songs);
-        }
 
         [HttpPost]
         public async Task<IActionResult> Upload(SongUploadModel model)
         {
             if (!ModelState.IsValid)
                 return RedirectToAction("Index");
-
-            string SaveFile(IFormFile file, string folder)
-            {
-                var fileName = Path.GetRandomFileName() + Guid.NewGuid().ToString() + Path.GetExtension(file.FileName); // 4.59 x 10^-43% Chance for collisions
-                var fullPath = Path.Combine(folder, fileName);
-                using var stream = new FileStream(fullPath, FileMode.Create);
-                file.CopyTo(stream);
-                return $"/uploads/{Path.GetFileName(folder)}/{fileName}";
-            }
             double musiclength = 0;
             var song = new Songs
             {
                 Title = model.Title,
                 AlbumId = model.AlbumId,
-                MusicFilePath = model.MusicFile != null ? SaveFile(model.MusicFile, GlobalConfiguration.MusicFilePath) : null,
-                LyricsFilePath = model.LyricsFile != null ? SaveFile(model.LyricsFile, GlobalConfiguration.LyricsFilePath) : null,
-                CoverImagePath = model.CoverImage != null ? SaveFile(model.CoverImage, GlobalConfiguration.CoverImagePath) : null,
-                BannerImagePath = model.BannerImage != null ? SaveFile(model.BannerImage, GlobalConfiguration.BannerImagePath) : null,
+                MusicFilePath = model.MusicFile != null ? await FileHelper.SaveFileAsync(model.MusicFile, GlobalConfiguration.MusicFilePath) : null,
+                LyricsFilePath = model.LyricsFile != null ? await FileHelper.SaveFileAsync(model.LyricsFile, GlobalConfiguration.LyricsFilePath) : null,
+                CoverImagePath = model.CoverImage != null ? await FileHelper.SaveFileAsync(model.CoverImage, GlobalConfiguration.CoverImagePath) : null,
+                BannerImagePath = model.BannerImage != null ? await FileHelper.SaveFileAsync(model.BannerImage, GlobalConfiguration.BannerImagePath) : null,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
-
             // Extract duration from MP3 file
             if (!Path.GetExtension(model.MusicFile.FileName).Equals(".mp3", StringComparison.OrdinalIgnoreCase))
                 return BadRequest("Only MP3 allowed");
-            using var stream = model.MusicFile.OpenReadStream();
-            var tagFile = TagLib.File.Create(new StreamFileAbstraction(model.MusicFile.FileName, stream));
-            musiclength = tagFile.Properties.Duration.TotalSeconds;
-
+            musiclength = await Task.Run(() =>
+            {
+                using var stream = model.MusicFile.OpenReadStream();
+                var tagFile = TagLib.File.Create(new StreamFileAbstraction(model.MusicFile.FileName, stream));
+                return tagFile.Properties.Duration.TotalSeconds;
+            });
             song.SongCounter = new SongCounter
             {
                 TotalLikes = 0,
                 TotalPlayed = 0,
                 MusicLength = (int)musiclength
             };
-            _context.Songs.Add(song);
+            await _context.Songs.AddAsync(song);
             await _context.SaveChangesAsync();
-            return RedirectToAction("Index");
+            return Ok();
         }
 
         [HttpPost]
@@ -72,19 +57,9 @@ namespace Floaty_Music.Controllers
         {
             var song = await _context.Songs.FindAsync(model.Id);
             if (song == null) return NotFound();
-            async Task<string> SaveFile(IFormFile file, string folder)
-            {
-                var fileName = Path.GetRandomFileName() + Guid.NewGuid().ToString() + Path.GetExtension(file.FileName); // 4.59 x 10^-43% Chance for collisions
-                var fullPath = Path.Combine(GlobalConfiguration.WebRootPath,GlobalConfiguration.UploadsFolder,folder, fileName);
-                using var stream = new FileStream(fullPath, FileMode.Create);
-                file.CopyTo(stream);
-                return $"/uploads/{Path.GetFileName(folder)}/{fileName}";
-            }
             song.Title = model.Title;
             song.AlbumId = model.AlbumId;
-
             double musiclength = 0;
-
             if (model.MusicFile != null)
             {
                 // Extract duration from MP3 file
@@ -93,24 +68,19 @@ namespace Floaty_Music.Controllers
                 using var stream = model.MusicFile.OpenReadStream();
                 var tagFile = TagLib.File.Create(new StreamFileAbstraction(model.MusicFile.FileName, stream));
                 musiclength = tagFile.Properties.Duration.TotalSeconds;
-                // Save
-                song.MusicFilePath = await SaveFile(model.MusicFile, "music");
+                song.MusicFilePath = await FileHelper.SaveFileAsync(model.MusicFile, GlobalConfiguration.MusicFilePath);
             }
             if (model.LyricsFile != null)
-                song.LyricsFilePath = await SaveFile(model.LyricsFile, "lyrics");
-
+                song.LyricsFilePath = await FileHelper.SaveFileAsync(model.LyricsFile, GlobalConfiguration.LyricsFilePath);
             if (model.CoverImage != null)
-                song.CoverImagePath = await SaveFile(model.CoverImage, "cover");
-
+                song.CoverImagePath = await FileHelper.SaveFileAsync(model.CoverImage, GlobalConfiguration.CoverImagePath);
             if (model.BannerImage != null)
-                song.BannerImagePath = await SaveFile(model.BannerImage, "banner");
-
+                song.BannerImagePath = await FileHelper.SaveFileAsync(model.BannerImage, GlobalConfiguration.BannerImagePath);
             await _context.SaveChangesAsync();
-
             var songcounter = await _context.SongCounter.FirstOrDefaultAsync(x => x.SongId == song.Id);
             if (songcounter != null)
             {
-                songcounter.MusicLength = (int)musiclength==0?songcounter.MusicLength:(int)musiclength;
+                songcounter.MusicLength = (int)musiclength == 0 ? songcounter.MusicLength : (int)musiclength;
                 await _context.SaveChangesAsync();
             }
             return Ok();
@@ -121,14 +91,20 @@ namespace Floaty_Music.Controllers
             var song = await _context.Songs.FindAsync(id);
             var songcount = await _context.SongCounter.FindAsync(id);
             if (song == null) return NotFound();
-
+            if (songcount == null) return NotFound();
+            var likes = await _context.Likes.Where(x => x.SongId == id).ToListAsync();
+            if (likes.Any())
+                _context.Likes.RemoveRange(likes);
+            var playlist = await _context.PlaylistSongs.Where(x => x.SongId == id).ToListAsync();
+            if (playlist.Any())
+                _context.PlaylistSongs.RemoveRange(playlist);
             _context.SongCounter.Remove(songcount);
             _context.Songs.Remove(song);
             await _context.SaveChangesAsync();
-            return RedirectToAction("Index");
+            return Ok();
         }
-        
-        public IActionResult Dashboard()
+
+        public async Task<IActionResult> Dashboard()
         {
             var totalSongs = _context.Songs.Count();
             var totalAlbums = _context.Albums.Count();
@@ -145,18 +121,82 @@ namespace Floaty_Music.Controllers
                     .ThenInclude(s => s.Album)
                         .ThenInclude(a => a.Artist)
                 .ToList();
+            ViewBag.TopSongsLikes = _context.SongCounter
+                .OrderByDescending(x => x.TotalLikes)
+                .Take(5)
+                .Include(x => x.Song)
+                    .ThenInclude(s => s.Album)
+                        .ThenInclude(a => a.Artist)
+                .ToList();
             ViewBag.Albums = _context.Albums.OrderDescending().Include(a => a.Artist).ToList();
             ViewBag.Artists = _context.Artists.OrderDescending().ToList(); // for dropdown
             ViewBag.Songs = _context.Songs
-    .OrderByDescending(x => x.Id)
-    .Include(x => x.Album)
-        .ThenInclude(a => a.Artist)
-    .Include(x => x.SongCounter)
-    .ToList();
+                .OrderByDescending(x => x.Id)
+                .Include(x => x.Album)
+                    .ThenInclude(a => a.Artist)
+                .Include(x => x.SongCounter)
+                .ToList();
 
-            ViewBag.RecentlyAddedSongs = _context.Songs
-    .OrderByDescending(x => x.CreatedAt).ToList();
+            // SLOW OPERATION, SO CACHE IT FOR 10 MINUTES
+            if (_cache.Stats == null || (DateTime.Now - _cache.LastUpdate).TotalMinutes > 10)
+            {
+                var tasks = new[] {
+                    DirectoryScanner.ScanAsync(GlobalConfiguration.MusicFilePath),
+                    DirectoryScanner.ScanAsync(GlobalConfiguration.LyricsFilePath),
+                    DirectoryScanner.ScanAsync(GlobalConfiguration.CoverImagePath),
+                    DirectoryScanner.ScanAsync(GlobalConfiguration.BannerImagePath),
+                    DirectoryScanner.ScanAsync(GlobalConfiguration.AlbumCoverPath),
+                    DirectoryScanner.ScanAsync(GlobalConfiguration.ArtistProfilePath)
+                };
+
+                var results = await Task.WhenAll(tasks);
+
+                _cache.Stats = new DashboardStats
+                {
+                    Music = new StorageStat { FileCount = results[0].FileCount, TotalSize = results[0].TotalSize },
+                    Lyrics = new StorageStat { FileCount = results[1].FileCount, TotalSize = results[1].TotalSize },
+                    Cover = new StorageStat { FileCount = results[2].FileCount, TotalSize = results[2].TotalSize },
+                    Banner = new StorageStat { FileCount = results[3].FileCount, TotalSize = results[3].TotalSize },
+                    Album = new StorageStat { FileCount = results[4].FileCount, TotalSize = results[4].TotalSize },
+                    Artist = new StorageStat { FileCount = results[5].FileCount, TotalSize = results[5].TotalSize }
+                };
+                _cache.LastUpdate = DateTime.Now;
+            }
+
+            ViewBag.StorageStats = _cache.Stats;
+            ViewBag.TotalFiles = _cache.Stats.Music.FileCount
+                   + _cache.Stats.Lyrics.FileCount
+                   + _cache.Stats.Cover.FileCount
+                   + _cache.Stats.Banner.FileCount
+                   + _cache.Stats.Album.FileCount
+                   + _cache.Stats.Artist.FileCount;
+
+            ViewBag.TotalSize = _cache.Stats.Music.TotalSize
+                              + _cache.Stats.Lyrics.TotalSize
+                              + _cache.Stats.Cover.TotalSize
+                              + _cache.Stats.Banner.TotalSize
+                              + _cache.Stats.Album.TotalSize
+                              + _cache.Stats.Artist.TotalSize;
+            ViewBag.LastUpdate = _cache.LastUpdate;
             return View();
         }
     }
+    public class StorageStat
+    {
+        public int FileCount { get; set; }
+        public long TotalSize { get; set; }
+    }
+
+    public class DashboardStats
+    {
+        public StorageStat Music { get; set; }
+        public StorageStat Lyrics { get; set; }
+        public StorageStat Cover { get; set; }
+        public StorageStat Banner { get; set; }
+        public StorageStat Album { get; set; }
+        public StorageStat Artist { get; set; }
+        public int TotalFiles => Music.FileCount + Lyrics.FileCount + Cover.FileCount + Banner.FileCount + Album.FileCount + Artist.FileCount;
+        public long TotalSize => Music.TotalSize + Lyrics.TotalSize + Cover.TotalSize + Banner.TotalSize + Album.TotalSize + Artist.TotalSize;
+    }
+
 }

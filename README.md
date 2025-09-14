@@ -197,8 +197,9 @@ The server will start on the port specified in `Properties/launchSettings.json` 
 Floatly-Server/
 ├── Controllers/             # API and MVC controllers
 │   └── LibraryController/   # API for searching the song library
+│   └── ClientController/    # API for client-side song interactions
 ├── Models/                  # Database context & data models (Album, Artist, Song, User, etc.)
-├── Services/                # Third-party services (e.g., email, auth)
+├── Services/                # Third-party services (e.g., email)
 ├── Utils/                   # Utility/helper classes
 ├── Views/                   # Razor views for admin/management
 ├── Properties/              # Project metadata & launch settings

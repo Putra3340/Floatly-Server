@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Floaty_Music.Controllers
+namespace Floaty_Music.Controllers.ClientController
 {
-    
+
     public class PlaylistController : ControllerBase
     {
         private readonly FloatlyContext _context;
@@ -25,6 +25,7 @@ namespace Floaty_Music.Controllers
 
             return Ok(playlists);
         }
+
         [HttpPost("api/createplaylist")]
         public async Task<IActionResult> CreatePlaylist([FromForm] string token, [FromForm] string name)
         {
@@ -44,63 +45,65 @@ namespace Floaty_Music.Controllers
 
             return Ok(new { message = "Playlist created successfully", playlist.Id });
         }
+
         [HttpPost("api/deleteplaylist")]
         public async Task<IActionResult> DeletePlaylist([FromForm] string token, [FromForm] int playlistId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
             if (user == null) return Unauthorized("Invalid Token");
-            if (playlistId <= 0) return BadRequest("Invalid data");
 
             var playlist = await _context.Playlists
-                .Include(x => x.Song) // so EF can cascade-remove from join table if configured
-                .FirstOrDefaultAsync(x => x.Id == playlistId && x.UserId == user.Id);
+                .Include(p => p.PlaylistSongs)
+                .FirstOrDefaultAsync(p => p.Id == playlistId && p.UserId == user.Id);
 
             if (playlist == null) return NotFound("Playlist not found");
 
+            // Remove related PlaylistSongs first
+            _context.PlaylistSongs.RemoveRange(playlist.PlaylistSongs);
             _context.Playlists.Remove(playlist);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Playlist deleted successfully" });
         }
+
         [HttpPost("api/addplaylistsong")]
         public async Task<IActionResult> AddPlaylistSong([FromForm] string token, [FromForm] int playlistId, [FromForm] int songId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
             if (user == null) return Unauthorized("Invalid Token");
-            if (playlistId <= 0 || songId <= 0) return BadRequest("Invalid data");
 
-            var playlist = await _context.Playlists
-                .Include(x => x.Song)
-                .FirstOrDefaultAsync(x => x.Id == playlistId && x.UserId == user.Id);
+            var playlist = await _context.Playlists.FirstOrDefaultAsync(p => p.Id == playlistId && p.UserId == user.Id);
             if (playlist == null) return NotFound("Playlist not found");
 
             var song = await _context.Songs.FindAsync(songId);
             if (song == null) return NotFound("Song not found");
 
-            if (playlist.Song.Any(x => x.Id == songId))
-                return Conflict("Song already in playlist");
+            var exists = await _context.PlaylistSongs.AnyAsync(ps => ps.PlaylistId == playlistId && ps.SongId == songId);
+            if (exists) return Conflict("Song already in playlist");
 
-            playlist.Song.Add(song);
+            _context.PlaylistSongs.Add(new PlaylistSongs
+            {
+                PlaylistId = playlistId,
+                SongId = songId,
+                CreatedAt = DateTime.Now
+            });
+
             await _context.SaveChangesAsync();
-
             return Ok(new { message = "Song added to playlist successfully" });
         }
+
         [HttpPost("api/removeplaylistsong")]
         public async Task<IActionResult> RemovePlaylistSong([FromForm] string token, [FromForm] int playlistId, [FromForm] int songId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
             if (user == null) return Unauthorized("Invalid Token");
-            if (playlistId <= 0 || songId <= 0) return BadRequest("Invalid data");
 
-            var playlist = await _context.Playlists
-                .Include(x => x.Song)
-                .FirstOrDefaultAsync(x => x.Id == playlistId && x.UserId == user.Id);
-            if (playlist == null) return NotFound("Playlist not found");
+            var entry = await _context.PlaylistSongs
+                .FirstOrDefaultAsync(ps => ps.PlaylistId == playlistId && ps.SongId == songId && ps.Playlist.UserId == user.Id);
 
-            var song = playlist.Song.FirstOrDefault(x => x.Id == songId);
-            if (song == null) return NotFound("Song not found in playlist");
+            if (entry == null) return NotFound("Song not found in playlist");
 
-            playlist.Song.Remove(song);
+            _context.PlaylistSongs.Remove(entry);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Song removed from playlist successfully" });
@@ -111,44 +114,43 @@ namespace Floaty_Music.Controllers
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
             if (user == null) return Unauthorized("Invalid Token");
-            if (playlistId <= 0 || string.IsNullOrWhiteSpace(name)) return BadRequest("Invalid data");
 
-            var playlist = await _context.Playlists.FirstOrDefaultAsync(x => x.Id == playlistId && x.UserId == user.Id);
+            var playlist = await _context.Playlists.FirstOrDefaultAsync(p => p.Id == playlistId && p.UserId == user.Id);
             if (playlist == null) return NotFound("Playlist not found");
+
+            if (string.IsNullOrWhiteSpace(name)) return BadRequest("Invalid name");
 
             playlist.Name = name.Trim();
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Playlist updated successfully" });
         }
+
         [HttpPost("api/getplaylistsongs")]
         public async Task<IActionResult> GetPlaylistSongs([FromForm] string token, [FromForm] int playlistId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
             if (user == null) return Unauthorized("Invalid Token");
-            if (playlistId <= 0) return BadRequest("Invalid data");
 
-            var playlist = await _context.Playlists
-                .Include(p => p.Song)
-                    .ThenInclude(s => s.Album)
-                        .ThenInclude(a => a.Artist)
-                .Include(p=> p.Song)
-                    .ThenInclude(c=>c.SongCounter)
-                .FirstOrDefaultAsync(p => p.Id == playlistId && p.UserId == user.Id);
-
+            var playlist = await _context.Playlists.FirstOrDefaultAsync(p => p.Id == playlistId && p.UserId == user.Id);
             if (playlist == null) return NotFound("Playlist not found");
 
-            var songs = playlist.Song
-                .Select(s => new
+            var songs = await _context.PlaylistSongs
+                .Where(ps => ps.PlaylistId == playlistId)
+                .Include(ps => ps.Song)
+                    .ThenInclude(s => s.Album)
+                        .ThenInclude(a => a.Artist)
+                .Include(ps => ps.Song.SongCounter)
+                .Select(ps => new
                 {
-                    s.Id,
-                    s.Title,
-                    s.SongCounter.MusicLength,
-                    s.CoverImagePath,
-                    Album = s.Album != null ? s.Album.Title : "Unknown",
-                    Artist = s.Album?.Artist != null ? s.Album.Artist.Name : "Unknown"
+                    ps.Song.Id,
+                    ps.Song.Title,
+                    ps.Song.SongCounter.MusicLength,
+                    ps.Song.CoverImagePath,
+                    Album = ps.Song.Album != null ? ps.Song.Album.Title : "Unknown",
+                    Artist = ps.Song.Album.Artist != null ? ps.Song.Album.Artist.Name : "Unknown"
                 })
-                .ToList();
+                .ToListAsync();
 
             return Ok(new
             {
@@ -157,7 +159,5 @@ namespace Floaty_Music.Controllers
                 Songs = songs
             });
         }
-
-
     }
 }

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
-namespace Floaty_Music.Controllers
+namespace Floaty_Music.Controllers.ClientController
 {
     public class ApiController : Controller
     {
@@ -33,7 +33,7 @@ namespace Floaty_Music.Controllers
         }
 
         [HttpPost("api/play")]
-        public IActionResult Play(string token,int songId)
+        public IActionResult Play(string token, int songId)
         {
             var user = _context.Users.FirstOrDefault(u => u.Token == token);
             if (user == null)
@@ -41,14 +41,14 @@ namespace Floaty_Music.Controllers
                 return Unauthorized(new { status = "Error", message = "Invalid token." });
             }
 
-            var song = _context.Songs.Include(s => s.Album).ThenInclude(x=>x.Artist).Include(x=>x.SongCounter).FirstOrDefault(s => s.Id == songId);
+            var song = _context.Songs.Include(s => s.Album).ThenInclude(x => x.Artist).Include(x => x.SongCounter).FirstOrDefault(s => s.Id == songId);
             if (song == null)
             {
                 return NotFound(new { status = "Error", message = "Song not found." });
             }
             song.SongCounter.TotalPlayed += 1;
             _context.SaveChanges();
-            
+
             return Ok();
         }
     }

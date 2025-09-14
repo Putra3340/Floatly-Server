@@ -31,7 +31,7 @@ public partial class Songs
 
     public virtual ICollection<Likes> Likes { get; set; } = new List<Likes>();
 
-    public virtual SongCounter? SongCounter { get; set; }
+    public virtual ICollection<PlaylistSongs> PlaylistSongs { get; set; } = new List<PlaylistSongs>();
 
-    public virtual ICollection<Playlists> Playlist { get; set; } = new List<Playlists>();
+    public virtual SongCounter? SongCounter { get; set; }
 }

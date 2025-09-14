@@ -13,7 +13,11 @@ public partial class Albums
 
     public DateOnly? ReleaseDate { get; set; }
 
-    public string? CoverUrl { get; set; }
+    public string? CoverImagePath { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual Artists? Artist { get; set; }
 

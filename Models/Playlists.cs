@@ -13,7 +13,7 @@ public partial class Playlists
 
     public DateTime? CreatedAt { get; set; }
 
-    public virtual Users? User { get; set; }
+    public virtual ICollection<PlaylistSongs> PlaylistSongs { get; set; } = new List<PlaylistSongs>();
 
-    public virtual ICollection<Songs> Song { get; set; } = new List<Songs>();
+    public virtual Users? User { get; set; }
 }
