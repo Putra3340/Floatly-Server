@@ -36,6 +36,18 @@ namespace Floaty_Music.Utils
             return Convert.ToBase64String(bytes);
         }
 
+        public static string GenerateRandomLongToken(int sizeInBytes = 512)
+        {
+            var bytes = new byte[sizeInBytes];
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(bytes);
+
+            return Convert.ToBase64String(bytes)
+                .TrimEnd('=')
+                .Replace('+', '-')
+                .Replace('/', '_'); // URL-safe
+        }
+
         public static bool TryDecodeBase64(string token, out string? email)
         {
             try

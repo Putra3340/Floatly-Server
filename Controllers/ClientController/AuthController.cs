@@ -15,6 +15,8 @@ namespace Floaty_Music.Controllers.ClientController
     [Route("auth")]
     public partial class AuthController : Controller
     {
+        private static List<(DateTime expiredtime,string email,string verifytoken)> emailverifyreq = new(); // temp store email verify request
+        private static HashSet<string> emailverified = new(); // temp store email verified, so user can register if server restarts they will be lost, doesnt affect login
         private readonly FloatlyContext _context;
         public AuthController(FloatlyContext context)
         {
@@ -64,7 +66,7 @@ namespace Floaty_Music.Controllers.ClientController
             {
                 var dateTime = DateTimeOffset.FromUnixTimeSeconds(epoch).UtcDateTime;
 
-                if (dateTime < DateTime.UtcNow)
+                if (dateTime <= DateTime.UtcNow)
                     return Unauthorized("Token Expired, Please Login Again");
             }
             else
@@ -83,10 +85,10 @@ namespace Floaty_Music.Controllers.ClientController
         [HttpPost("desktop/register")]
         public async Task<IActionResult> RegisterDesktop([FromForm] string username, [FromForm] string email, [FromForm] string password)
         {
-            if (username.IsNullOrEmpty() || email.IsNullOrEmpty() || password.IsNullOrEmpty())
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
                 return BadRequest("Invalid data");
-            var verified = _context.VerifiedEmail.FirstOrDefault(x => x.Email == email);
-            if (verified == null)
+            // check if email was verified
+            if (!emailverified.Contains(email))
                 return Unauthorized("Email not verified");
             var existingUser = _context.Users.FirstOrDefault(x => x.Username == username || x.Email == email);
             if (existingUser != null)
@@ -112,37 +114,40 @@ namespace Floaty_Music.Controllers.ClientController
             var existingUser = _context.Users.FirstOrDefault(x => x.Email == email);
             if (existingUser != null)
                 return Conflict("Email already in use");
-            var alreadyVerified = _context.VerifiedEmail.FirstOrDefault(x => x.Email == email);
-            if (alreadyVerified != null)
-                return Conflict("Email already verified");
-            // This will send a verification url to the user's email
-            string token = Convert.ToBase64String(Encoding.UTF8.GetBytes(email));
+            emailverifyreq.RemoveAll(x => x.expiredtime <= DateTime.Now); // remove expired requests
+            var alreadyRequested = emailverifyreq.FirstOrDefault(x => x.email == email && x.expiredtime > DateTime.Now);
+            if (alreadyRequested != default)
+                return Conflict("Verification already requested, wait a few minutes to request new verification link");
+            // This will send a verification url to the user's email (random token)
+            string token = HashHelper.GenerateRandomLongToken();
             string verify_url = $"{Request.Scheme}://{Request.Host}/auth/desktop/verify-token?token={token}";
+            emailverifyreq.Add((DateTime.Now.AddMinutes(5), email, token)); // expires in 5 minutes, after 5 minutes user need to request again
             EmailService emailservice = new EmailService();
             await emailservice.SendEmailAsync(email, "Verify your email",
-                $"        <!-- Heading -->\r\n        <h1 class=\"h3 fw-bold text-dark mb-2\">Verify Your Email</h1>\r\n        \r\n        <!-- Description -->\r\n        <p class=\"text-muted mb-4 lh-base\">\r\n            Please click the button below to verify your email address and complete your account setup.\r\n        </p>\r\n\r\n        <!-- Email Address -->\r\n        <div class=\"bg-light rounded p-3 mb-4\">\r\n            <p class=\"small text-muted mb-1\">Verifying email for:</p>\r\n            <p class=\"fw-medium text-dark mb-0\">{email}</p>\r\n        </div>\r\n\r\n        <!-- Verify Button -->\r\n        <a href=\"{verify_url}\" class=\"btn btn-primary btn-lg mb-4\" style=\"border-color: #3466F2;font-size: large;\">\r\n            Verify Email</a>\r\n\r\n        <!-- Security Note -->\r\n        <div class=\"mt-4 pt-4 border-top\">\r\n            <p class=\"small text-muted lh-base mb-0\">\r\n                This verification link will NOT expire. If you did not create an account, please ignore this email.\r\n            </p>\r\n        </div>"
+                $"        <!-- Heading -->\r\n        <h1 class=\"h3 fw-bold text-dark mb-2\">Verify Your Email</h1>\r\n        \r\n        <!-- Description -->\r\n        <p class=\"text-muted mb-4 lh-base\">\r\n            Please click the button below to verify your email address and complete your account setup.\r\n        </p>\r\n\r\n        <!-- Email Address -->\r\n        <div class=\"bg-light rounded p-3 mb-4\">\r\n            <p class=\"small text-muted mb-1\">Verifying email for:</p>\r\n            <p class=\"fw-medium text-dark mb-0\">{email}</p>\r\n        </div>\r\n\r\n        <!-- Verify Button -->\r\n        <a href=\"{verify_url}\" class=\"btn btn-primary btn-lg mb-4\" style=\"border-color: #3466F2;font-size: large;\">\r\n            Verify Email</a>\r\n\r\n        <!-- Security Note -->\r\n        <div class=\"mt-4 pt-4 border-top\">\r\n            <p class=\"small text-muted lh-base mb-0\">\r\n                This verification link will expired in 5 minutes. If you did not create an account, please ignore this email.\r\n            </p>\r\n        </div>"
 
 
                 );
-            return Ok();
+            return Ok("Verification link sent");
         }
         [HttpGet("desktop/verify-token")]
-        public async Task<IActionResult> VerifyToken([FromQuery] string token)
+        public IActionResult VerifyToken([FromQuery] string token)
         {
-            if (!HashHelper.TryDecodeBase64(token, out var email) || string.IsNullOrWhiteSpace(email))
-                return BadRequest(new { message = "Invalid or malformed token" });
-            if (!string.IsNullOrWhiteSpace(email))
-            {
-                _context.VerifiedEmail.Add(new VerifiedEmail
-                {
-                    Email = email,
-                    VerifiedAt = DateTime.Now
-                });
-                await _context.SaveChangesAsync();
-                return Ok(new { email });
-            }
-            return Unauthorized("Invalid or expired token");
+            // cleanup expired requests first
+            emailverifyreq.RemoveAll(x => x.expiredtime <= DateTime.UtcNow);
+
+            var match = emailverifyreq.FirstOrDefault(x => x.verifytoken == token);
+            if (match == default)
+                return Unauthorized("Invalid or expired token");
+
+            if (!emailverified.Contains(match.email))
+                emailverified.Add(match.email);
+
+            emailverifyreq.Remove(match);
+
+            return Ok(new { email = match.email,message = "Your account has been verified!" });
         }
+
 
         //[HttpPost("desktop/reset-password")]
         //public async Task<IActionResult> RequestReset([FromQuery] string email)
@@ -163,5 +168,4 @@ namespace Floaty_Music.Controllers.ClientController
         //    return Ok();
         //}
     }
-
 }

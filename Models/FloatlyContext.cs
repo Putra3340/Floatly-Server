@@ -31,8 +31,6 @@ public partial class FloatlyContext : DbContext
 
     public virtual DbSet<Users> Users { get; set; }
 
-    public virtual DbSet<VerifiedEmail> VerifiedEmail { get; set; }
-
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (GlobalConfiguration.isSQLITE)
@@ -165,12 +163,6 @@ public partial class FloatlyContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.Username).HasMaxLength(50);
-        });
-
-        modelBuilder.Entity<VerifiedEmail>(entity =>
-        {
-            entity.Property(e => e.Email).HasMaxLength(100);
-            entity.Property(e => e.VerifiedAt).HasColumnType("datetime");
         });
 
         OnModelCreatingPartial(modelBuilder);
