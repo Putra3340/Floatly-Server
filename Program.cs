@@ -1,5 +1,6 @@
 using Floaty_Music;
 using Floaty_Music.Models;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,6 +38,18 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 });
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true; // also compress HTTPS
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[]
+    {
+    "image/svg+xml",   // vector, compressible
+    "image/jpeg",      // usually no benefit
+    "image/png",       // usually no benefit
+    "image/webp"       // usually no benefit
+    });
+
+});
 
 
 var app = builder.Build();
@@ -59,7 +72,16 @@ if (app.Environment.IsDevelopment())
 //        }
 //    }
 //});
-app.UseStaticFiles();
+//app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // cache for 30 days
+        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=2592000");
+    }
+});
+
 
 app.UseRouting();
 app.UseAuthentication();
@@ -73,8 +95,9 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 app.MapControllers();
+app.UseResponseCompression();
 
-if(GlobalConfiguration.isSQLITE)
+if (GlobalConfiguration.isSQLITE)
 {
     // For SQLite, ensure database file and tables are created
     using var scope = app.Services.CreateScope();

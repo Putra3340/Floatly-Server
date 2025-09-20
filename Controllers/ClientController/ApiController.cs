@@ -7,6 +7,7 @@ namespace Floaty_Music.Controllers.ClientController
 {
     public class ApiController : Controller
     {
+        public static List<(DateTime cooldownuntil,string token)> cooldowntoken = new();
         private readonly FloatlyContext _context;
         public ApiController(FloatlyContext cont)
         {
@@ -32,9 +33,14 @@ namespace Floaty_Music.Controllers.ClientController
             return Json(response);
         }
 
-        [HttpPost("api/play")]
+        [HttpPost("api/play")] // we use token cooldown, this endpoint just for play count
         public IActionResult Play(string token, int songId)
         {
+            cooldowntoken.RemoveAll(x => x.cooldownuntil <= DateTime.Now); // remove obsolete cooldown
+            if (cooldowntoken.Any(x => x.token == token && x.cooldownuntil > DateTime.Now))
+            {
+                return BadRequest(new { status = "Error", message = "You are on cooldown. Please wait before sending another play request." });
+            }
             var user = _context.Users.FirstOrDefault(u => u.Token == token);
             if (user == null)
             {
@@ -42,13 +48,13 @@ namespace Floaty_Music.Controllers.ClientController
             }
 
             var song = _context.Songs.Include(s => s.Album).ThenInclude(x => x.Artist).Include(x => x.SongCounter).FirstOrDefault(s => s.Id == songId);
-            if (song == null)
+            if (song == null || song.SongCounter == null)
             {
                 return NotFound(new { status = "Error", message = "Song not found." });
             }
             song.SongCounter.TotalPlayed += 1;
             _context.SaveChanges();
-
+            cooldowntoken.Add((DateTime.Now.AddMinutes(2), user.Token)); // 2 minutes cooldown
             return Ok();
         }
     }
