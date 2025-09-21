@@ -104,6 +104,113 @@ namespace Floaty_Music.Controllers
             return Ok();
         }
 
+        public async Task<IActionResult> CleanUp()
+        {
+            var songs = _context.Songs.Select(x=> new
+            {
+                MusicFile = GlobalConfiguration.WebRootPath + x.MusicFilePath.Replace("/","\\"),
+                LyricFile = GlobalConfiguration.WebRootPath + x.LyricsFilePath.Replace("/", "\\"),
+                CoverFile = GlobalConfiguration.WebRootPath + x.CoverImagePath.Replace("/", "\\"),
+                BannerFile = GlobalConfiguration.WebRootPath + x.BannerImagePath.Replace("/", "\\")
+            }).ToList();
+
+            var albums = _context.Albums.Select(x => GlobalConfiguration.WebRootPath + x.CoverImagePath.Replace("/", "\\")).ToList();
+            var artists = _context.Artists.Select(x => GlobalConfiguration.WebRootPath + x.CoverImagePath.Replace("/", "\\")).ToList();
+
+            var files = Directory.GetFiles(GlobalConfiguration.MusicFilePath).ToList();
+            var lyrics = Directory.GetFiles(GlobalConfiguration.LyricsFilePath).ToList();
+            var covers = Directory.GetFiles(GlobalConfiguration.CoverImagePath).ToList();
+            var banners = Directory.GetFiles(GlobalConfiguration.BannerImagePath).ToList();
+            var albumcovers = Directory.GetFiles(GlobalConfiguration.AlbumCoverPath).ToList();
+            var artistcovers = Directory.GetFiles(GlobalConfiguration.ArtistProfilePath).ToList();
+
+            var referencedFiles = new HashSet<string>(
+    songs.SelectMany(s => new[] { s.MusicFile, s.LyricFile, s.CoverFile, s.BannerFile })
+         .Where(p => !string.IsNullOrEmpty(p))
+         .Concat(albums.Where(p => !string.IsNullOrEmpty(p)))   // absolute
+         .Concat(artists.Where(p => !string.IsNullOrEmpty(p))), // absolute
+    StringComparer.OrdinalIgnoreCase
+);
+
+            // Now iterate over each category and delete if not referenced
+            void DeleteStrayFiles(IEnumerable<string> categoryFiles)
+            {
+                foreach (var file in categoryFiles)
+                {
+                    if (!referencedFiles.Contains(file))
+                    {
+                        try
+                        {
+                            Console.WriteLine($"Deleting stray file: {file}");
+                            System.IO.File.Delete(file);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Failed to delete {file}: {ex.Message}");
+                        }
+                    }
+                }
+            }
+
+            // Check all file groups
+            DeleteStrayFiles(files);
+            DeleteStrayFiles(lyrics);
+            DeleteStrayFiles(covers);
+            DeleteStrayFiles(banners);
+            DeleteStrayFiles(albumcovers);
+            DeleteStrayFiles(artistcovers);
+
+            // Refresh dashboard stats
+            var tasks = new[] {
+                DirectoryScanner.ScanAsync(GlobalConfiguration.MusicFilePath),
+                DirectoryScanner.ScanAsync(GlobalConfiguration.LyricsFilePath),
+                DirectoryScanner.ScanAsync(GlobalConfiguration.CoverImagePath),
+                DirectoryScanner.ScanAsync(GlobalConfiguration.BannerImagePath),
+                DirectoryScanner.ScanAsync(GlobalConfiguration.AlbumCoverPath),
+                DirectoryScanner.ScanAsync(GlobalConfiguration.ArtistProfilePath)
+            };
+            var results = await Task.WhenAll(tasks);
+            _cache.Stats = new DashboardStats
+            {
+                Music = new StorageStat { FileCount = results[0].FileCount, TotalSize = results[0].TotalSize },
+                Lyrics = new StorageStat { FileCount = results[1].FileCount, TotalSize = results[1].TotalSize },
+                Cover = new StorageStat { FileCount = results[2].FileCount, TotalSize = results[2].TotalSize },
+                Banner = new StorageStat { FileCount = results[3].FileCount, TotalSize = results[3].TotalSize },
+                Album = new StorageStat { FileCount = results[4].FileCount, TotalSize = results[4].TotalSize },
+                Artist = new StorageStat { FileCount = results[5].FileCount, TotalSize = results[5].TotalSize }
+            };
+            _cache.LastUpdate = DateTime.Now;
+            return RedirectToAction("Dashboard");
+        }
+
+        public async Task<IActionResult> RefreshDisk()
+        {
+            // Refresh dashboard stats
+            var tasks = new[] {
+                DirectoryScanner.ScanAsync(GlobalConfiguration.MusicFilePath),
+                DirectoryScanner.ScanAsync(GlobalConfiguration.LyricsFilePath),
+                DirectoryScanner.ScanAsync(GlobalConfiguration.CoverImagePath),
+                DirectoryScanner.ScanAsync(GlobalConfiguration.BannerImagePath),
+                DirectoryScanner.ScanAsync(GlobalConfiguration.AlbumCoverPath),
+                DirectoryScanner.ScanAsync(GlobalConfiguration.ArtistProfilePath)
+            };
+
+            var results = await Task.WhenAll(tasks);
+
+            _cache.Stats = new DashboardStats
+            {
+                Music = new StorageStat { FileCount = results[0].FileCount, TotalSize = results[0].TotalSize },
+                Lyrics = new StorageStat { FileCount = results[1].FileCount, TotalSize = results[1].TotalSize },
+                Cover = new StorageStat { FileCount = results[2].FileCount, TotalSize = results[2].TotalSize },
+                Banner = new StorageStat { FileCount = results[3].FileCount, TotalSize = results[3].TotalSize },
+                Album = new StorageStat { FileCount = results[4].FileCount, TotalSize = results[4].TotalSize },
+                Artist = new StorageStat { FileCount = results[5].FileCount, TotalSize = results[5].TotalSize }
+            };
+            _cache.LastUpdate = DateTime.Now;
+
+            return RedirectToAction("Dashboard");
+        }
+
         public async Task<IActionResult> Dashboard()
         {
             var totalSongs = _context.Songs.Count();

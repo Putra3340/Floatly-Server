@@ -1,0 +1,94 @@
+﻿:root {
+    --bs-primary: #0d6efd;
+    --bs-primary-rgb: 13, 110, 253;
+}
+
+body {
+    background-color: #0a0e1a;
+    color: #e9ecef;
+}
+
+.sidebar {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #1a1d29 0%, #0f1419 100%);
+    border-right: 1px solid #2d3748;
+}
+
+    .sidebar .nav-link {
+        color: #a0aec0;
+        padding: 0.75rem 1rem;
+        margin: 0.25rem 0;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+        .sidebar .nav-link:hover {
+            background-color: rgba(13, 110, 253, 0.1);
+            color: #0d6efd;
+        }
+
+        .sidebar .nav-link.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+
+.main-content {
+    background-color: #0f1419;
+    min-height: 100vh;
+}
+
+.card {
+    background-color: #1a1d29;
+    border: 1px solid #2d3748;
+}
+
+.card-header {
+    background-color: #2d3748;
+    border-bottom: 1px solid #4a5568;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+    .btn-primary:hover {
+        background-color: #0b5ed7;
+        border-color: #0a58ca;
+    }
+
+.table-dark {
+    --bs-table-bg: #1a1d29;
+}
+
+.navbar-brand {
+    font-weight: 600;
+    color: #0d6efd !important;
+}
+
+.content-section {
+    display: none;
+}
+
+    .content-section.active {
+        display: block;
+    }
+
+.stats-card {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    border: none;
+    color: white;
+}
+
+.search-box {
+    background-color: #2d3748;
+    border: 1px solid #4a5568;
+    color: #e9ecef;
+}
+
+    .search-box:focus {
+        background-color: #2d3748;
+        border-color: #0d6efd;
+        color: #e9ecef;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
