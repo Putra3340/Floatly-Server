@@ -13,8 +13,47 @@ namespace Floaty_Music.Controllers
         {
             _context = cont;
         }
+        [HttpGet]
+        public IActionResult Index()
+        {
+            var songlist = _context.Songs.Include(x => x.Album).ThenInclude(x => x.Artist).Include(x=>x.SongCounter).ToList();
+            var artistlist = _context.Artists.ToList();
+            var albumlist = _context.Albums.Include(x => x.Artist).ToList();
 
-        [HttpGet] // search
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+
+            var result = new
+            {
+                songs = songlist.Select(x => new
+                {
+                    id = x.Id,
+                    title = x.Title,
+                    artist = x.Album.Artist.Name,
+                        music = baseUrl + x.MusicFilePath,
+                        lyrics = baseUrl + x.LyricsFilePath,
+                        cover = baseUrl + x.CoverImagePath,
+                        banner = baseUrl + x.BannerImagePath,
+                    songlength = x.SongCounter.MusicLength,
+                    createdAt = x.CreatedAt
+                }).Take(5).ToList(), // limit
+                artists = artistlist.Select(x => new
+                {
+                    id = x.Id,
+                    name = x.Name,
+                    coverUrl = baseUrl + x.CoverImagePath,
+                }).Take(3).ToList(),
+                albums = albumlist.Select(x => new
+                {
+                    id = x.Id,
+                    title = x.Title,
+                    artistName = x.Artist.Name,
+                    coverUrl = baseUrl + x.CoverImagePath
+                }).Take(3).ToList()
+            };
+            return Ok(result);
+        }
+
+        [HttpGet("search")] // search
         public IActionResult Search([FromQuery] string? anycontent)
         {
             if (string.IsNullOrWhiteSpace(anycontent))

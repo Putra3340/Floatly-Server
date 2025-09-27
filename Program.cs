@@ -72,15 +72,15 @@ if (app.Environment.IsDevelopment())
 //        }
 //    }
 //});
-//app.UseStaticFiles();
-app.UseStaticFiles(new StaticFileOptions
-{
-    OnPrepareResponse = ctx =>
-    {
-        // cache for 30 days
-        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=2592000");
-    }
-});
+app.UseStaticFiles();
+// app.UseStaticFiles(new StaticFileOptions
+// {
+//     OnPrepareResponse = ctx =>
+//     {
+//         // cache for 30 days
+//         ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=2592000");
+//     }
+// });
 
 
 app.UseRouting();
