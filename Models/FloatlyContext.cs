@@ -37,7 +37,11 @@ public partial class FloatlyContext : DbContext
         {
             optionsBuilder.UseSqlite(GlobalConfiguration.ConnectionString);
         }
-        else
+        else if (GlobalConfiguration.isMySQL)
+        {
+            optionsBuilder.UseMySql(GlobalConfiguration.ConnectionString, ServerVersion.AutoDetect(GlobalConfiguration.ConnectionString));
+        }
+        else if (GlobalConfiguration.isSQLSERVER)
         {
             optionsBuilder.UseSqlServer(GlobalConfiguration.ConnectionString);
         }

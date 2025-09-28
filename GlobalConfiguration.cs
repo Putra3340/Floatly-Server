@@ -22,8 +22,12 @@ namespace Floaty_Music
         public static string SMTP_EMAIL;
         public static string SMTP_PASSWORD;
         public static string TOKEN_EXPIRED_IN_DAYS;
+        public static string ServerStatus;
+        public static string ServerDetail;
 
-        public static bool isSQLITE = false; // set true if using remote database
+        public static bool isSQLSERVER = false;
+        public static bool isSQLITE = false;
+        public static bool isMySQL = false;
         public static void LoadConfig()
         {
             Env.Load();
@@ -35,17 +39,27 @@ namespace Floaty_Music
             SMTP_EMAIL = Env.GetString("SMTP_EMAIL", "");
             SMTP_PASSWORD = Env.GetString("SMTP_PASSWORD", "");
             TOKEN_EXPIRED_IN_DAYS = Env.GetString("TOKEN_EXPIRED_IN_DAYS", "");
+            ServerStatus = Env.GetString("SERVER_MESSAGE", "");
+            ServerDetail = Env.GetString("SERVER_DETAIL", "");
             string dbtype = Env.GetString("DATABASE_TYPE", "SQLSERVER");
             if (dbtype.ToUpper() == "SQLITE")
             {
                 isSQLITE = true;
+            }else if(dbtype.ToUpper() == "SQLSERVER")
+            {
+                isSQLSERVER = true;
+            }
+            else if(dbtype.ToUpper() == "MYSQL")
+            {
+                isMySQL = true;
             }
             else
             {
-                isSQLITE = false;
+                Console.WriteLine("Invalid DATABASE_TYPE, must be SQLITE or SQLSERVER, defaulting to SQLSERVER");
+                isSQLSERVER = true;
             }
 
-            if(!Directory.Exists(WebRootPath))
+            if (!Directory.Exists(WebRootPath))
                 Directory.CreateDirectory(WebRootPath);
             if (!Directory.Exists(Path.Combine(WebRootPath, UploadsFolder)))
                 Directory.CreateDirectory(Path.Combine(WebRootPath, UploadsFolder));

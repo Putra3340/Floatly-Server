@@ -19,9 +19,9 @@ namespace Floaty_Music.Controllers.ClientController
         {
             var response = new
             {
-                status = "Active",
-                message = "Floaty Music Server is in progress.",
-                version = "1.0.1",
+                status = GlobalConfiguration.ServerStatus,
+                message = GlobalConfiguration.ServerDetail,
+                version = "PREVIEW-1.0.0-HOME",
                 uptime = DateTime.Now - Process.GetCurrentProcess().StartTime,
                 serverTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                 serverName = Environment.MachineName,

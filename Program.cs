@@ -19,7 +19,12 @@ if (GlobalConfiguration.isSQLITE)
     builder.Services.AddDbContext<FloatlyContext>(options =>
     options.UseSqlite(GlobalConfiguration.ConnectionString));
 }
-else
+else if(GlobalConfiguration.isMySQL)
+{
+    builder.Services.AddDbContext<FloatlyContext>(options =>
+    options.UseMySql(GlobalConfiguration.ConnectionString, ServerVersion.AutoDetect(GlobalConfiguration.ConnectionString)));
+}
+else if (GlobalConfiguration.isSQLSERVER)
 {
     builder.Services.AddDbContext<FloatlyContext>(options =>
         options.UseSqlServer(GlobalConfiguration.ConnectionString));
@@ -61,18 +66,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-//app.UseStaticFiles(new StaticFileOptions
-//{
-//    ServeUnknownFileTypes = true,
-//    ContentTypeProvider = new FileExtensionContentTypeProvider
-//    {
-//        Mappings = {
-//            [".srt"] = "application/x-subrip",
-//            [".mp3"] = "audio/mpeg"
-//        }
-//    }
-//});
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    ServeUnknownFileTypes = true,
+    ContentTypeProvider = new FileExtensionContentTypeProvider
+    {
+        Mappings = {
+            [".srt"] = "application/x-subrip",
+            [".mp3"] = "audio/mpeg"
+        }
+    }
+});
+//app.UseStaticFiles();
 // app.UseStaticFiles(new StaticFileOptions
 // {
 //     OnPrepareResponse = ctx =>
@@ -91,7 +96,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection(); 
 
 app.UseAuthorization();
 app.MapControllers();
@@ -100,6 +105,13 @@ app.UseResponseCompression();
 if (GlobalConfiguration.isSQLITE)
 {
     // For SQLite, ensure database file and tables are created
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<FloatlyContext>();
+    db.Database.EnsureCreated();
+}
+else if (GlobalConfiguration.isMySQL)
+{
+    // For MySQL, apply any pending migrations
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<FloatlyContext>();
     db.Database.EnsureCreated();

@@ -16,39 +16,62 @@ namespace Floaty_Music.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var songlist = _context.Songs.Include(x => x.Album).ThenInclude(x => x.Artist).Include(x=>x.SongCounter).ToList();
-            var artistlist = _context.Artists.ToList();
-            var albumlist = _context.Albums.Include(x => x.Artist).ToList();
-
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
+
+            var songlist = _context.Songs
+                .Include(s => s.Album).ThenInclude(a => a.Artist)
+                .Include(s => s.SongCounter)
+                .OrderByDescending(s => s.SongCounter.TotalPlayed) // sort by plays
+                .Take(5)
+                .ToList();
+
+            var topSongs = songlist.Select(x => new
+            {
+                id = x.Id,
+                title = x.Title,
+                artist = x.Album.Artist.Name,
+                music = baseUrl + x.MusicFilePath,
+                lyrics = baseUrl + x.LyricsFilePath,
+                cover = baseUrl + x.CoverImagePath,
+                banner = baseUrl + x.BannerImagePath,
+                songlength = x.SongCounter.MusicLength,
+                playcount = x.SongCounter.TotalPlayed,
+                createdAt = x.CreatedAt
+            }).ToList();
+
+            var topArtists = _context.Artists
+                .Select(a => new
+                {
+                    id = a.Id,
+                    name = a.Name,
+                    coverUrl = baseUrl + a.CoverImagePath,
+                    totalPlays = a.Albums
+                        .SelectMany(al => al.Songs)
+                        .Sum(s => (long?)s.SongCounter.TotalPlayed ?? 0)
+                })
+                .OrderByDescending(a => a.totalPlays)
+                .Take(3)
+                .ToList();
+
+            var topAlbums = _context.Albums
+                .Select(al => new
+                {
+                    id = al.Id,
+                    title = al.Title,
+                    artistName = al.Artist.Name,
+                    coverUrl = baseUrl + al.CoverImagePath,
+                    totalPlays = al.Songs.Sum(s => (long?)s.SongCounter.TotalPlayed ?? 0)
+                })
+                .OrderByDescending(al => al.totalPlays)
+                .Take(3)
+                .ToList();
+
 
             var result = new
             {
-                songs = songlist.Select(x => new
-                {
-                    id = x.Id,
-                    title = x.Title,
-                    artist = x.Album.Artist.Name,
-                        music = baseUrl + x.MusicFilePath,
-                        lyrics = baseUrl + x.LyricsFilePath,
-                        cover = baseUrl + x.CoverImagePath,
-                        banner = baseUrl + x.BannerImagePath,
-                    songlength = x.SongCounter.MusicLength,
-                    createdAt = x.CreatedAt
-                }).Take(5).ToList(), // limit
-                artists = artistlist.Select(x => new
-                {
-                    id = x.Id,
-                    name = x.Name,
-                    coverUrl = baseUrl + x.CoverImagePath,
-                }).Take(3).ToList(),
-                albums = albumlist.Select(x => new
-                {
-                    id = x.Id,
-                    title = x.Title,
-                    artistName = x.Artist.Name,
-                    coverUrl = baseUrl + x.CoverImagePath
-                }).Take(3).ToList()
+                songs = topSongs,
+                artists = topArtists,
+                albums = topAlbums
             };
             return Ok(result);
         }
