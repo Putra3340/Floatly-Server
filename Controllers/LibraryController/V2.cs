@@ -22,7 +22,7 @@ namespace Floaty_Music.Controllers
                 .Include(s => s.Album).ThenInclude(a => a.Artist)
                 .Include(s => s.SongCounter)
                 .OrderByDescending(s => s.SongCounter.TotalPlayed) // sort by plays
-                .Take(5)
+                .Take(10)
                 .ToList();
 
             var topSongs = songlist.Select(x => new
@@ -30,14 +30,30 @@ namespace Floaty_Music.Controllers
                 id = x.Id,
                 title = x.Title,
                 artist = x.Album.Artist.Name,
+                artistId = x.Album.Artist.Id,
                 music = baseUrl + x.MusicFilePath,
                 lyrics = baseUrl + x.LyricsFilePath,
                 cover = baseUrl + x.CoverImagePath,
                 banner = baseUrl + x.BannerImagePath,
-                songlength = x.SongCounter.MusicLength,
-                playcount = x.SongCounter.TotalPlayed,
+                songLength = x.SongCounter?.MusicLength ?? 0,
+                playCount = x.SongCounter?.TotalPlayed,
                 createdAt = x.CreatedAt
-            }).ToList();
+            }).AsEnumerable() // switch to LINQ-to-Objects
+    .Select(x => new
+    {
+        x.id,
+        x.title,
+        x.artist,
+        x.artistId,
+        x.music,
+        x.lyrics,
+        x.cover,
+        x.banner,
+        songLength = TimeSpan.FromSeconds(x.songLength).ToString(@"mm\:ss"),
+        playCount = (x.playCount ?? 0).ToString("N0") + " Plays",
+        x.createdAt
+    })
+    .ToList();
 
             var topArtists = _context.Artists
                 .Select(a => new
@@ -50,7 +66,15 @@ namespace Floaty_Music.Controllers
                         .Sum(s => (long?)s.SongCounter.TotalPlayed ?? 0)
                 })
                 .OrderByDescending(a => a.totalPlays)
-                .Take(3)
+                .Take(6)
+                .AsEnumerable()
+                .Select(a => new
+                {
+                    a.id,
+                    a.name,
+                    a.coverUrl,
+                    totalPlays = a.totalPlays.ToString("N0") + " Plays"
+                })
                 .ToList();
 
             var topAlbums = _context.Albums
@@ -63,7 +87,7 @@ namespace Floaty_Music.Controllers
                     totalPlays = al.Songs.Sum(s => (long?)s.SongCounter.TotalPlayed ?? 0)
                 })
                 .OrderByDescending(al => al.totalPlays)
-                .Take(3)
+                .Take(10)
                 .ToList();
 
 
@@ -96,6 +120,7 @@ namespace Floaty_Music.Controllers
                     id = x.Id,
                     title = x.Title,
                     artist = x.Album.Artist.Name,
+                    artistId = x.Album.Artist.Id,
                     downloadUrls = new
                     {
                         music = baseUrl + x.MusicFilePath,
@@ -148,8 +173,10 @@ namespace Floaty_Music.Controllers
         [HttpGet("artist/{id}")]
         public IActionResult SearchArtist(int id)
         {
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var artis = _context.Artists.Find(id);
             if (artis == null) return NotFound(new { message = "Not found" });
+            artis.CoverImagePath = baseUrl + artis.CoverImagePath;
             return Ok(artis);
         }
 
