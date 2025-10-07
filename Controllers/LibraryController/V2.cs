@@ -108,13 +108,13 @@ namespace Floaty_Music.Controllers
             List<Albums> albumlist = null;
             if (string.IsNullOrWhiteSpace(anycontent)) // fetch some if empty
             {
-                songlist = _context.Songs.Include(x => x.Album).ThenInclude(x => x.Artist).Take(20).ToList();
+                songlist = _context.Songs.Include(x => x.Album).ThenInclude(x => x.Artist).Include(x=>x.SongCounter).Take(20).ToList();
                 artistlist = _context.Artists.Take(5).ToList();
                 albumlist = _context.Albums.Include(x => x.Artist).Take(20).ToList();
             }
             else // filter search
             {
-                songlist = _context.Songs.Include(x => x.Album).ThenInclude(x => x.Artist).Where(x => x.Title.ToUpper().Contains(anycontent.ToUpper())).ToList();
+                songlist = _context.Songs.Include(x => x.Album).ThenInclude(x => x.Artist).Include(x=>x.SongCounter).Where(x => x.Title.ToUpper().Contains(anycontent.ToUpper())).ToList();
                 artistlist = _context.Artists.Where(x => x.Name.ToUpper().Contains(anycontent.ToUpper())).ToList();
                 albumlist = _context.Albums.Include(x => x.Artist).Where(x => x.Title.ToUpper().Contains(anycontent.ToUpper())).ToList();
             }
