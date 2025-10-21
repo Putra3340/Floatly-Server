@@ -21,7 +21,7 @@ namespace Floaty_Music.Controllers.ClientController
             {
                 status = GlobalConfiguration.ServerStatus,
                 message = GlobalConfiguration.ServerDetail,
-                version = "PREVIEW-1.0.0-HOME",
+                version = "PREVIEW-1.0.0",
                 uptime = DateTime.Now - Process.GetCurrentProcess().StartTime,
                 serverTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                 serverName = Environment.MachineName,

@@ -287,6 +287,97 @@ namespace Floaty_Music.Controllers
             ViewBag.LastUpdate = _cache.LastUpdate;
             return View();
         }
+        public async Task<IActionResult> DashboardV2()
+        {
+            var totalSongs = _context.Songs.Count();
+            var totalAlbums = _context.Albums.Count();
+            var totalArtists = _context.Artists.Count();
+            ViewBag.TotalSongs = totalSongs;
+            ViewBag.TotalAlbums = totalAlbums;
+            ViewBag.TotalArtists = totalArtists;
+            ViewBag.TotalPlayed = _context.SongCounter.Sum(x => x.TotalPlayed);
+            ViewBag.TotalLikes = _context.SongCounter.Sum(x => x.TotalLikes);
+            ViewBag.TopSongs = _context.SongCounter
+                .OrderByDescending(x => x.TotalPlayed)
+                .Take(5)
+                .Include(x => x.Song)
+                    .ThenInclude(s => s.Album)
+                        .ThenInclude(a => a.Artist)
+                .ToList();
+            ViewBag.TopSongsLikes = _context.SongCounter
+                .OrderByDescending(x => x.TotalLikes)
+                .Take(5)
+                .Include(x => x.Song)
+                    .ThenInclude(s => s.Album)
+                        .ThenInclude(a => a.Artist)
+                .ToList();
+            ViewBag.Albums = _context.Albums.OrderDescending().Include(a => a.Artist).ToList();
+            ViewBag.Artists = _context.Artists.OrderDescending().ToList(); // for dropdown
+            ViewBag.Songs = _context.Songs
+                .OrderByDescending(x => x.Id)
+                .Include(x => x.Album)
+                    .ThenInclude(a => a.Artist)
+                .Include(x => x.SongCounter)
+                .ToList();
+
+            // SLOW OPERATION, SO CACHE IT FOR 10 MINUTES
+            if (_cache.Stats == null || (DateTime.Now - _cache.LastUpdate).TotalMinutes > 10)
+            {
+                var tasks = new[] {
+                    DirectoryScanner.ScanAsync(GlobalConfiguration.MusicFilePath),
+                    DirectoryScanner.ScanAsync(GlobalConfiguration.LyricsFilePath),
+                    DirectoryScanner.ScanAsync(GlobalConfiguration.CoverImagePath),
+                    DirectoryScanner.ScanAsync(GlobalConfiguration.BannerImagePath),
+                    DirectoryScanner.ScanAsync(GlobalConfiguration.AlbumCoverPath),
+                    DirectoryScanner.ScanAsync(GlobalConfiguration.ArtistProfilePath)
+                };
+
+                var results = await Task.WhenAll(tasks);
+
+                _cache.Stats = new DashboardStats
+                {
+                    Music = new StorageStat { FileCount = results[0].FileCount, TotalSize = results[0].TotalSize },
+                    Lyrics = new StorageStat { FileCount = results[1].FileCount, TotalSize = results[1].TotalSize },
+                    Cover = new StorageStat { FileCount = results[2].FileCount, TotalSize = results[2].TotalSize },
+                    Banner = new StorageStat { FileCount = results[3].FileCount, TotalSize = results[3].TotalSize },
+                    Album = new StorageStat { FileCount = results[4].FileCount, TotalSize = results[4].TotalSize },
+                    Artist = new StorageStat { FileCount = results[5].FileCount, TotalSize = results[5].TotalSize }
+                };
+                _cache.LastUpdate = DateTime.Now;
+            }
+
+            ViewBag.StorageStats = _cache.Stats;
+            ViewBag.TotalFiles = _cache.Stats.Music.FileCount
+                   + _cache.Stats.Lyrics.FileCount
+                   + _cache.Stats.Cover.FileCount
+                   + _cache.Stats.Banner.FileCount
+                   + _cache.Stats.Album.FileCount
+                   + _cache.Stats.Artist.FileCount;
+
+            ViewBag.TotalSize = _cache.Stats.Music.TotalSize
+                              + _cache.Stats.Lyrics.TotalSize
+                              + _cache.Stats.Cover.TotalSize
+                              + _cache.Stats.Banner.TotalSize
+                              + _cache.Stats.Album.TotalSize
+                              + _cache.Stats.Artist.TotalSize;
+            ViewBag.LastUpdate = _cache.LastUpdate;
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetArtistAlbum(int artistid)
+        {
+            var albums = await _context.Albums.Where(a => a.ArtistId == artistid).Select(a => new{a.Id,a.Title,a.ReleaseDate,a.CoverImagePath}).ToListAsync();
+            return Json(albums);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAlbumSong(int albumid)
+        {
+            var songs = await _context.Songs.Where(s => s.AlbumId == albumid).Select(s => new{ s.Id, s.Title, s.MusicFilePath, Duration = s.SongCounter.MusicLength, Plays = s.SongCounter.TotalPlayed, Likes = s.SongCounter.TotalLikes}).ToListAsync();
+            return Json(songs);
+        }
+
     }
     public class StorageStat
     {

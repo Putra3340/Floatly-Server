@@ -1,0 +1,460 @@
+﻿@using Microsoft.EntityFrameworkCore.Metadata.Internal
+
+
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Management Dashboard</title>
+    <link href="~/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/dashboard.css" />
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4 class="navbar-brand mb-0">
+                            <i class="bi bi-music-note-beamed me-2"></i>
+                            FloatLy
+                        </h4>
+                        <small class="text-muted">Management Dashboard</small>
+                    </div>
+
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" data-section="dashboard">
+                                <i class="bi bi-speedometer2 me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#manager" data-section="manager">
+                                <i class="bi bi-music-note-list me-2"></i>
+                                Library Manager
+                            </a>
+                        </li>
+                    </ul>
+
+                    <hr class="my-4">
+
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <i class="bi bi-gear me-2"></i>
+                                Settings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Auth/Logout">
+                                <i class="bi bi-box-arrow-right me-2"></i>
+                                Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+
+                <!-- Dashboard Section -->
+                <div id="dashboard" class="content-section active">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Dashboard</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            @* <button type="button" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Add New
+                            </button> *@
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-3 mb-3">
+                            <div class="card stats-card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-disc fs-1 mb-2"></i>
+                                    <h3 class="card-title">@ViewBag.TotalAlbums</h3>
+                                    <p class="card-text">Total Albums</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card stats-card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-person-circle fs-1 mb-2"></i>
+                                    <h3 class="card-title">@ViewBag.TotalArtists</h3>
+                                    <p class="card-text">Artists</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card stats-card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-music-note-list fs-1 mb-2"></i>
+                                    <h3 class="card-title">@ViewBag.TotalSongs</h3>
+                                    <p class="card-text">Songs</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card stats-card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-play-circle fs-1 mb-2"></i>
+                                    <h3 class="card-title">@ViewBag.TotalPlayed</h3>
+                                    <p class="card-text">Total Plays</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Disk Usage Information</h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-music-note-beamed me-2"></i>
+                                                Music Files (@ViewBag.StorageStats.Music.FileCount)
+                                            </span>
+                                            <span class="badge bg-primary">@((ViewBag.StorageStats.Music.TotalSize / 1024 / 1024).ToString("N2")) MB</span>
+                                        </li>
+
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-file-text me-2"></i>
+                                                Lyrics (@ViewBag.StorageStats.Lyrics.FileCount)
+                                            </span>
+                                            <span class="badge bg-primary">@((ViewBag.StorageStats.Lyrics.TotalSize / 1024 / 1024).ToString("N2")) MB</span>
+                                        </li>
+
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-image me-2"></i>
+                                                Cover Images (@ViewBag.StorageStats.Cover.FileCount)
+                                            </span>
+                                            <span class="badge bg-primary">@((ViewBag.StorageStats.Cover.TotalSize / 1024 / 1024).ToString("N2")) MB</span>
+                                        </li>
+
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-card-image me-2"></i>
+                                                Banners (@ViewBag.StorageStats.Banner.FileCount)
+                                            </span>
+                                            <span class="badge bg-primary">@((ViewBag.StorageStats.Banner.TotalSize / 1024 / 1024).ToString("N2")) MB</span>
+                                        </li>
+
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-disc me-2"></i>
+                                                Album Covers (@ViewBag.StorageStats.Album.FileCount)
+                                            </span>
+                                            <span class="badge bg-primary">@((ViewBag.StorageStats.Album.TotalSize / 1024 / 1024).ToString("N2")) MB</span>
+                                        </li>
+
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-person-circle me-2"></i>
+                                                Artist Profiles (@ViewBag.StorageStats.Artist.FileCount)
+                                            </span>
+                                            <span class="badge bg-primary">@((ViewBag.StorageStats.Artist.TotalSize / 1024 / 1024).ToString("N2")) MB</span>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                                <div class="card-footer text-muted small">
+                                    Total: <strong>@ViewBag.TotalFiles</strong> files,
+                                    <strong>@((ViewBag.TotalSize / 1024 / 1024).ToString("N2")) MB</strong> used
+                                    <br />
+                                    Last updated: @ViewBag.LastUpdate
+                                    <button class="btn btn-primary" onclick="window.location.href = '/Song/RefreshDisk'">Refresh</button>
+                                    <button class="btn btn-warning" onclick="window.location.href = '/Song/CleanUp'">Clean</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Top 10 Most Liked Songs</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="list-group list-group-flush">
+                                        @foreach (var item in ViewBag.TopSongsLikes)
+                                        {
+                                            <div class="list-group-item bg-transparent border-0 d-flex justify-content-between">
+                                                <span>@item.Song.Title</span>
+                                                <span class="badge bg-primary">@item.TotalLikes Likes</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Top 10 Most Played Songs</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="list-group list-group-flush">
+                                        @foreach (var item in ViewBag.TopSongs)
+                                        {
+                                            <div class="list-group-item bg-transparent border-0 d-flex justify-content-between">
+                                                <span>@item.Song.Title</span>
+                                                <span class="badge bg-primary">@item.TotalPlayed Plays</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Music Section -->
+                <div id="manager" class="content-section">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Music Management</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <button type="button" class="btn btn-primary" onclick="openSongModal()">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Add Song
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control search-box" id="searchTitle" placeholder="Search songs...">
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select search-box" id="searchArtist" onchange="filterAlbumsSongs()">
+                                <option value="">All Artists</option>
+                                @foreach (var a in ViewBag.Artists)
+                                {
+                                    <option value="@a.Id">@a.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select search-box" id="searchAlbum">
+                                <option value="">All Albums</option>
+                                @foreach (var a in ViewBag.Albums)
+                                {
+                                    <option value="@a.Id" data-artist="@a.ArtistId">@a.Title</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                            <div class="row">
+                                @foreach (var artist in ViewBag.Artists)
+                                {
+                                    <div class="col-md-12 mb-3 artist-card" id="artist-@artist.Id">
+                                        <div class="card p-3">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <!-- Left: Cover -->
+                                                <div class="d-flex align-items-center">
+                                                    @if (!string.IsNullOrEmpty(artist.CoverImagePath))
+                                                    {
+                                                        <img src="@artist.CoverImagePath" class="rounded-circle me-3" style="width: 80px; height: 80px; object-fit: cover;" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                                             style="width: 80px; height: 80px;">
+                                                            <i class="bi bi-person fs-1 text-white"></i>
+                                                        </div>
+                                                    }
+                                                    <div>
+                                                        <h5 class="mb-1">@artist.Name</h5>
+                                                        <small class="text-muted">
+                                                            @(artist.Bio?.Length > 100 ? artist.Bio.Substring(0, 180) + "..." : artist.Bio)
+                                                        </small>
+                                                        <div class="text-muted small mt-1">
+                                                            <strong>@artist.Albums.Count</strong> Albums
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Right: Buttons -->
+                                                <div class="btn-group">
+                                                    <button class="btn btn-sm btn-outline-info" onclick="loadAlbums(@artist.Id)">Expand</button>
+                                                    <a class="btn btn-sm btn-outline-primary">Edit</a>
+                                                    <a class="btn btn-sm btn-outline-warning">Details</a>
+                                                    <form action="/Artist/Delete" method="post" class="d-inline">
+                                                        <input type="hidden" name="id" value="@artist.Id" />
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                                onclick="return confirm('Delete @artist.Name?')">
+                                                            Delete
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+
+                                            <!-- Albums will appear here -->
+                                            <div class="row albums-container" style="display: none"></div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+
+                </div>
+                <!-- Album Modal -->
+                <div class="modal fade" id="albumModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form id="albumForm" method="post" enctype="multipart/form-data">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Album</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="Id" id="albumId" />
+
+                                    <div class="mb-3">
+                                        <label for="albumTitle" class="form-label">Title</label>
+                                        <input type="text" name="Title" id="albumTitle" class="form-control" required />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="albumArtistId" class="form-label">Artist</label>
+                                        <select name="ArtistId" id="albumArtistId" class="form-select">
+                                            <option value="">-- Select Artist --</option>
+                                            @foreach (var artist in ViewBag.Artists)
+                                            {
+                                                <option value="@artist.Id">@artist.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="albumReleaseDate" class="form-label">Release Date</label>
+                                        <input type="date" name="ReleaseDate" id="albumReleaseDate" class="form-control" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="albumCoverUrl" class="form-label">Cover Image</label>
+                                        <input type="file" name="CoverImage" id="albumCoverUrl" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-success">Save</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- Artists Modal -->
+                <div class="modal fade" id="artistModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form id="artistForm" method="post" enctype="multipart/form-data">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Artist</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="Id" id="artistId" />
+                                    <div class="mb-3">
+                                        <label for="artistName" class="form-label">Name</label>
+                                        <input type="text" name="Name" id="artistName" class="form-control" required />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="artistBio" class="form-label">Bio</label>
+                                        <textarea name="Bio" id="artistBio" class="form-control"></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="ProfileUrl" class="form-label">Picture</label>
+                                        <input type="file" name="ProfileUrl" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- Music Modal -->
+                <div class="modal fade" id="songModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form id="songForm" enctype="multipart/form-data">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modaltitlesong">Add Song</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="Id" id="songId" />
+                                    <div class="mb-2">
+                                        <label>Title</label>
+                                        <input type="text" name="Title" class="form-control" id="songTitle" required />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label>Artist</label>
+                                        <select id="artistSelect" class="form-select" onchange="filterAlbums()">
+                                            <option value="">-- Select --</option>
+                                            @foreach (var a in ViewBag.Artists)
+                                            {
+                                                <option value="@a.Id">@a.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label>Album</label>
+                                        <select name="AlbumId" class="form-select" id="albumSelect">
+                                            <option value="">-- Select --</option>
+                                            @foreach (var a in ViewBag.Albums)
+                                            {
+                                                <option value="@a.Id" data-artist="@a.ArtistId">@a.Title</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label>Music</label>
+                                        <input type="file" name="MusicFile" class="form-control" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label>Lyrics</label>
+                                        <input type="file" name="LyricsFile" class="form-control" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label>Cover</label>
+                                        <input type="file" name="CoverImage" class="form-control" />
+                                    </div>
+                                    <div class="mb-2">
+                                        <label>Banner</label>
+                                        <input type="file" name="BannerImage" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+
+    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/jquery/jquery.min.js"></script>
+
+    <script src="~/js/dashboardv2.js"></script>
+
+</body>
+</html>
