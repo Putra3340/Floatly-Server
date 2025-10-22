@@ -116,4 +116,11 @@ else if (GlobalConfiguration.isMySQL)
     var db = scope.ServiceProvider.GetRequiredService<FloatlyContext>();
     db.Database.EnsureCreated();
 }
+
+// wakey wakey
+using (var ctx = new FloatlyContext())
+{
+    ctx.Database.GetDbConnection().Open();
+    ctx.Songs.FirstOrDefault(); // triggers model & query compilation
+}
 app.Run();

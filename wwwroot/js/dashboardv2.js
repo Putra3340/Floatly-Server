@@ -61,10 +61,25 @@
     /* -------------------------
         Expand Collapse Item
     ------------------------- */
-    window.loadAlbums = async function (artistId) {
+    window.loadAlbums = async function (artistId, button) {
         const container = document.querySelector(`#artist-${artistId} .albums-container`);
-        setVisibility(container, true);
-        container.innerHTML = "<p>Loading albums...</p>";
+
+        if (container.classList.contains("visible")) {
+            //console.log("Collapsing");
+            container.classList.remove("visible");
+            button.innerText = "Expand";
+            // Wait until the transition finishes before hiding
+            setTimeout(() => {
+                setVisibility(container, false);
+                container.innerHTML = "";
+            }, 400); // match the CSS transition duration
+        } else {
+            //console.log("Expanding");
+            setVisibility(container, true);
+            button.innerText = "Collapse";
+            requestAnimationFrame(() => container.classList.add("visible"));
+        }
+
 
         const response = await fetch(`/Song/GetArtistAlbum?artistid=${artistId}`);
         const albums = await response.json();
@@ -104,9 +119,6 @@
             songsContainer.className = "p-3 mt-2 songs-container";
             songsContainer.style = "display: none";
 
-
-
-
             albumcard.appendChild(albumDiv);
             albumcard.appendChild(songsContainer);
             albumContainer.appendChild(albumcard);
@@ -124,8 +136,21 @@
             console.warn("No songs-container found for this album card.");
             return;
         }
-        setVisibility(container, true);
-        container.innerHTML = "<p>Loading songs...</p>";
+        if (container.classList.contains("visible")) {
+            //console.log("Collapsing");
+            container.classList.remove("visible");
+            button.innerText = "Expand";
+            // Wait until the transition finishes before hiding
+            setTimeout(() => {
+                setVisibility(container, false);
+                container.innerHTML = "";
+            }, 400); // match the CSS transition duration
+        } else {
+            //console.log("Expanding");
+            setVisibility(container, true);
+            button.innerText = "Collapse";
+            requestAnimationFrame(() => container.classList.add("visible"));
+        }
 
         const response = await fetch(`/Song/GetAlbumSong?albumid=${albumId}`);
         const songs = await response.json();
@@ -134,7 +159,6 @@
             container.innerHTML = "<p class='text-muted'>No songs found.</p>";
             return;
         }
-
         
         const tableWrapper = document.createElement("div");
         tableWrapper.className = "table-responsive";
@@ -145,10 +169,10 @@
         <thead>
             <tr>
                 <th>Song</th>
-                <th>Duration</th>
-                <th>Plays</th>
-                <th>Likes</th>
-                <th>Actions</th>
+                <th class="text-end">Duration</th>
+                <th class="text-end">Plays</th>
+                <th class="text-end">Likes</th>
+                <th class="text-end">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -162,10 +186,10 @@
                             <div><strong>${m.title}</strong></div>
                         </div>
                     </td>
-                    <td>${Math.floor(m.duration / 60)}:${(m.duration % 60).toString().padStart(2, '0')}</td>
-                    <td>${m.plays}</td>
-                    <td>${m.likes}</td>
-                    <td>
+                    <td class="text-end">${Math.floor(m.duration / 60)}:${(m.duration % 60).toString().padStart(2, '0')}</td>
+                    <td class="text-end">${m.plays}</td>
+                    <td class="text-end">${m.likes}</td>
+                    <td class="text-end">
                         <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
                         <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                     </td>
@@ -179,5 +203,62 @@
         container.innerHTML = "";
         container.appendChild(tableWrapper);
     };
+    /* -------------------------
+        Artist Modal
+    ------------------------- */
+    window.openArtistModal = function (id = 0, artistName = '', artistBio = '', artistProfileUrl = '') {
+        const modal = new bootstrap.Modal(document.getElementById('artistModal'));
+        const form = document.getElementById('artistForm');
+        const fileInput = form.querySelector('#artistProfileUrl');
+        const preview = form.querySelector('#artistProfilePreview');
 
+        // Reset form and preview
+        form.reset();
+        preview.src = '';
+        preview.classList.add('d-none');
+
+        // Fill form values
+        form.querySelector('#artistId').value = id || '';
+        form.querySelector('#artistName').value = artistName || '';
+        form.querySelector('#artistBio').value = artistBio || '';
+
+        // Show existing profile picture if provided
+        if (artistProfileUrl) {
+            preview.src = artistProfileUrl;
+            preview.classList.remove('d-none');
+        }
+
+        // Live preview when selecting new file
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                preview.src = URL.createObjectURL(file);
+                preview.classList.remove('d-none');
+            } else {
+                preview.src = '';
+                preview.classList.add('d-none');
+            }
+        };
+
+        modal.show();
+    };
+});
+
+document.getElementById("artistForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const response = await fetch("/Artist/Edit", {
+        method: "POST",
+        body: formData
+    });
+
+    if (response.ok) {
+        bootstrap.Modal.getInstance(document.getElementById("artistModal")).hide();
+        alert("Artist saved successfully!");
+        // reload or update table if needed
+    } else {
+        const error = await response.text();
+        alert("Error: " + error);
+    }
 });

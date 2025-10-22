@@ -289,12 +289,9 @@ namespace Floaty_Music.Controllers
         }
         public async Task<IActionResult> DashboardV2()
         {
-            var totalSongs = _context.Songs.Count();
-            var totalAlbums = _context.Albums.Count();
-            var totalArtists = _context.Artists.Count();
-            ViewBag.TotalSongs = totalSongs;
-            ViewBag.TotalAlbums = totalAlbums;
-            ViewBag.TotalArtists = totalArtists;
+            ViewBag.TotalSongs = _context.Songs.Count();
+            ViewBag.TotalAlbums = _context.Albums.Count();
+            ViewBag.TotalArtists = _context.Artists.Count();
             ViewBag.TotalPlayed = _context.SongCounter.Sum(x => x.TotalPlayed);
             ViewBag.TotalLikes = _context.SongCounter.Sum(x => x.TotalLikes);
             ViewBag.TopSongs = _context.SongCounter
@@ -311,14 +308,7 @@ namespace Floaty_Music.Controllers
                     .ThenInclude(s => s.Album)
                         .ThenInclude(a => a.Artist)
                 .ToList();
-            ViewBag.Albums = _context.Albums.OrderDescending().Include(a => a.Artist).ToList();
-            ViewBag.Artists = _context.Artists.OrderDescending().ToList(); // for dropdown
-            ViewBag.Songs = _context.Songs
-                .OrderByDescending(x => x.Id)
-                .Include(x => x.Album)
-                    .ThenInclude(a => a.Artist)
-                .Include(x => x.SongCounter)
-                .ToList();
+            ViewBag.Artists = _context.Artists.Include(x=>x.Albums).OrderDescending().ToList();
 
             // SLOW OPERATION, SO CACHE IT FOR 10 MINUTES
             if (_cache.Stats == null || (DateTime.Now - _cache.LastUpdate).TotalMinutes > 10)
