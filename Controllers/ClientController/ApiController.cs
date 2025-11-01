@@ -57,5 +57,29 @@ namespace Floaty_Music.Controllers.ClientController
             cooldowntoken.Add((DateTime.Now.AddMinutes(2), user.Token)); // 2 minutes cooldown
             return Ok();
         }
+
+        [HttpGet("api/getqueue")]
+        public IActionResult GetRandomNextSong()
+        {
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var selected = _context.Songs.Include(x => x.Album).ThenInclude(x => x.Artist).Include(x => x.SongCounter)
+    .Take(10)
+    .Select(s => new
+    {
+        Title = s.Title,
+        Artist = s.Album.Artist.Name,
+        ArtistId = s.Album.Artist.Id,
+        ArtistBio = s.Album.Artist.Bio,
+        ArtistCover = baseUrl + s.Album.Artist.CoverImagePath,
+        Music = baseUrl + s.MusicFilePath,
+        Lyrics = baseUrl + s.LyricsFilePath,
+        Cover = baseUrl + s.CoverImagePath,
+        Banner = baseUrl + s.BannerImagePath,
+        SongLength = s.SongCounter.MusicLength,
+    })
+    .ToList();
+
+            return Ok(selected);
+        }
     }
 }
