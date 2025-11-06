@@ -29,8 +29,8 @@ namespace Floaty_Music.Controllers
             {
                 id = x.Id,
                 title = x.Title,
-                artist = x.Album.Artist.Name,
-                artistId = x.Album.Artist.Id,
+                artistId = x.Album?.Artist?.Id,
+                artistName = x.Album?.Artist?.Name,
                 music = baseUrl + x.MusicFilePath,
                 lyrics = baseUrl + x.LyricsFilePath,
                 cover = baseUrl + x.CoverImagePath,
@@ -43,8 +43,8 @@ namespace Floaty_Music.Controllers
     {
         x.id,
         x.title,
-        x.artist,
         x.artistId,
+        x.artistName,
         x.music,
         x.lyrics,
         x.cover,
@@ -125,8 +125,8 @@ namespace Floaty_Music.Controllers
                 {
                     id = x.Id,
                     title = x.Title,
-                    artist = x.Album.Artist.Name,
-                    artistId = x.Album.Artist.Id,
+                    artistId = x.Album?.Artist?.Id,
+                    artistName = x.Album?.Artist?.Name,
                     music = baseUrl + x.MusicFilePath,
                     lyrics = baseUrl + x.LyricsFilePath,
                     cover = baseUrl + x.CoverImagePath,
@@ -134,7 +134,7 @@ namespace Floaty_Music.Controllers
                     songLength = x.SongCounter?.MusicLength ?? 0,
                     playCount = x.SongCounter?.TotalPlayed,
                     createdAt = x.CreatedAt
-                }).AsEnumerable() .Select(x => new{x.id,x.title,x.artist,x.artistId,x.music,x.lyrics,x.cover,x.banner,songLength = TimeSpan.FromSeconds(x.songLength).ToString(@"mm\:ss"),playCount = (x.playCount ?? 0).ToString("N0") + " Plays",x.createdAt})
+                }).AsEnumerable() .Select(x => new{x.id,x.title,x.artistName,x.artistId,x.music,x.lyrics,x.cover,x.banner,songLength = TimeSpan.FromSeconds(x.songLength).ToString(@"mm\:ss"),playCount = (x.playCount ?? 0).ToString("N0") + " Plays",x.createdAt})
     .ToList(),
             artists = artistlist.Select(x => new
                 {
