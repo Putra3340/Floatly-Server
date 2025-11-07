@@ -7,7 +7,6 @@ namespace Floaty_Music.Controllers.ClientController
 {
     public class ApiController : Controller
     {
-        public static List<(DateTime cooldownuntil,string token)> cooldowntoken = new();
         private readonly FloatlyContext _context;
         public ApiController(FloatlyContext cont)
         {
@@ -33,53 +32,6 @@ namespace Floaty_Music.Controllers.ClientController
             return Json(response);
         }
 
-        [HttpPost("api/play")] // we use token cooldown, this endpoint just for play count
-        public IActionResult Play(string token, int songId)
-        {
-            cooldowntoken.RemoveAll(x => x.cooldownuntil <= DateTime.Now); // remove obsolete cooldown
-            if (cooldowntoken.Any(x => x.token == token && x.cooldownuntil > DateTime.Now))
-            {
-                return BadRequest(new { status = "Error", message = "You are on cooldown. Please wait before sending another play request." });
-            }
-            var user = _context.Users.FirstOrDefault(u => u.Token == token);
-            if (user == null)
-            {
-                return Unauthorized(new { status = "Error", message = "Invalid token." });
-            }
-
-            var song = _context.Songs.Include(s => s.Album).ThenInclude(x => x.Artist).Include(x => x.SongCounter).FirstOrDefault(s => s.Id == songId);
-            if (song == null || song.SongCounter == null)
-            {
-                return NotFound(new { status = "Error", message = "Song not found." });
-            }
-            song.SongCounter.TotalPlayed += 1;
-            _context.SaveChanges();
-            cooldowntoken.Add((DateTime.Now.AddMinutes(2), user.Token)); // 2 minutes cooldown
-            return Ok();
-        }
-
-        [HttpGet("api/getqueue")]
-        public IActionResult GetRandomNextSong()
-        {
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
-            var selected = _context.Songs.Include(x => x.Album).ThenInclude(x => x.Artist).Include(x => x.SongCounter)
-    .Take(10)
-    .Select(s => new
-    {
-        Title = s.Title,
-        Artist = s.Album.Artist.Name,
-        ArtistId = s.Album.Artist.Id,
-        ArtistBio = s.Album.Artist.Bio,
-        ArtistCover = baseUrl + s.Album.Artist.CoverImagePath,
-        Music = baseUrl + s.MusicFilePath,
-        Lyrics = baseUrl + s.LyricsFilePath,
-        Cover = baseUrl + s.CoverImagePath,
-        Banner = baseUrl + s.BannerImagePath,
-        SongLength = s.SongCounter.MusicLength,
-    })
-    .ToList();
-
-            return Ok(selected);
-        }
+        
     }
 }

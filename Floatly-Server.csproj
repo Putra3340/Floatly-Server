@@ -38,6 +38,7 @@
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.4" />
     <PackageReference Include="TagLibSharp" Version="2.3.0" />
+    <PackageReference Include="Xabe.FFmpeg" Version="6.0.2" />
   </ItemGroup>
 
   <ItemGroup>

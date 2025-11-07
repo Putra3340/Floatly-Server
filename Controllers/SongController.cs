@@ -368,6 +368,31 @@ namespace Floaty_Music.Controllers
             return Json(songs);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> CompressAllSongs()
+        {
+            var songs = await _context.Songs.ToListAsync();
+            foreach (var song in songs)
+            {
+                if (song.MusicFilePath != null && Path.GetExtension(song.MusicFilePath).Equals(".mp3", StringComparison.OrdinalIgnoreCase))
+                {
+                    var inputPath = GlobalConfiguration.WebRootPath + song.MusicFilePath.Replace("/", "\\");
+                    if (System.IO.File.Exists(inputPath))
+                    {
+                        try
+                        {
+                            // we only compress but keep the original file
+                            await AudioHelper.CompressAsync(inputPath, "96k");
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error compressing {song.Title}: {ex.Message}");
+                        }
+                    }
+                }
+            }
+            return RedirectToAction("Dashboard");
+        }
     }
     public class StorageStat
     {
