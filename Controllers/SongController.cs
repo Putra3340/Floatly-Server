@@ -354,17 +354,26 @@ namespace Floaty_Music.Controllers
             return View();
         }
 
+
+        // For Web API
+        [HttpGet]
+        public async Task<IActionResult> GetArtist(int start = 0, int end = 10)
+        {
+            var albums = await _context.Artists.Include(x=>x.Albums).ThenInclude(x=>x.Songs).Skip(start).Take(end).OrderDescending().Select(x=> new {x.Id,x.Name,x.Bio,x.CoverImagePath,AlbumCount = x.Albums.Count,SongCount = x.Albums.Sum(a=>a.Songs.Count)}).ToListAsync();
+            return Json(albums);
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetArtistAlbum(int artistid)
         {
-            var albums = await _context.Albums.Where(a => a.ArtistId == artistid).Select(a => new{a.Id,a.Title,a.ReleaseDate,a.CoverImagePath}).ToListAsync();
+            var albums = await _context.Albums.Where(a => a.ArtistId == artistid).OrderDescending().Select(a => new{a.Id,a.Title,a.ReleaseDate,a.CoverImagePath}).ToListAsync();
             return Json(albums);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAlbumSong(int albumid)
         {
-            var songs = await _context.Songs.Where(s => s.AlbumId == albumid).Select(s => new{ s.Id, s.Title, s.MusicFilePath, Duration = s.SongCounter.MusicLength, Plays = s.SongCounter.TotalPlayed, Likes = s.SongCounter.TotalLikes}).ToListAsync();
+            var songs = await _context.Songs.Where(s => s.AlbumId == albumid).OrderDescending().Select(s => new{ s.Id, s.Title, s.MusicFilePath, Duration = s.SongCounter.MusicLength, Plays = s.SongCounter.TotalPlayed, Likes = s.SongCounter.TotalLikes}).ToListAsync();
             return Json(songs);
         }
 

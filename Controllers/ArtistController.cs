@@ -16,8 +16,8 @@ namespace Floaty_Music.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(ArtistFormModel model)
         {
-            if (!ModelState.IsValid)
-                return Redirect("/Song/Dashboard#artists");
+            if (!model.Name.isNotNullOrWhiteSpace())
+                return BadRequest();
             var artist = new Artists
             {
                 Name = model.Name,

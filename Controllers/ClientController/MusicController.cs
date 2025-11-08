@@ -26,6 +26,8 @@ namespace Floaty_Music.Controllers.ClientController
         public async Task<IActionResult> Play(string token, int songId, string bitrate)
         {
             cooldowntoken.RemoveAll(x => x.cooldownuntil <= DateTime.Now); // remove obsolete cooldown
+            StreamSession.RemoveAll(x => x.expiredtime <= DateTime.Now); // remove obsolete session
+
             var allowedBitrates = new[] { "320k", "256k", "192k", "160k", "128k", "96k", "64k" };
             if (!allowedBitrates.Contains(bitrate))
                 bitrate = "128k"; // fallback
@@ -66,7 +68,7 @@ namespace Floaty_Music.Controllers.ClientController
         {
             if (string.IsNullOrEmpty(filekey))
                 return NotFound();
-
+            cooldowntoken.RemoveAll(x => x.cooldownuntil <= DateTime.Now); // remove obsolete cooldown
             StreamSession.RemoveAll(x => x.expiredtime <= DateTime.Now); // remove obsolete session
             var session = StreamSession.FirstOrDefault(x => x.Key == filekey);
             if (session == default)

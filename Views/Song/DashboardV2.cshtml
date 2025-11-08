@@ -224,7 +224,7 @@
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h1 class="h2">Library Management</h1>
                         <div class="btn-toolbar mb-2 mb-md-0">
-                            <button type="button" class="btn btn-primary">
+                            <button type="button" class="btn btn-primary" onclick='openArtistModal()'>
                                 <i class="bi bi-plus-circle me-1"></i>
                                 Add New Artist
                             </button>
@@ -236,62 +236,7 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        @foreach (var artist in ViewBag.Artists)
-                        {
-                            <div class="col-md-12 mb-3 artist-card" id="artist-@artist.Id">
-                                <div class="card p-3">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <!-- Left: Cover -->
-                                        <div class="d-flex align-items-center">
-                                            @if (!string.IsNullOrEmpty(artist.CoverImagePath))
-                                            {
-                                                <img src="@artist.CoverImagePath" class="rounded-circle me-3" style="width: 80px; height: 80px; object-fit: cover;" />
-                                            }
-                                            else
-                                            {
-                                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
-                                                     style="width: 80px; height: 80px;">
-                                                    <i class="bi bi-person fs-1 text-white"></i>
-                                                </div>
-                                            }
-                                            <div>
-                                                <h5 class="mb-1">@artist.Name</h5>
-                                                <small class="text-muted">
-                                                    @(artist.Bio?.Length > 100 ? artist.Bio.Substring(0, 180) + "..." : artist.Bio)
-                                                </small>
-                                                <div class="text-muted small mt-1">
-                                                    <strong>@artist.Albums.Count</strong> Albums
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Right: Buttons -->
-                                        <div class="btn-group">
-                                            <button class="btn btn-sm btn-outline-info" onclick="loadAlbums(@artist.Id,this)">Expand</button>
-                                            <a class="btn btn-sm btn-outline-primary"
-                                               onclick='openArtistModal(@artist.Id,
-       @Html.Raw(Json.Serialize(artist.Name)),
-       @Html.Raw(Json.Serialize(artist.Bio)),
-       @Html.Raw(Json.Serialize(artist.CoverImagePath)))'>
-                                                Edit
-                                            </a>
-                                            <a class="btn btn-sm btn-outline-warning">Details</a>
-                                            <form action="/Artist/Delete" method="post" class="d-inline">
-                                                <input type="hidden" name="id" value="@artist.Id" />
-                                                <button type="submit" class="btn btn-outline-danger btn-sm"
-                                                        onclick="return confirm('Delete @artist.Name?')">
-                                                    Delete
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-
-                                    <!-- Albums will appear here -->
-                                    <div class="row albums-container" style="display: none"></div>
-                                </div>
-                            </div>
-                        }
+                    <div id="artists-container" class="row">
                     </div>
 
 
@@ -332,44 +277,32 @@
 
                 <!-- Album Modal -->
                 <div class="modal fade" id="albumModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog">
+                    <div class="modal-dialog modal-xl">
                         <div class="modal-content">
-                            <form id="albumForm" method="post" enctype="multipart/form-data">
+                            <form id="albumForm">
                                 <div class="modal-header">
                                     <h5 class="modal-title">Album</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
                                     <input type="hidden" name="Id" id="albumId" />
-
+                                    <input type="hidden" name="artistId" id="artistId" />
                                     <div class="mb-3">
-                                        <label for="albumTitle" class="form-label">Title</label>
-                                        <input type="text" name="Title" id="albumTitle" class="form-control" required />
+                                        <label for="albumTitle" class="form-label">Name</label>
+                                        <input type="text" name="title" id="albumTitle" class="form-control" required />
                                     </div>
-
-                                    <div class="mb-3">
-                                        <label for="albumArtistId" class="form-label">Artist</label>
-                                        <select name="ArtistId" id="albumArtistId" class="form-select">
-                                            <option value="">-- Select Artist --</option>
-                                            @foreach (var artist in ViewBag.Artists)
-                                            {
-                                                <option value="@artist.Id">@artist.Name</option>
-                                            }
-                                        </select>
-                                    </div>
-
                                     <div class="mb-3">
                                         <label for="albumReleaseDate" class="form-label">Release Date</label>
-                                        <input type="date" name="ReleaseDate" id="albumReleaseDate" class="form-control" />
+                                        <input type="date" name="releaseDate" id="albumReleaseDate" class="form-control" />
                                     </div>
-
                                     <div class="mb-3">
-                                        <label for="albumCoverUrl" class="form-label">Cover Image</label>
-                                        <input type="file" name="CoverImage" id="albumCoverUrl" class="form-control" />
+                                        <label for="albumCoverUrl" class="form-label">Picture</label>
+                                        <input type="file" name="coverImage" id="albumCoverUrl" class="form-control" />
+                                        <img id="albumCoverPreview" class="img-fluid mt-2 d-none rounded shadow-sm" alt="Profile preview" />
                                     </div>
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="submit" class="btn btn-success">Save</button>
+                                    <button type="submit" class="btn btn-primary">Save</button>
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                 </div>
                             </form>
@@ -433,6 +366,14 @@
                         </div>
                     </div>
                 </div>
+                <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
+                    <div id="toastSuccess" class="toast align-items-center text-bg-success border-0" role="alert">
+                        <div class="d-flex">
+                            <div class="toast-body">Artist saved successfully!</div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
@@ -440,7 +381,6 @@
 
     <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/jquery/jquery.min.js"></script>
-
     <script src="~/js/dashboardv2.js"></script>
 
 </body>

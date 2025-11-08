@@ -1,4 +1,6 @@
 ﻿$(document).ready(function () {
+    const encode = (val) =>
+        encodeURIComponent(val ?? "").replace(/'/g, "\\'");
     /* -------------------------
        Section Navigation
     ------------------------- */
@@ -61,6 +63,86 @@
     /* -------------------------
         Expand Collapse Item
     ------------------------- */
+
+    window.loadArtists = async function (start = 0, end = 10) {
+        const container = document.querySelector("#artists-container");
+        container.innerHTML = "<p class='text-muted'>Loading artists...</p>";
+
+        const response = await fetch(`/Song/GetArtist?start=${start}&end=${end}`);
+        const artists = await response.json();
+
+        if (!artists.length) {
+            container.innerHTML = "<p class='text-muted'>No artists found.</p>";
+            return;
+        }
+
+        container.innerHTML = "";
+
+        
+
+        for (const artist of artists) {
+            const safeName = encode(artist.name);
+            const safeBio = encode(artist.bio);
+            const safeCover = encode(artist.coverImagePath);
+
+            const artistCard = document.createElement("div");
+            artistCard.className = "col-md-12 mb-3 artist-card";
+            artistCard.id = `artist-${artist.id}`;
+
+            artistCard.innerHTML = `
+            <div class="card p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        ${artist.coverImagePath
+                    ? `<img src="${artist.coverImagePath}" class="rounded-circle me-3" style="width: 80px; height: 80px; object-fit: cover;" />`
+                    : `<div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                       style="width: 80px; height: 80px;">
+                                       <i class="bi bi-person fs-1 text-white"></i>
+                                   </div>`
+                }
+                        <div>
+                            <h5 class="mb-1">${artist.name}</h5>
+                            <small class="text-muted">
+                                ${artist.bio?.length > 100
+                    ? artist.bio.substring(0, 180) + "..."
+                    : artist.bio || ""}
+                            </small>
+                            <div class="text-muted small mt-1">
+                                <strong>${artist.albumCount}</strong> Albums - 
+                                <strong>${artist.songCount}</strong> Songs
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-info" onclick="loadAlbums(${artist.id}, this)">Expand</button>
+                        <a class="btn btn-sm btn-outline-primary"
+                           onclick="openArtistModal(${artist.id},
+                               decodeURIComponent('${safeName}'),
+                               decodeURIComponent('${safeBio}'),
+                               decodeURIComponent('${safeCover}')
+                           )">Edit</a>
+                        <button class="btn btn-sm btn-outline-warning" 
+                            onclick='openAlbumModal(
+                                0,
+                                ${artist.id},
+                            )'>Add</button>
+                        <form action="/Artist/Delete" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="${artist.id}" />
+                            <button type="submit" class="btn btn-outline-danger btn-sm"
+                                    onclick="return confirm('Delete ${artist.name}?')">Delete</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="row albums-container" style="display: none"></div>
+            </div>
+        `;
+
+            container.appendChild(artistCard);
+        }
+    };
+
     window.loadAlbums = async function (artistId, button) {
         const container = document.querySelector(`#artist-${artistId} .albums-container`);
 
@@ -91,6 +173,10 @@
 
         container.innerHTML = "";
         for (const album of albums) {
+            const safeTitle = encode(album.title);
+            const safeDate = encode(album.releaseDate);
+            const safeCover = encode(album.coverImagePath);
+
 
             const albumContainer = document.createElement("div");
             albumContainer.className = "col-md-12 mt-3";
@@ -110,7 +196,14 @@
             </div>
             <div class="btn-group">
                 <button class="btn btn-sm btn-outline-info" onclick="loadSongs(${album.id}, this)">Expand</button>
-                <a class="btn btn-sm btn-outline-primary">Edit</a>
+                <a class="btn btn-sm btn-outline-primary"
+                   onclick="openAlbumModal(${album.id},
+                       ${artistId},
+                       decodeURIComponent('${safeTitle}'),
+                       decodeURIComponent('${safeDate}'),
+                       decodeURIComponent('${safeCover}')
+                   )">Edit</a>
+
                 <a class="btn btn-sm btn-outline-danger">Delete</a>
             </div>
         `;
@@ -128,7 +221,6 @@
     window.setVisibility = function (element, visible) {
         element.style.display = visible ? "block" : "none";
     }
-
     window.loadSongs = async function (albumId, button) {
         const card = button.closest(".card");
         const container = card.querySelector(".songs-container");
@@ -203,14 +295,37 @@
         container.innerHTML = "";
         container.appendChild(tableWrapper);
     };
+
+
+
+    /* -------------------------
+        Toast Notification
+    ------------------------- */
+    window.showToast = function (message, type = 'success') {
+        const toastEl = document.getElementById('toastSuccess');
+        const toastBody = toastEl.querySelector('.toast-body');
+
+        // update message & color
+        toastBody.textContent = message;
+        toastEl.className = `toast align-items-center text-bg-${type} border-0`;
+        console.log(message);
+        // show it~
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+    };
+
     /* -------------------------
         Artist Modal
     ------------------------- */
     window.openArtistModal = function (id = 0, artistName = '', artistBio = '', artistProfileUrl = '') {
-        const modal = new bootstrap.Modal(document.getElementById('artistModal'));
+        const modalElement = document.getElementById('artistModal');
+        const modal = new bootstrap.Modal(modalElement);
         const form = document.getElementById('artistForm');
         const fileInput = form.querySelector('#artistProfileUrl');
         const preview = form.querySelector('#artistProfilePreview');
+
+        const titleElement = modalElement.querySelector('.modal-title');
+        titleElement.textContent = id === 0 ? 'Add Artist' : 'Edit Artist';
 
         // Reset form and preview
         form.reset();
@@ -240,25 +355,146 @@
             }
         };
 
-        modal.show();
+        setTimeout(() => modal.show(), 100);
+
     };
+
+    /* -------------------------
+        Album Modal
+    ------------------------- */
+    window.openAlbumModal = function (id = 0, artistId = 0, albumTitle = '',albumReleaseDate = '', albumCoverUrl = '') {
+        const modalElement = document.getElementById('albumModal');
+        const modal = new bootstrap.Modal(modalElement);
+        const form = modalElement.querySelector('#albumForm');
+        const fileInput = form.querySelector('#albumCoverUrl');
+        const preview = modalElement.querySelector('#albumCoverPreview'); // optional preview if added later
+
+        const titleElement = modalElement.querySelector('.modal-title');
+        titleElement.textContent = id === 0 ? 'Add Album' : 'Edit Album';
+
+        // Reset form
+        form.reset();
+
+        // Fill in the values
+        form.querySelector('#albumId').value = id || '';
+        form.querySelector('input[name="artistId"]').value = artistId || '';
+        form.querySelector('#albumTitle').value = albumTitle || '';
+        form.querySelector('#albumReleaseDate').value = albumReleaseDate || '';
+
+        console.log(albumCoverUrl);
+        // Show existing cover preview if provided (optional)
+        if (preview && albumCoverUrl) {
+            preview.src = albumCoverUrl;
+            preview.classList.remove('d-none');
+        } else if (preview) {
+            preview.classList.add('d-none');
+        }
+
+        // File preview (if preview image exists in DOM)
+        if (preview) {
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    preview.src = URL.createObjectURL(file);
+                    preview.classList.remove('d-none');
+                } else {
+                    preview.src = '';
+                    preview.classList.add('d-none');
+                }
+            };
+        }
+
+        setTimeout(() => modal.show(), 100);
+    };
+    console.log("Loading Artist...");
+    loadArtists(0, 20);
 });
 
+/* -------------------------
+        Artist Form
+    ------------------------- */
 document.getElementById("artistForm").addEventListener("submit", async function (e) {
     e.preventDefault();
 
-    const formData = new FormData(this);
-    const response = await fetch("/Artist/Edit", {
-        method: "POST",
-        body: formData
-    });
+    const form = this;
+    const title = form.querySelector(".modal-title").textContent.trim();
+    const formData = new FormData(form);
 
-    if (response.ok) {
-        bootstrap.Modal.getInstance(document.getElementById("artistModal")).hide();
-        alert("Artist saved successfully!");
-        // reload or update table if needed
+    // 🌸 choose route depending on title
+    let url = "";
+    if (title === "Add Artist") {
+        url = "/Artist/Create";
+    } else if (title === "Edit Artist") {
+        url = "/Artist/Edit";
     } else {
-        const error = await response.text();
-        alert("Error: " + error);
+        alert("Unknown action — please reopen the modal.");
+        return;
     }
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            body: formData
+        });
+
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById("artistModal")).hide();
+            showToast("Artist saved successfully!", "success");
+            loadArtists(); // refresh artist list
+        } else {
+            const error = await response.text();
+            alert("Error: " + error);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("An unexpected error occurred, my love.");
+    }
+});
+const artistModal = document.getElementById('artistModal');
+artistModal.addEventListener('hide.bs.modal', () => {
+    document.activeElement.blur();
+});
+/* -------------------------
+        Album Modal
+    ------------------------- */
+
+
+document.getElementById("albumForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const form = this;
+    const title = form.querySelector(".modal-title").textContent.trim();
+    const formData = new FormData(form);
+
+    // 🌸 choose route depending on title
+    let url = "";
+    if (title === "Add Album") {
+        url = "/Album/Create";
+    } else if (title === "Edit Album") {
+        url = "/Album/Edit";
+    } else {
+        alert("Unknown action — please reopen the modal.");
+        return;
+    }
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            body: formData
+        });
+
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById("albumModal")).hide();
+            showToast("Album saved successfully!", "success");
+            loadArtists(); // refresh artist list
+        } else {
+            const error = await response.text();
+            alert("Error: " + error);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("An unexpected error occurred, my love.");
+    }
+});
+const albumModal = document.getElementById('albumModal');
+albumModal.addEventListener('hide.bs.modal', () => {
+    document.activeElement.blur();
 });
