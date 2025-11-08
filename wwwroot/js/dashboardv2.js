@@ -1,6 +1,7 @@
 ﻿$(document).ready(function () {
     const encode = (val) =>
         encodeURIComponent(val ?? "").replace(/'/g, "\\'");
+    let artistperpage = 20;
     /* -------------------------
        Section Navigation
     ------------------------- */
@@ -64,7 +65,9 @@
         Expand Collapse Item
     ------------------------- */
 
-    window.loadArtists = async function (start = 0, end = 10) {
+    window.loadArtists = async function (start = 0, end = artistperpage) {
+        console.log("Loading Artist...");
+
         const container = document.querySelector("#artists-container");
         container.innerHTML = "<p class='text-muted'>Loading artists...</p>";
 
@@ -127,11 +130,7 @@
                                 0,
                                 ${artist.id},
                             )'>Add</button>
-                        <form action="/Artist/Delete" method="post" class="d-inline">
-                            <input type="hidden" name="id" value="${artist.id}" />
-                            <button type="submit" class="btn btn-outline-danger btn-sm"
-                                    onclick="return confirm('Delete ${artist.name}?')">Delete</button>
-                        </form>
+                        <button type="button" class="btn btn-outline-danger btn-sm delete-btn" onclick="openDeleteModal(${artist.id},1,decodeURIComponent('${safeName}'))">Delete</button>
                     </div>
                 </div>
 
@@ -143,23 +142,25 @@
         }
     };
 
-    window.loadAlbums = async function (artistId, button) {
+    window.loadAlbums = async function (artistId, button = null) {
         const container = document.querySelector(`#artist-${artistId} .albums-container`);
 
-        if (container.classList.contains("visible")) {
-            //console.log("Collapsing");
-            container.classList.remove("visible");
-            button.innerText = "Expand";
-            // Wait until the transition finishes before hiding
-            setTimeout(() => {
-                setVisibility(container, false);
-                container.innerHTML = "";
-            }, 400); // match the CSS transition duration
-        } else {
-            //console.log("Expanding");
-            setVisibility(container, true);
-            button.innerText = "Collapse";
-            requestAnimationFrame(() => container.classList.add("visible"));
+        if (button != null) {
+            if (container.classList.contains("visible")) {
+                //console.log("Collapsing");
+                container.classList.remove("visible");
+                button.innerText = "Expand";
+                // Wait until the transition finishes before hiding
+                setTimeout(() => {
+                    setVisibility(container, false);
+                    container.innerHTML = "";
+                }, 400); // match the CSS transition duration
+            } else {
+                //console.log("Expanding");
+                setVisibility(container, true);
+                button.innerText = "Collapse";
+                requestAnimationFrame(() => container.classList.add("visible"));
+            }
         }
 
 
@@ -204,7 +205,7 @@
                        decodeURIComponent('${safeCover}')
                    )">Edit</a>
 
-                <a class="btn btn-sm btn-outline-danger">Delete</a>
+                <button type="button" class="btn btn-outline-danger btn-sm delete-btn" onclick="openDeleteModal(${album.id},2,decodeURIComponent('${safeTitle}'),${artistId})">Delete</button>
             </div>
         `;
 
@@ -381,7 +382,6 @@
         form.querySelector('#albumTitle').value = albumTitle || '';
         form.querySelector('#albumReleaseDate').value = albumReleaseDate || '';
 
-        console.log(albumCoverUrl);
         // Show existing cover preview if provided (optional)
         if (preview && albumCoverUrl) {
             preview.src = albumCoverUrl;
@@ -406,8 +406,37 @@
 
         setTimeout(() => modal.show(), 100);
     };
-    console.log("Loading Artist...");
-    loadArtists(0, 20);
+    window.openDeleteModal = function (id = 0, type = 0, title = '', artistId = 0, albumId = 0) {
+        const modalElement = document.getElementById('confirmDeleteModal');
+        const modal = new bootstrap.Modal(modalElement);
+        const form = modalElement.querySelector('#deleteForm');
+
+        const titleElement = modalElement.querySelector('.modal-title');
+
+        // 1 means artist delete, 2 means album delete, 3 means song delete
+        if (type === 0) {
+            alert("Aint no way bruh");
+        } else if (type === 1) {
+            titleElement.textContent = "Delete Artist ?";
+        } else if (type === 2) {
+            titleElement.textContent = "Delete Album ?";
+        } else if (type === 3) {
+            titleElement.textContent = "Delete Song ?";
+        }
+
+        // Reset form
+        form.reset();
+
+        // Fill in the values
+        form.querySelector('#id').value = id || '0';
+        form.querySelector('#type').value = type || '0';
+        form.querySelector('#artistId').value = artistId || '0';
+        form.querySelector('#albumId').value = albumId || '0';
+        form.querySelector('#deleteName').textContent = title || '0';
+
+        setTimeout(() => modal.show(), 100);
+    };
+    loadArtists(0, artistperpage);
 });
 
 /* -------------------------
@@ -439,7 +468,7 @@ document.getElementById("artistForm").addEventListener("submit", async function 
         if (response.ok) {
             bootstrap.Modal.getInstance(document.getElementById("artistModal")).hide();
             showToast("Artist saved successfully!", "success");
-            loadArtists(); // refresh artist list
+            setTimeout(() => loadArtists(), 500); // refresh artist list
         } else {
             const error = await response.text();
             alert("Error: " + error);
@@ -454,7 +483,7 @@ artistModal.addEventListener('hide.bs.modal', () => {
     document.activeElement.blur();
 });
 /* -------------------------
-        Album Modal
+        Album Form
     ------------------------- */
 
 
@@ -464,6 +493,7 @@ document.getElementById("albumForm").addEventListener("submit", async function (
     const form = this;
     const title = form.querySelector(".modal-title").textContent.trim();
     const formData = new FormData(form);
+    const artistId = formData.get("artistId"); // 🌸 get hidden artistId
 
     // 🌸 choose route depending on title
     let url = "";
@@ -484,7 +514,7 @@ document.getElementById("albumForm").addEventListener("submit", async function (
         if (response.ok) {
             bootstrap.Modal.getInstance(document.getElementById("albumModal")).hide();
             showToast("Album saved successfully!", "success");
-            loadArtists(); // refresh artist list
+            loadAlbums(artistId); // 💖 refresh albums for this artist
         } else {
             const error = await response.text();
             alert("Error: " + error);
@@ -497,4 +527,66 @@ document.getElementById("albumForm").addEventListener("submit", async function (
 const albumModal = document.getElementById('albumModal');
 albumModal.addEventListener('hide.bs.modal', () => {
     document.activeElement.blur();
+});
+
+/* -------------------------
+        Delete Form
+    ------------------------- */
+document.getElementById("deleteForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const form = this;
+    const title = form.querySelector(".modal-title").textContent.trim();
+    const formData = new FormData(form);
+    const uid = formData.get("id"); // universal id
+    const ref = formData.get("type"); // universal id
+    const artistId = formData.get("artistId"); // universal id
+    const albumId = formData.get("albumId"); // universal id
+
+    // 🌸 choose route depending on title
+    // 1 means artist delete, 2 means album delete, 3 means song delete
+    let url = "";
+    if (ref == 1) {
+        url = "/Artist/Delete";
+    } else if (ref == 2) {
+        url = "/Album/Delete";
+    } else if (ref == 3) {
+        url = "/Song/Delete";
+    } else {
+        alert("Unknown action — please reopen the modal.");
+        return;
+    }
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            body: formData
+        });
+
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById("confirmDeleteModal")).hide();
+            if (ref == 1) {
+                showToast("Artist deleted successfully!", "success");
+                setTimeout(() => loadArtists(), 500); // refresh artist list
+            } else if (ref == 2) {
+                showToast("Album deleted successfully!", "success");
+                console.log(artistId);
+                setTimeout(() => loadAlbums(artistId)); // refresh album list
+            } else if (ref == 3) {
+                url = "/Song/Delete";
+            } else {
+                alert("Unknown action — please refresh the page.");
+                return;
+            }
+        } else {
+            const error = await response.text();
+            alert("Error: " + error);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("An unexpected error occurred, my love.");
+    }
+});
+const deleteModal = document.getElementById('confirmDeleteModal');
+deleteModal.addEventListener('hide.bs.modal', () => {
+    if (document.activeElement) document.activeElement.blur();
 });

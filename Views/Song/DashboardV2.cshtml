@@ -366,6 +366,8 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Toast Notification -->
                 <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
                     <div id="toastSuccess" class="toast align-items-center text-bg-success border-0" role="alert">
                         <div class="d-flex">
@@ -374,6 +376,33 @@
                         </div>
                     </div>
                 </div>
+
+
+                <!-- 🌸 Bootstrap Confirmation Modal -->
+                <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form id="deleteForm">
+                                <div class="modal-header bg-danger text-white">
+                                    <h5 class="modal-title"></h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="id" id="id">
+                                    <input type="hidden" name="type" id="type">
+                                    <input type="hidden" name="artistId" id="artistId">
+                                    <input type="hidden" name="albumId" id="albumId">
+                                    Are you sure you want to delete <strong id="deleteName"></strong>?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" id="confirmDeleteBtn" class="btn btn-danger">Yes, Delete</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
             </main>
         </div>
     </div>
