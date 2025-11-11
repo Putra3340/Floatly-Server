@@ -1,4 +1,5 @@
-﻿using Floaty_Music.Models;
+﻿using DotNetEnv;
+using Floaty_Music.Models;
 using Floaty_Music.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -104,9 +105,9 @@ namespace Floaty_Music.Controllers
 
         public async Task<IActionResult> CleanUp()
         {
-            var songs = _context.Songs.Select(x=> new
+            var songs = _context.Songs.Select(x => new
             {
-                MusicFile = GlobalConfiguration.WebRootPath + x.MusicFilePath.Replace("/","\\"),
+                MusicFile = GlobalConfiguration.WebRootPath + x.MusicFilePath.Replace("/", "\\"),
                 LyricFile = GlobalConfiguration.WebRootPath + x.LyricsFilePath.Replace("/", "\\"),
                 CoverFile = GlobalConfiguration.WebRootPath + x.CoverImagePath.Replace("/", "\\"),
                 BannerFile = GlobalConfiguration.WebRootPath + x.BannerImagePath.Replace("/", "\\")
@@ -306,7 +307,7 @@ namespace Floaty_Music.Controllers
                     .ThenInclude(s => s.Album)
                         .ThenInclude(a => a.Artist)
                 .ToList();
-            ViewBag.Artists = _context.Artists.Include(x=>x.Albums).OrderDescending().ToList();
+            ViewBag.Artists = _context.Artists.Include(x => x.Albums).OrderDescending().ToList();
 
             // SLOW OPERATION, SO CACHE IT FOR 10 MINUTES
             if (_cache.Stats == null || (DateTime.Now - _cache.LastUpdate).TotalMinutes > 10)
@@ -357,25 +358,89 @@ namespace Floaty_Music.Controllers
         [HttpGet]
         public async Task<IActionResult> GetArtist(int start = 0, int end = 10)
         {
-            var albums = await _context.Artists.Include(x=>x.Albums).ThenInclude(x=>x.Songs).Skip(start).Take(end).OrderDescending().Select(x=> new {x.Id,x.Name,x.Bio,x.CoverImagePath,AlbumCount = x.Albums.Count,SongCount = x.Albums.Sum(a=>a.Songs.Count)}).ToListAsync();
+            var albums = await _context.Artists.Include(x => x.Albums).ThenInclude(x => x.Songs).Skip(start).Take(end).OrderDescending().Select(x => new { x.Id, x.Name, x.Bio, x.CoverImagePath, AlbumCount = x.Albums.Count, SongCount = x.Albums.Sum(a => a.Songs.Count) }).ToListAsync();
             return Json(albums);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetArtistAlbum(int artistid)
         {
-            var albums = await _context.Albums.Where(a => a.ArtistId == artistid).OrderDescending().Select(a => new{a.Id,a.Title,a.ReleaseDate,a.CoverImagePath}).ToListAsync();
+            var albums = await _context.Albums.Where(a => a.ArtistId == artistid).OrderDescending().Select(a => new { a.Id, a.Title, a.ReleaseDate, a.CoverImagePath }).ToListAsync();
             return Json(albums);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAlbumSong(int albumid)
         {
-            var songs = await _context.Songs.Where(s => s.AlbumId == albumid).OrderDescending().Select(s => 
-            new{
-                s.Id, s.Title, s.AlbumId , musicUrl = s.MusicFilePath, coverUrl = s.CoverImagePath, bannerUrl = s.BannerImagePath, Duration = s.SongCounter.MusicLength, Plays = s.SongCounter.TotalPlayed, Likes = s.SongCounter.TotalLikes
+            var songs = await _context.Songs.Where(s => s.AlbumId == albumid).OrderDescending().Select(s =>
+            new
+            {
+                s.Id,
+                s.Title,
+                s.AlbumId,
+                musicUrl = s.MusicFilePath,
+                coverUrl = s.CoverImagePath,
+                bannerUrl = s.BannerImagePath,
+                Duration = s.SongCounter.MusicLength,
+                Plays = s.SongCounter.TotalPlayed,
+                Likes = s.SongCounter.TotalLikes
             }).ToListAsync();
             return Json(songs);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetLibrarySearch(string query)
+        {
+            query = query.ToUpper();
+            var artist = await _context.Artists.
+                Include(x => x.Albums).
+                ThenInclude(x => x.Songs).
+                ThenInclude(x=>x.SongCounter).
+                Where(x =>
+                    x.Name.ToUpper().Contains(query) || // artist search
+                    x.Albums.Any(a => a.Title.ToUpper().Contains(query)) || // album search
+                    x.Albums.Any(a => a.Songs.Any(s => s.Title.ToUpper().Contains(query)))). // song search
+                OrderByDescending(x => x.Id)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.Name,
+                    x.Bio,
+                    x.CoverImagePath,
+                    AlbumCount = x.Albums.Count,
+                    SongCount = x.Albums.Sum(a => a.Songs.Count),
+
+                    // Only include albums that match album/song search
+                    Albums = x.Albums
+            .Where(a =>
+                a.Title.ToUpper().Contains(query) ||
+                a.Songs.Any(s => s.Title.ToUpper().Contains(query))
+            )
+            .Select(a => new
+            {
+                a.Id,
+                a.Title,
+                a.ReleaseDate,
+                a.CoverImagePath,
+                SongCount = a.Songs.Count,
+                Songs = a.Songs
+                    .Where(s => s.Title.ToUpper().Contains(query))
+                    .Select(s => new
+                    {
+                        s.Id,
+                        s.Title,
+                        s.SongCounter.MusicLength,
+                        s.MusicFilePath,
+                        s.CoverImagePath,
+                        s.Likes,
+                        s.SongCounter.TotalLikes
+                    })
+                    .ToList()
+            })
+            .ToList()
+                })
+            .ToListAsync();
+            return Json(artist);
         }
 
         [HttpGet]

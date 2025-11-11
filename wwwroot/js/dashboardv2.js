@@ -64,7 +64,7 @@
         Expand Collapse Item
     ------------------------- */
 
-    window.loadArtists = async function (start = 0, end = artistperpage) {
+    window.loadArtists = async function (start = 0, end = pageSize) {
         console.log("Loading Artist...");
 
         const container = document.querySelector("#artists-container");
@@ -139,6 +139,166 @@
 
             container.appendChild(artistCard);
         }
+    };
+    window.loadSearch = function (query = "") {
+        console.log("Loading Artist...");
+        if (query === "" || query.length <3) {
+            loadArtists();
+            return;
+        }
+
+        const container = document.querySelector("#artists-container");
+        container.innerHTML = "<p class='text-muted'>Loading artists...</p>";
+
+        fetch(`/Song/GetLibrarySearch?query=${encodeURIComponent(query)}`)
+            .then(response => {
+                if (!response.ok) throw new Error("Failed to fetch artists");
+                return response.json();
+            })
+            .then(artists => {
+                if (!artists.length) {
+                    container.innerHTML = "<p class='text-muted'>No artists found.</p>";
+                    return;
+                }
+
+                container.innerHTML = "";
+
+                const artistPromises = artists.map(artist => {
+                    const safeName = encode(artist.name);
+                    const safeBio = encode(artist.bio);
+                    const safeCover = encode(artist.coverImagePath);
+
+                    const artistCard = document.createElement("div");
+                    artistCard.className = "col-md-12 mb-3 artist-card";
+                    artistCard.id = `artist-${artist.id}`;
+                    artistCard.innerHTML = `
+                    <div class="card p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center">
+                                ${artist.coverImagePath
+                            ? `<img src="${artist.coverImagePath}" class="rounded-circle me-3" style="width:80px;height:80px;object-fit:cover;" />`
+                            : `<div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                        style="width:80px;height:80px;">
+                                        <i class="bi bi-person fs-1 text-white"></i>
+                                    </div>`}
+                                <div>
+                                    <h5 class="mb-1">${artist.name}</h5>
+                                    <small class="text-muted">
+                                        ${artist.bio?.length > 100 ? artist.bio.substring(0, 180) + "..." : artist.bio || ""}
+                                    </small>
+                                    <div class="text-muted small mt-1">
+                                        <strong>${artist.albumCount}</strong> Albums - 
+                                        <strong>${artist.songCount}</strong> Songs
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-info" onclick="loadAlbums(${artist.id}, this)">Collapse</button>
+                                <a class="btn btn-sm btn-outline-primary"
+                                   onclick="openArtistModal(${artist.id},
+                                       decodeURIComponent('${safeName}'),
+                                       decodeURIComponent('${safeBio}'),
+                                       decodeURIComponent('${safeCover}')
+                                   )">Edit</a>
+                                <button class="btn btn-sm btn-outline-warning" onclick="openAlbumModal(0, ${artist.id})">Add</button>
+                                <button type="button" class="btn btn-outline-danger btn-sm delete-btn" onclick="openDeleteModal(${artist.id},1,decodeURIComponent('${safeName}'))">Delete</button>
+                            </div>
+                        </div>
+                        <div class="row albums-container visible" style="display:block"></div>
+                    </div>
+                `;
+                    container.appendChild(artistCard);
+
+                    // Fetch albums in parallel
+                    return fetch(`/Song/GetArtistAlbum?artistid=${artist.id}`)
+                        .then(res => res.json())
+                        .then(albums => {
+                            const albumsContainer = artistCard.querySelector(".albums-container");
+                            if (!albums.length) {
+                                albumsContainer.innerHTML = "<p class='text-muted'>No albums found.</p>";
+                                return;
+                            }
+
+                            const albumPromises = albums.map(album => {
+                                const albumContainer = document.createElement("div");
+                                albumContainer.className = "col-md-12 mt-3";
+                                albumContainer.innerHTML = `
+                                <div class="card p-3" id="album-${album.id}">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <img src="${album.coverImagePath || '/images/default.png'}"
+                                                class="rounded-3 me-3" style="width:80px;height:80px;object-fit:cover;" />
+                                            <div>
+                                                <h5 class="mb-1">${album.title}</h5>
+                                                <small class="text-muted">${album.releaseDate ?? ''}</small>
+                                            </div>
+                                        </div>
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-outline-info" onclick="loadSongs(${album.id}, this)">Collapse</button>
+                                            <a class="btn btn-sm btn-outline-primary"
+                                                onclick="openAlbumModal(${album.id}, ${artist.id},
+                                                    decodeURIComponent('${encode(album.title)}'),
+                                                    decodeURIComponent('${encode(album.releaseDate)}'),
+                                                    decodeURIComponent('${encode(album.coverImagePath)}'))">Edit</a>
+                                            <a class="btn btn-sm btn-outline-warning" onclick="openSongModal(0,${album.id})">Add</a>
+                                            <button type="button" class="btn btn-outline-danger btn-sm delete-btn" onclick="openDeleteModal(${album.id},2,decodeURIComponent('${encode(album.title)}'),${artist.id})">Delete</button>
+                                        </div>
+                                    </div>
+                                    <div class="p-3 mt-2 songs-container visible" style="display:block"></div>
+                                </div>
+                            `;
+                                albumsContainer.appendChild(albumContainer);
+
+                                // Fetch songs in parallel
+                                return fetch(`/Song/GetAlbumSong?albumid=${album.id}`)
+                                    .then(songRes => songRes.json())
+                                    .then(songs => {
+                                        const songsContainer = albumContainer.querySelector(".songs-container");
+                                        if (!songs.length) {
+                                            songsContainer.innerHTML = "<p class='text-muted'>No songs found.</p>";
+                                            return;
+                                        }
+
+                                        const table = document.createElement("table");
+                                        table.className = "table table-dark table-hover";
+                                        table.innerHTML = `
+                                        <thead>
+                                            <tr>
+                                                <th>Song</th>
+                                                <th class="text-end">Duration</th>
+                                                <th class="text-end">Plays</th>
+                                                <th class="text-end">Likes</th>
+                                                <th class="text-end">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${songs.map(m => `
+                                                <tr>
+                                                    <td>${m.title}</td>
+                                                    <td class="text-end">${Math.floor(m.duration / 60)}:${(m.duration % 60).toString().padStart(2, '0')}</td>
+                                                    <td class="text-end">${m.plays}</td>
+                                                    <td class="text-end">${m.likes}</td>
+                                                    <td class="text-end">
+                                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openSongModal(${m.id},${m.albumId})"><i class="bi bi-pencil"></i></button>
+                                                        <button class="btn btn-sm btn-outline-danger" onclick="openDeleteModal(${m.id},3,decodeURIComponent('${encode(m.title)}'),0,${m.albumId})"><i class="bi bi-trash"></i></button>
+                                                    </td>
+                                                </tr>`).join("")}
+                                        </tbody>
+                                    `;
+                                        songsContainer.appendChild(table);
+                                    });
+                            });
+
+                            return Promise.all(albumPromises);
+                        });
+                });
+
+                return Promise.all(artistPromises);
+            })
+            .catch(error => {
+                console.error(error);
+                container.innerHTML = "<p class='text-danger'>Failed to load artists.</p>";
+            });
     };
 
     window.loadAlbums = async function (artistId, button = null) {
@@ -521,205 +681,265 @@
         Startup
     ------------------------- */
 
-    let artistperpage = 20;
-    loadArtists(0, artistperpage);
-});
+    let start = 0;
+    let end = 9;
+    const pageSize = 10; // i think 10 is enough
+    let total = 0;
 
-/* -------------------------
-        Artist Form
-    ------------------------- */
-document.getElementById("artistForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
+    const artistModal = document.getElementById('artistModal');
+    const albumModal = document.getElementById('albumModal');
+    const deleteModal = document.getElementById('confirmDeleteModal');
+    const songModal = document.getElementById('songModal');
 
-    const form = this;
-    const title = form.querySelector(".modal-title").textContent.trim();
-    const formData = new FormData(form);
+    const el = document.querySelector("a[artisttotal]");
+    total = el?.getAttribute("artisttotal");
 
-    // 🌸 choose route depending on title
-    let url = "";
-    if (title === "Add Artist") {
-        url = "/Artist/Create";
-    } else if (title === "Edit Artist") {
-        url = "/Artist/Edit";
-    } else {
-        alert("Unknown action — please reopen the modal.");
-        return;
+    updateInputs();
+    updateArtists();
+
+
+    /* -------------------------
+            Pagination Thing
+        ------------------------- */
+    document.getElementById("totalCount").textContent = total;
+
+    function updateArtists() {
+        loadArtists(start, end);
     }
-    try {
-        const response = await fetch(url, {
-            method: "POST",
-            body: formData
-        });
-
-        if (response.ok) {
-            bootstrap.Modal.getInstance(document.getElementById("artistModal")).hide();
-            showToast("Artist saved successfully!", "success");
-            setTimeout(() => loadArtists(), 500); // refresh artist list
-        } else {
-            const error = await response.text();
-            alert("Error: " + error);
+    document.getElementById("prevPage").addEventListener("click", () => {
+        if (start > 0) {
+            start = Math.max(0, start - pageSize);
+            end = Math.min(total - 1, start + pageSize - 1);
+            updateInputs();
+            updateArtists();
         }
-    } catch (err) {
-        console.error(err);
-        alert("An unexpected error occurred, my love.");
-    }
-});
-const artistModal = document.getElementById('artistModal');
-artistModal.addEventListener('hide.bs.modal', () => {
-    document.activeElement.blur();
-});
-/* -------------------------
-        Album Form
-    ------------------------- */
-
-
-document.getElementById("albumForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
-
-    const form = this;
-    const title = form.querySelector(".modal-title").textContent.trim();
-    const formData = new FormData(form);
-    const artistId = formData.get("artistId"); // 🌸 get hidden artistId
-
-    // 🌸 choose route depending on title
-    let url = "";
-    if (title === "Add Album") {
-        url = "/Album/Create";
-    } else if (title === "Edit Album") {
-        url = "/Album/Edit";
-    } else {
-        alert("Unknown action — please reopen the modal.");
-        return;
-    }
-    try {
-        const response = await fetch(url, {
-            method: "POST",
-            body: formData
-        });
-
-        if (response.ok) {
-            bootstrap.Modal.getInstance(document.getElementById("albumModal")).hide();
-            showToast("Album saved successfully!", "success");
-            loadAlbums(artistId); // 💖 refresh albums for this artist
-        } else {
-            const error = await response.text();
-            alert("Error: " + error);
+    });
+    document.getElementById("nextPage").addEventListener("click", () => {
+        if (end < total - 1) {
+            start = Math.min(total - pageSize, start + pageSize);
+            end = Math.min(total - 1, start + pageSize - 1);
+            updateInputs();
+            updateArtists();
         }
-    } catch (err) {
-        console.error(err);
-        alert("An unexpected error occurred, my love.");
+    });
+    function updateInputs() {
+        document.getElementById("startInput").value = start;
+        document.getElementById("endInput").value = end;
+
+        // disable buttons if at edges
+        document.getElementById("prevPage").disabled = start <= 0;
+        document.getElementById("nextPage").disabled = end >= total - 1;
     }
-});
-const albumModal = document.getElementById('albumModal');
-albumModal.addEventListener('hide.bs.modal', () => {
-    document.activeElement.blur();
-});
+    document.getElementById("startInput").addEventListener("change", e => {
+        start = Math.max(0, parseInt(e.target.value) || 0);
+        end = Math.min(total - 1, start + pageSize - 1);
+        updateInputs();
+        updateArtists();
+    });
+    document.getElementById("endInput").addEventListener("change", e => {
+        end = Math.min(total - 1, parseInt(e.target.value) || end);
+        updateInputs();
+        updateArtists();
+    });
 
-/* -------------------------
-        Delete Form
-    ------------------------- */
-document.getElementById("deleteForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
+    /* -------------------------
+            Search
+        ------------------------- */
 
-    const form = this;
-    const title = form.querySelector(".modal-title").textContent.trim();
-    const formData = new FormData(form);
-    const uid = formData.get("id"); // universal id
-    const ref = formData.get("type"); // universal id
-    const artistId = formData.get("artistId"); // universal id
-    const albumId = formData.get("albumId"); // universal id
+    const searchInput = document.getElementById("searchcontext");
+    searchInput.addEventListener("input", e => {
+        const query = e.target.value.trim();
+        loadSearch(query);
+    });
 
-    // 🌸 choose route depending on title
-    // 1 means artist delete, 2 means album delete, 3 means song delete
-    let url = "";
-    if (ref == 1) {
-        url = "/Artist/Delete";
-    } else if (ref == 2) {
-        url = "/Album/Delete";
-    } else if (ref == 3) {
-        url = "/Song/Delete";
-    } else {
-        alert("Unknown action — please reopen the modal.");
-        return;
-    }
-    try {
-        const response = await fetch(url, {
-            method: "POST",
-            body: formData
-        });
+    /* -------------------------
+            Artist Form
+        ------------------------- */
+    document.getElementById("artistForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
 
-        if (response.ok) {
-            bootstrap.Modal.getInstance(document.getElementById("confirmDeleteModal")).hide();
-            if (ref == 1) {
-                showToast("Artist deleted successfully!", "success");
+        const form = this;
+        const title = form.querySelector(".modal-title").textContent.trim();
+        const formData = new FormData(form);
+
+        // 🌸 choose route depending on title
+        let url = "";
+        if (title === "Add Artist") {
+            url = "/Artist/Create";
+        } else if (title === "Edit Artist") {
+            url = "/Artist/Edit";
+        } else {
+            alert("Unknown action — please reopen the modal.");
+            return;
+        }
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                body: formData
+            });
+
+            if (response.ok) {
+                bootstrap.Modal.getInstance(document.getElementById("artistModal")).hide();
+                showToast("Artist saved successfully!", "success");
                 setTimeout(() => loadArtists(), 500); // refresh artist list
-            } else if (ref == 2) {
-                showToast("Album deleted successfully!", "success");
-                setTimeout(() => loadAlbums(artistId)); // refresh album list
-            } else if (ref == 3) {
-                showToast("Song deleted successfully!", "success");
-                setTimeout(() => loadSongs(albumId)); // refresh album list
             } else {
-                alert("Unknown action — please refresh the page.");
-                return;
+                const error = await response.text();
+                alert("Error: " + error);
             }
-        } else {
-            const error = await response.text();
-            alert("Error: " + error);
+        } catch (err) {
+            console.error(err);
+            alert("An unexpected error occurred, my love.");
         }
-    } catch (err) {
-        console.error(err);
-        alert("An unexpected error occurred, my love.");
-    }
-});
-const deleteModal = document.getElementById('confirmDeleteModal');
-deleteModal.addEventListener('hide.bs.modal', () => {
-    if (document.activeElement) document.activeElement.blur();
-});
+    });
+    artistModal.addEventListener('hide.bs.modal', () => {
+        document.activeElement.blur();
+    });
+    /* -------------------------
+            Album Form
+        ------------------------- */
+    document.getElementById("albumForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
 
-/* -------------------------
-        Song Form
-    ------------------------- */
+        const form = this;
+        const title = form.querySelector(".modal-title").textContent.trim();
+        const formData = new FormData(form);
+        const artistId = formData.get("artistId"); // 🌸 get hidden artistId
 
-
-document.getElementById("songForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
-
-    const form = this;
-    const title = form.querySelector(".modal-title").textContent.trim();
-    const formData = new FormData(form);
-    const albumId = formData.get("albumId"); // 🌸 get hidden albumId
-
-    // 🌸 choose route depending on title
-    let url = "";
-    if (title === "Add Song") {
-        url = "/Song/Upload";
-    } else if (title === "Edit Song") {
-        url = "/Song/Edit";
-    } else {
-        alert("Unknown action — please reopen the modal.");
-        return;
-    }
-    try {
-        const response = await fetch(url, {
-            method: "POST",
-            body: formData
-        });
-
-        if (response.ok) {
-            bootstrap.Modal.getInstance(document.getElementById("songModal")).hide();
-            showToast("Song saved successfully!", "success");
-            loadSongs(albumId);
+        // 🌸 choose route depending on title
+        let url = "";
+        if (title === "Add Album") {
+            url = "/Album/Create";
+        } else if (title === "Edit Album") {
+            url = "/Album/Edit";
         } else {
-            const error = await response.text();
-            alert("Error: " + error);
+            alert("Unknown action — please reopen the modal.");
+            return;
         }
-    } catch (err) {
-        console.error(err);
-        alert("An unexpected error occurred, my love.");
-    }
-});
-const songModal = document.getElementById('songModal');
-songModal.addEventListener('hide.bs.modal', () => {
-    document.activeElement.blur();
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                body: formData
+            });
+
+            if (response.ok) {
+                bootstrap.Modal.getInstance(document.getElementById("albumModal")).hide();
+                showToast("Album saved successfully!", "success");
+                loadAlbums(artistId); // 💖 refresh albums for this artist
+            } else {
+                const error = await response.text();
+                alert("Error: " + error);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("An unexpected error occurred, my love.");
+        }
+    });
+    albumModal.addEventListener('hide.bs.modal', () => {
+        document.activeElement.blur();
+    });
+
+    /* -------------------------
+            Delete Form
+        ------------------------- */
+    document.getElementById("deleteForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const form = this;
+        const title = form.querySelector(".modal-title").textContent.trim();
+        const formData = new FormData(form);
+        const uid = formData.get("id"); // universal id
+        const ref = formData.get("type"); // universal id
+        const artistId = formData.get("artistId"); // universal id
+        const albumId = formData.get("albumId"); // universal id
+
+        // 🌸 choose route depending on title
+        // 1 means artist delete, 2 means album delete, 3 means song delete
+        let url = "";
+        if (ref == 1) {
+            url = "/Artist/Delete";
+        } else if (ref == 2) {
+            url = "/Album/Delete";
+        } else if (ref == 3) {
+            url = "/Song/Delete";
+        } else {
+            alert("Unknown action — please reopen the modal.");
+            return;
+        }
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                body: formData
+            });
+
+            if (response.ok) {
+                bootstrap.Modal.getInstance(document.getElementById("confirmDeleteModal")).hide();
+                if (ref == 1) {
+                    showToast("Artist deleted successfully!", "success");
+                    setTimeout(() => loadArtists(), 500); // refresh artist list
+                } else if (ref == 2) {
+                    showToast("Album deleted successfully!", "success");
+                    setTimeout(() => loadAlbums(artistId)); // refresh album list
+                } else if (ref == 3) {
+                    showToast("Song deleted successfully!", "success");
+                    setTimeout(() => loadSongs(albumId)); // refresh album list
+                } else {
+                    alert("Unknown action — please refresh the page.");
+                    return;
+                }
+            } else {
+                const error = await response.text();
+                alert("Error: " + error);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("An unexpected error occurred, my love.");
+        }
+    });
+    deleteModal.addEventListener('hide.bs.modal', () => {
+        if (document.activeElement) document.activeElement.blur();
+    });
+
+    /* -------------------------
+            Song Form
+        ------------------------- */
+    document.getElementById("songForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const form = this;
+        const title = form.querySelector(".modal-title").textContent.trim();
+        const formData = new FormData(form);
+        const albumId = formData.get("albumId"); // 🌸 get hidden albumId
+
+        // 🌸 choose route depending on title
+        let url = "";
+        if (title === "Add Song") {
+            url = "/Song/Upload";
+        } else if (title === "Edit Song") {
+            url = "/Song/Edit";
+        } else {
+            alert("Unknown action — please reopen the modal.");
+            return;
+        }
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                body: formData
+            });
+
+            if (response.ok) {
+                bootstrap.Modal.getInstance(document.getElementById("songModal")).hide();
+                showToast("Song saved successfully!", "success");
+                loadSongs(albumId);
+            } else {
+                const error = await response.text();
+                alert("Error: " + error);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("An unexpected error occurred, my love.");
+        }
+    });
+    songModal.addEventListener('hide.bs.modal', () => {
+        document.activeElement.blur();
+    });
 });
