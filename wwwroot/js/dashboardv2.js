@@ -430,9 +430,9 @@
         <tbody>
             ${songs.map(m => {
                 const safeTitle = encode(m.title);
-                const safeMusic = encode(m.musicUrl);
                 const safeCover = encode(m.coverUrl);
                 const safeBanner = encode(m.bannerUrl);
+                const safeVideo = encode(m.videoUrl);
 
                 return `
                 <tr>
@@ -448,7 +448,7 @@
                     <td class="text-end">${m.plays}</td>
                     <td class="text-end">${m.likes}</td>
                     <td class="text-end">
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openSongModal(${m.id},${m.albumId},decodeURIComponent('${safeTitle}'),decodeURIComponent('${safeCover}'),decodeURIComponent('${safeBanner}'))"><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openSongModal(${m.id},${m.albumId},decodeURIComponent('${safeTitle}'),decodeURIComponent('${safeCover}'),decodeURIComponent('${safeBanner}'),decodeURIComponent('${safeVideo}'))"><i class="bi bi-pencil"></i></button>
                         <button class="btn btn-sm btn-outline-danger" onclick="openDeleteModal(${m.id},3,decodeURIComponent('${safeTitle}'),0,${m.albumId})"><i class="bi bi-trash"></i></button>
                     </td>
                 </tr>
@@ -610,14 +610,18 @@
     /* -------------------------
         Song Modal
     ------------------------- */
-    window.openSongModal = function (id = 0, albumId = 0, title = '', coverUrl = '', bannerUrl = '') {
+    window.openSongModal = function (id = 0, albumId = 0, title = '', coverUrl = '', bannerUrl = '', movieUrl = '') {
         const modalElement = document.getElementById('songModal');
         const modal = new bootstrap.Modal(modalElement);
         const form = modalElement.querySelector('#songForm');
         const fileInput = form.querySelector('#coverImage');
         const fileInput2 = form.querySelector('#bannerImage');
-        const preview = modalElement.querySelector('#coverPreview'); // optional preview if added later
-        const preview2 = modalElement.querySelector('#bannerPreview'); // optional preview if added later
+        const videoInput = form.querySelector('#specialMovie');
+        const preview = form.querySelector('#coverPreview');
+        const preview2 = form.querySelector('#bannerPreview');
+        const videopreview = form.querySelector('#moviePreview');
+        const videosrc = form.querySelector('#moviesrc');
+        console.log(movieUrl);
 
         const titleElement = modalElement.querySelector('.modal-title');
         titleElement.textContent = id === 0 ? 'Add Song' : 'Edit Song';
@@ -630,15 +634,14 @@
         form.querySelector('#albumId').value = albumId || '';
         form.querySelector('#songTitle').value = title || '';
 
-        // Show existing cover preview if provided (optional)
+        // Preview 1
         if (preview && coverUrl) {
             preview.src = coverUrl;
             preview.classList.remove('d-none');
         } else if (preview) {
             preview.classList.add('d-none');
         }
-
-        // File preview (if preview image exists in DOM)
+        // File preview
         if (preview) {
             fileInput.onchange = (e) => {
                 const file = e.target.files[0];
@@ -651,15 +654,15 @@
                 }
             };
         }
-        // Show existing cover preview if provided (optional)
+
+        // Preview 2
         if (preview2 && bannerUrl) {
             preview2.src = bannerUrl;
             preview2.classList.remove('d-none');
         } else if (preview2) {
             preview2.classList.add('d-none');
         }
-
-        // File preview2 (if preview2 image exists in DOM)
+        // File preview2
         if (preview2) {
             fileInput2.onchange = (e) => {
                 const file = e.target.files[0];
@@ -672,6 +675,31 @@
                 }
             };
         }
+
+        // Movie preview
+        if (videopreview && videosrc && movieUrl) {
+            videosrc.src = movieUrl || '';
+            videopreview.load();            // refresh the video source
+            videopreview.classList.remove('d-none');
+        } else if (videopreview) {
+            videopreview.classList.add('d-none');
+        }
+        // File videopreview (if videopreview image exists in DOM)
+        if (videopreview) {
+            videoInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    videosrc.src = URL.createObjectURL(file);
+                    videopreview.load(); // refresh to show the new video
+                    videopreview.classList.remove('d-none');
+                } else {
+                    videosrc.src = '';
+                    videopreview.load();
+                    videopreview.classList.add('d-none');
+                }
+            };
+        }
+
 
         setTimeout(() => modal.show(), 100);
     };

@@ -28,6 +28,7 @@ namespace Floaty_Music.Controllers
                 LyricsFilePath = model.LyricsFile != null ? await FileHelper.SaveFileAsync(model.LyricsFile, GlobalConfiguration.LyricsFilePath) : null,
                 CoverImagePath = model.CoverImage != null ? await FileHelper.SaveFileAsync(model.CoverImage, GlobalConfiguration.CoverImagePath) : null,
                 BannerImagePath = model.BannerImage != null ? await FileHelper.SaveFileAsync(model.BannerImage, GlobalConfiguration.BannerImagePath) : null,
+                MoviePath = model.SpecialMovie != null ? await FileHelper.SaveFileAsync(model.SpecialMovie, GlobalConfiguration.VideoPath) : null,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
@@ -75,6 +76,8 @@ namespace Floaty_Music.Controllers
                 song.CoverImagePath = await FileHelper.SaveFileAsync(model.CoverImage, GlobalConfiguration.CoverImagePath);
             if (model.BannerImage != null)
                 song.BannerImagePath = await FileHelper.SaveFileAsync(model.BannerImage, GlobalConfiguration.BannerImagePath);
+            if (model.SpecialMovie != null)
+                song.MoviePath = await FileHelper.SaveFileAsync(model.SpecialMovie, GlobalConfiguration.VideoPath);
             await _context.SaveChangesAsync();
             var songcounter = await _context.SongCounter.FirstOrDefaultAsync(x => x.SongId == song.Id);
             if (songcounter != null)
@@ -381,6 +384,7 @@ namespace Floaty_Music.Controllers
                 musicUrl = s.MusicFilePath,
                 coverUrl = s.CoverImagePath,
                 bannerUrl = s.BannerImagePath,
+                videoUrl = s.MoviePath,
                 Duration = s.SongCounter.MusicLength,
                 Plays = s.SongCounter.TotalPlayed,
                 Likes = s.SongCounter.TotalLikes

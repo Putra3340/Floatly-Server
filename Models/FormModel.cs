@@ -10,6 +10,7 @@
         public IFormFile? LyricsFile { get; set; }
         public IFormFile? CoverImage { get; set; }
         public IFormFile? BannerImage { get; set; }
+        public IFormFile? SpecialMovie { get; set; }
     }
 
     public class ArtistFormModel

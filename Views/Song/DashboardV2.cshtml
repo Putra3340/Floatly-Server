@@ -359,9 +359,16 @@
                                         <label>Banner</label>
                                         <input type="file" name="bannerImage" id="bannerImage" class="form-control" />
                                     </div>
+                                    <div class="mb-2">
+                                        <label>Special Movie</label>
+                                        <input type="file" name="specialMovie" id="specialMovie" class="form-control" />
+                                    </div>
                                     <img id="coverPreview" class="img-fluid mt-2 d-none rounded shadow-sm" alt="Profile preview" />
                                     <img id="bannerPreview" class="img-fluid mt-2 d-none rounded shadow-sm" alt="Profile preview" />
-
+                                    <video id="moviePreview" class="d-none" width="640" height="360" controls autoplay muted loop poster="/images/thumbnail.jpg">
+                                        <source src="" type="video/mp4" id="moviesrc">
+                                        Your browser doesn’t support the video tag.
+                                    </video>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="submit" class="btn btn-primary">Save</button>

@@ -11,6 +11,7 @@ namespace Floaty_Music
         public static string LyricsFilePath { get; set; } = Path.Combine(WebRootPath, UploadsFolder, "lyrics");
         public static string CoverImagePath { get; set; } = Path.Combine(WebRootPath, UploadsFolder, "cover");
         public static string BannerImagePath { get; set; } = Path.Combine(WebRootPath, UploadsFolder, "banner");
+        public static string VideoPath { get; set; } = Path.Combine(WebRootPath, UploadsFolder, "video");
 
         public static string ArtistProfilePath { get; set; } = Path.Combine(WebRootPath, UploadsFolder, "artist");
         public static string AlbumCoverPath { get; set; } = Path.Combine(WebRootPath, UploadsFolder, "album");
@@ -75,6 +76,8 @@ namespace Floaty_Music
                 Directory.CreateDirectory(ArtistProfilePath);
             if (!Directory.Exists(AlbumCoverPath))
                 Directory.CreateDirectory(AlbumCoverPath);
+            if (!Directory.Exists(VideoPath))
+                Directory.CreateDirectory(VideoPath);
         }
         public static string SaveFile(IFormFile file, string folder)
         {
