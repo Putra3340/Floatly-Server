@@ -18,8 +18,6 @@ namespace Floaty_Music.Controllers
         [HttpPost]
         public async Task<IActionResult> Upload(SongUploadModel model)
         {
-            if (!ModelState.IsValid)
-                return RedirectToAction("Index");
             double musiclength = 0;
             var song = new Songs
             {
@@ -373,7 +371,10 @@ namespace Floaty_Music.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAlbumSong(int albumid)
         {
-            var songs = await _context.Songs.Where(s => s.AlbumId == albumid).OrderDescending().Select(s => new{ s.Id, s.Title, s.MusicFilePath, Duration = s.SongCounter.MusicLength, Plays = s.SongCounter.TotalPlayed, Likes = s.SongCounter.TotalLikes}).ToListAsync();
+            var songs = await _context.Songs.Where(s => s.AlbumId == albumid).OrderDescending().Select(s => 
+            new{
+                s.Id, s.Title, s.AlbumId , musicUrl = s.MusicFilePath, coverUrl = s.CoverImagePath, bannerUrl = s.BannerImagePath, Duration = s.SongCounter.MusicLength, Plays = s.SongCounter.TotalPlayed, Likes = s.SongCounter.TotalLikes
+            }).ToListAsync();
             return Json(songs);
         }
 

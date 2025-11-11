@@ -1,7 +1,6 @@
 ﻿$(document).ready(function () {
     const encode = (val) =>
         encodeURIComponent(val ?? "").replace(/'/g, "\\'");
-    let artistperpage = 20;
     /* -------------------------
        Section Navigation
     ------------------------- */
@@ -183,6 +182,7 @@
             albumContainer.className = "col-md-12 mt-3";
             const albumcard = document.createElement("div");
             albumcard.className = "card p-3";
+            albumcard.id = `album-${album.id}`;
 
             const albumDiv = document.createElement("div");
             albumDiv.className = "d-flex align-items-center justify-content-between";
@@ -204,6 +204,8 @@
                        decodeURIComponent('${safeDate}'),
                        decodeURIComponent('${safeCover}')
                    )">Edit</a>
+                   <a class="btn btn-sm btn-outline-warning"
+                   onclick="openSongModal(0,${album.id})">Add</a>
 
                 <button type="button" class="btn btn-outline-danger btn-sm delete-btn" onclick="openDeleteModal(${album.id},2,decodeURIComponent('${safeTitle}'),${artistId})">Delete</button>
             </div>
@@ -222,27 +224,24 @@
     window.setVisibility = function (element, visible) {
         element.style.display = visible ? "block" : "none";
     }
-    window.loadSongs = async function (albumId, button) {
-        const card = button.closest(".card");
-        const container = card.querySelector(".songs-container");
-        if (!container) {
-            console.warn("No songs-container found for this album card.");
-            return;
-        }
-        if (container.classList.contains("visible")) {
-            //console.log("Collapsing");
-            container.classList.remove("visible");
-            button.innerText = "Expand";
-            // Wait until the transition finishes before hiding
-            setTimeout(() => {
-                setVisibility(container, false);
-                container.innerHTML = "";
-            }, 400); // match the CSS transition duration
-        } else {
-            //console.log("Expanding");
-            setVisibility(container, true);
-            button.innerText = "Collapse";
-            requestAnimationFrame(() => container.classList.add("visible"));
+    window.loadSongs = async function (albumId, button = null) {
+        container = document.querySelector(`#album-${albumId} .songs-container`);
+        if (button != null) {
+            if (container.classList.contains("visible")) {
+                //console.log("Collapsing");
+                container.classList.remove("visible");
+                button.innerText = "Expand";
+                // Wait until the transition finishes before hiding
+                setTimeout(() => {
+                    setVisibility(container, false);
+                    container.innerHTML = "";
+                }, 400); // match the CSS transition duration
+            } else {
+                //console.log("Expanding");
+                setVisibility(container, true);
+                button.innerText = "Collapse";
+                requestAnimationFrame(() => container.classList.add("visible"));
+            }
         }
 
         const response = await fetch(`/Song/GetAlbumSong?albumid=${albumId}`);
@@ -269,11 +268,17 @@
             </tr>
         </thead>
         <tbody>
-            ${songs.map(m => `
+            ${songs.map(m => {
+                const safeTitle = encode(m.title);
+                const safeMusic = encode(m.musicUrl);
+                const safeCover = encode(m.coverUrl);
+                const safeBanner = encode(m.bannerUrl);
+
+                return `
                 <tr>
                     <td>
                         <div class="d-flex align-items-center">
-                            <button class="btn btn-sm btn-outline-primary me-3" data-music="${m.musicFilePath}">
+                            <button class="btn btn-sm btn-outline-primary me-3" data-music="${m.musicUrl}">
                                 <i class="bi bi-play-fill"></i>
                             </button>
                             <div><strong>${m.title}</strong></div>
@@ -283,11 +288,12 @@
                     <td class="text-end">${m.plays}</td>
                     <td class="text-end">${m.likes}</td>
                     <td class="text-end">
-                        <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
-                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openSongModal(${m.id},${m.albumId},decodeURIComponent('${safeTitle}'),decodeURIComponent('${safeCover}'),decodeURIComponent('${safeBanner}'))"><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="openDeleteModal(${m.id},3,decodeURIComponent('${safeTitle}'),0,${m.albumId})"><i class="bi bi-trash"></i></button>
                     </td>
                 </tr>
-            `).join('')}
+            `;
+            }).join('')}
         </tbody>
     `;
 
@@ -406,6 +412,10 @@
 
         setTimeout(() => modal.show(), 100);
     };
+
+    /* -------------------------
+        Universal Delete Modal
+    ------------------------- */
     window.openDeleteModal = function (id = 0, type = 0, title = '', artistId = 0, albumId = 0) {
         const modalElement = document.getElementById('confirmDeleteModal');
         const modal = new bootstrap.Modal(modalElement);
@@ -436,6 +446,82 @@
 
         setTimeout(() => modal.show(), 100);
     };
+
+    /* -------------------------
+        Song Modal
+    ------------------------- */
+    window.openSongModal = function (id = 0, albumId = 0, title = '', coverUrl = '', bannerUrl = '') {
+        const modalElement = document.getElementById('songModal');
+        const modal = new bootstrap.Modal(modalElement);
+        const form = modalElement.querySelector('#songForm');
+        const fileInput = form.querySelector('#coverImage');
+        const fileInput2 = form.querySelector('#bannerImage');
+        const preview = modalElement.querySelector('#coverPreview'); // optional preview if added later
+        const preview2 = modalElement.querySelector('#bannerPreview'); // optional preview if added later
+
+        const titleElement = modalElement.querySelector('.modal-title');
+        titleElement.textContent = id === 0 ? 'Add Song' : 'Edit Song';
+
+        // Reset form
+        form.reset();
+
+        // Fill in the values
+        form.querySelector('#songId').value = id || '';
+        form.querySelector('#albumId').value = albumId || '';
+        form.querySelector('#songTitle').value = title || '';
+
+        // Show existing cover preview if provided (optional)
+        if (preview && coverUrl) {
+            preview.src = coverUrl;
+            preview.classList.remove('d-none');
+        } else if (preview) {
+            preview.classList.add('d-none');
+        }
+
+        // File preview (if preview image exists in DOM)
+        if (preview) {
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    preview.src = URL.createObjectURL(file);
+                    preview.classList.remove('d-none');
+                } else {
+                    preview.src = '';
+                    preview.classList.add('d-none');
+                }
+            };
+        }
+        // Show existing cover preview if provided (optional)
+        if (preview2 && bannerUrl) {
+            preview2.src = bannerUrl;
+            preview2.classList.remove('d-none');
+        } else if (preview2) {
+            preview2.classList.add('d-none');
+        }
+
+        // File preview2 (if preview2 image exists in DOM)
+        if (preview2) {
+            fileInput2.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    preview2.src = URL.createObjectURL(file);
+                    preview2.classList.remove('d-none');
+                } else {
+                    preview2.src = '';
+                    preview2.classList.add('d-none');
+                }
+            };
+        }
+
+        setTimeout(() => modal.show(), 100);
+    };
+
+
+    /* -------------------------
+        Startup
+    ------------------------- */
+
+    let artistperpage = 20;
     loadArtists(0, artistperpage);
 });
 
@@ -569,10 +655,10 @@ document.getElementById("deleteForm").addEventListener("submit", async function 
                 setTimeout(() => loadArtists(), 500); // refresh artist list
             } else if (ref == 2) {
                 showToast("Album deleted successfully!", "success");
-                console.log(artistId);
                 setTimeout(() => loadAlbums(artistId)); // refresh album list
             } else if (ref == 3) {
-                url = "/Song/Delete";
+                showToast("Song deleted successfully!", "success");
+                setTimeout(() => loadSongs(albumId)); // refresh album list
             } else {
                 alert("Unknown action — please refresh the page.");
                 return;
@@ -589,4 +675,51 @@ document.getElementById("deleteForm").addEventListener("submit", async function 
 const deleteModal = document.getElementById('confirmDeleteModal');
 deleteModal.addEventListener('hide.bs.modal', () => {
     if (document.activeElement) document.activeElement.blur();
+});
+
+/* -------------------------
+        Song Form
+    ------------------------- */
+
+
+document.getElementById("songForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const form = this;
+    const title = form.querySelector(".modal-title").textContent.trim();
+    const formData = new FormData(form);
+    const albumId = formData.get("albumId"); // 🌸 get hidden albumId
+
+    // 🌸 choose route depending on title
+    let url = "";
+    if (title === "Add Song") {
+        url = "/Song/Upload";
+    } else if (title === "Edit Song") {
+        url = "/Song/Edit";
+    } else {
+        alert("Unknown action — please reopen the modal.");
+        return;
+    }
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            body: formData
+        });
+
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById("songModal")).hide();
+            showToast("Song saved successfully!", "success");
+            loadSongs(albumId);
+        } else {
+            const error = await response.text();
+            alert("Error: " + error);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("An unexpected error occurred, my love.");
+    }
+});
+const songModal = document.getElementById('songModal');
+songModal.addEventListener('hide.bs.modal', () => {
+    document.activeElement.blur();
 });
