@@ -183,7 +183,16 @@ namespace Floaty_Music.Controllers
             var artis = _context.Artists.Find(id);
             if (artis == null) return NotFound(new { message = "Not found" });
             artis.CoverImagePath = baseUrl + artis.CoverImagePath;
-            return Ok(artis);
+
+            return Ok(new
+            {
+                Id = artis.Id,
+                Bio = artis.Bio,
+                Name = artis.Name,
+                CoverUrl = artis.CoverImagePath,
+                CreatedAt = artis.CreatedAt,
+                UpdatedAt = artis.UpdatedAt
+            });
         }
 
         [HttpGet("album/{id}")]

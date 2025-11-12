@@ -461,7 +461,7 @@ namespace Floaty_Music.Controllers
                         try
                         {
                             // we only compress but keep the original file
-                            await AudioHelper.CompressAsync(inputPath, "96k");
+                            await AudioHelper.CompressAsync(inputPath, "128k");
                         }
                         catch (Exception ex)
                         {

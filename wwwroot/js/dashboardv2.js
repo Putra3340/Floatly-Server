@@ -488,7 +488,7 @@
         const modalElement = document.getElementById('artistModal');
         const modal = new bootstrap.Modal(modalElement);
         const form = document.getElementById('artistForm');
-        const fileInput = form.querySelector('#artistProfileUrl');
+        const fileInput = form.querySelector('#profileUrl');
         const preview = form.querySelector('#artistProfilePreview');
 
         const titleElement = modalElement.querySelector('.modal-title');
