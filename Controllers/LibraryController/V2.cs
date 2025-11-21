@@ -88,6 +88,15 @@ namespace Floaty_Music.Controllers
                 })
                 .OrderByDescending(al => al.totalPlays)
                 .Take(10)
+                .AsEnumerable()
+                .Select(al => new
+                {
+                    id = al.id,
+                    title = al.title,
+                    artistName = al.artistName,
+                    coverUrl = al.coverUrl,
+                    totalPlays = (al.totalPlays).ToString("N0") + " Plays"
+                })
                 .ToList();
 
 
