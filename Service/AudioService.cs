@@ -10,7 +10,7 @@ namespace Floaty_Music.Utils
     {
         static AudioHelper()
         {
-            FFmpeg.SetExecutablesPath("D:\\ffmpeg-master-latest-win64-gpl-shared\\bin");
+            FFmpeg.SetExecutablesPath(Path.GetFullPath("Exec/ffmpeg/bin"));
         }
 
         // Saves uploaded IFormFile to a temporary file.

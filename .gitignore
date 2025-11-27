@@ -428,4 +428,3 @@ FodyWeavers.xsd
 /database.db-wal
 /wwwroot/uploads/video
 /Service/Exec/ffmpeg
-/Service/Exec/yt-dlp.exe
