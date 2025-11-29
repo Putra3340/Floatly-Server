@@ -1,9 +1,11 @@
 ﻿using Floaty_Music.Models;
 using Floaty_Music.Models.ApiClient;
 using Floaty_Music.Service;
+using Floaty_Music.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+using TagLib.Matroska;
 
 namespace Floaty_Music.Controllers
 {
@@ -21,7 +23,7 @@ namespace Floaty_Music.Controllers
         [HttpGet("search")] // search
         public async Task<IActionResult> Search([FromQuery] string? anycontent)
         {
-            var list = await YoutubeService.SearchAsync(anycontent);
+            var list = await YoutubeService.SearchAsync(anycontent,10);
             List<ApiSong> combinedsonglist = new();
             foreach(var x in list)
             {
@@ -94,17 +96,36 @@ namespace Floaty_Music.Controllers
             if(!int.TryParse(id,out localid))
             {
                 // Youtube
-                // TODO BITRATE AND LYRICS
-                var streamurl = await YoutubeService.StreamAudioAsync(id);
-                var video = await YoutubeService.GetVideoDetailsAsync(id);
-                song = new()
+                // TODO BITRATE AND LYRICS OPTIMIZATION
+                var streamTask = YoutubeService.StreamAudioAsync(id);
+                var videoTask = YoutubeService.GetVideoDetailsAsync(id);
+                var lyricsTask = YoutubeService.GetLyrics(id);
+
+                await Task.WhenAll(streamTask, videoTask, lyricsTask);
+                var streamurl = await streamTask;
+                var video = await videoTask;
+                var lyrics = await lyricsTask;
+
+                string lyricspath = $"{Request.Scheme}://{Request.Host}/empty.srt";
+                var priority = new[] { "English", "Indonesia", "Japan", "Korea" };
+                var firstlyrics = lyrics
+                    .OrderBy(l => {
+                        int idx = Array.IndexOf(priority, l.Language);
+                        return idx == -1 ? int.MaxValue : idx; // unknown languages go last
+                    })
+                    .FirstOrDefault();
+                if (firstlyrics != null) {
+                    lyricspath = $"{Request.Scheme}://{Request.Host}" + await FileHelper.SaveIntoFileAsync($"{id}.srt", "yt", firstlyrics.Content);
+                }
+
+                song = new ApiSongPlay()
                 {
                     Id = id,
                     Title = video.Title,
                     Music = streamurl,
                     Cover = video.Thumbnails.FirstOrDefault().Url,
                     Banner = video.Thumbnails.FirstOrDefault().Url,
-                    Lyrics = $"{Request.Scheme}://{Request.Host}/empty.srt",
+                    Lyrics = lyricspath, // give default lyrics
                     UploadedBy = "YouTube",
                     SongLength = video.Duration?.ToString(@"mm\:ss") ?? "Unknown",
                     PlayCount = "",
@@ -124,7 +145,7 @@ namespace Floaty_Music.Controllers
                 {
                     return NotFound();
                 }
-                song = new()
+                song = new ApiSongPlay()
                 {
                     AlbumId = songdb.Album.Id,
                     AlbumTitle = songdb.Album.Title,

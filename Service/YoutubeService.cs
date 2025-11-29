@@ -152,7 +152,7 @@ namespace Floaty_Music.Service
                     #endif
                     text += $"{i}\n" +
                         $"{item.Offset.ToString(@"hh\:mm\:ss\,fff")} --> {(item.Offset.Add(item.Duration)).ToString(@"hh\:mm\:ss\,fff")}\n" +
-                        $"{item.Text}";
+                        $"{item.Text}\n\n";
                     i++;
                 }
                 result.Add(new LyricItem { Language = track.Language.Name, Content = text});

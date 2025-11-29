@@ -20,6 +20,19 @@
 
             return $"/uploads/{Path.GetFileName(folder)}/{fileName}";
         }
+        public static async Task<string> SaveIntoFileAsync(string id,string folder,string content)
+        {
+            var fullPath = Path.Combine(
+                GlobalConfiguration.WebRootPath,
+                GlobalConfiguration.UploadsFolder,
+                folder,
+                id);
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+
+            File.WriteAllText(fullPath, content);
+
+            return $"/uploads/{Path.GetFileName(folder)}/{id}";
+        }
     }
 
 
