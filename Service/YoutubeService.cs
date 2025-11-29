@@ -1,4 +1,7 @@
-﻿using YoutubeExplode;
+﻿using Floaty_Music.Models.ApiClient;
+using System.Diagnostics;
+using System.Reflection.Metadata;
+using YoutubeExplode;
 using YoutubeExplode.Common;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.ClosedCaptions;
@@ -83,6 +86,10 @@ namespace Floaty_Music.Service
 
             return (audioPath, thumbPath, lyrics);
         }
+
+
+
+        // USE THIS
         public static async Task<List<YoutubeSearchResult>> SearchAsync(string query, int count = 5)
         {
             var results = new List<YoutubeSearchResult>();
@@ -118,6 +125,39 @@ namespace Floaty_Music.Service
             var videoId = VideoId.Parse(youtubeUrl);
             var video = await client.Videos.GetAsync(videoId);
             return video;
+        }
+        public static async Task<List<LyricItem>> GetLyrics(string yturl)
+        {
+            var videoId = VideoId.Parse(yturl);
+            var manifest = await client.Videos.ClosedCaptions.GetManifestAsync(videoId);
+
+            var result = new List<LyricItem>();
+
+            foreach (var track in manifest.Tracks)
+            {
+                var captions = await client.Videos.ClosedCaptions.GetAsync(track);
+
+
+                // 29 NOVEMBER Parse Youtube Caption as SRT
+                // Credits by Putra3340
+                string text = string.Empty;
+
+                int i = 1;
+                foreach (var item in captions.Captions)
+                {
+                    #if DEBUG
+                    Debug.WriteLine(i);
+                    Debug.WriteLine($"{item.Offset} --> {item.Offset.Add(item.Duration)}");
+                    Debug.WriteLine(item.Text);
+                    #endif
+                    text += $"{i}\n" +
+                        $"{item.Offset.ToString(@"hh\:mm\:ss\,fff")} --> {(item.Offset.Add(item.Duration)).ToString(@"hh\:mm\:ss\,fff")}\n" +
+                        $"{item.Text}";
+                    i++;
+                }
+                result.Add(new LyricItem { Language = track.Language.Name, Content = text});
+            }
+            return result;
         }
         public class YoutubeSearchResult
         {

@@ -147,7 +147,8 @@ namespace Floaty_Music.Controllers
         [HttpGet("lyrics/{id}")]
         public async Task<IActionResult> GetLyrics(string id)
         {
-
+            var lyrics = await YoutubeService.GetLyrics(id);
+            return Ok(lyrics);
         }
     }
 }

@@ -27,4 +27,10 @@
         public string? AlbumTitle { get => field; set;}
         public int AlbumId { get => field; set;}
     }
+    public class LyricItem
+    {
+        public string Language { get; set; }
+        public string Content { get; set; }
+    }
+
 }
