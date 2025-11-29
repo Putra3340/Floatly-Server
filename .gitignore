@@ -428,3 +428,4 @@ FodyWeavers.xsd
 /database.db-wal
 /wwwroot/uploads/video
 /Service/Exec/ffmpeg
+/wwwroot/uploads/yt
