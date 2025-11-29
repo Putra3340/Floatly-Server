@@ -64,7 +64,10 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(x =>
+    {
+        x.InjectStylesheet("/swagger/swagger-dark.css");
+    });
 }
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -120,6 +123,7 @@ else if (GlobalConfiguration.isMySQL)
 // wakey wakey
 using (var ctx = new FloatlyContext())
 {
+    ctx.Database.EnsureCreated();
     ctx.Database.GetDbConnection().Open();
     ctx.Songs.FirstOrDefault(); // triggers model & query compilation
 }

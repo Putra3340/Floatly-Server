@@ -1,0 +1,68 @@
+﻿body {
+    background: #0d0d0d !important;
+    color: white !important;
+}
+
+.swagger-ui .opblock {
+    background: #1a1a1a !important;
+    border-color: #333 !important;
+}
+
+.swagger-ui .topbar {
+    background: #111 !important;
+}
+
+.swagger-ui, .topbar a {
+    color: #eee !important;
+}
+
+.opblock-section-header {
+    background: #1a1a1a !important;
+}
+
+select {
+    background: #1a1a1a !important;
+}
+
+span {
+    color: white !important;
+}
+
+option {
+    color: white !important;
+}
+
+select {
+    color: white !important;
+}
+
+h2 {
+    color: white !important;
+}
+h4 {
+    color: white !important;
+}
+
+p {
+    color: white !important;
+}
+button{
+
+    color: white !important;
+}
+td{
+
+    color: white !important;
+}
+div{
+
+    color: white !important;
+}
+label{
+
+    color: white !important;
+}
+input{
+    color: white !important;
+    background-color: black !important;
+}

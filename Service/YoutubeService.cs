@@ -47,25 +47,6 @@ namespace Floaty_Music.Service
         }
 
         // ============================
-        // DOWNLOAD THUMBNAIL
-        // ============================
-        public static async Task<string> DownloadThumbnailAsync(string youtubeUrl, string outputPath)
-        {
-            var videoId = VideoId.Parse(youtubeUrl);
-            var video = await client.Videos.GetAsync(videoId);
-
-            var thumbUrl = video.Thumbnails
-                .OrderByDescending(x => x.Resolution.Area)
-                .First().Url;
-
-            using var http = new HttpClient();
-            var bytes = await http.GetByteArrayAsync(thumbUrl);
-            await File.WriteAllBytesAsync(outputPath, bytes);
-
-            return outputPath;
-        }
-
-        // ============================
         // GET ALL LYRICS (ALL SUBS)
         // ============================
         public static async Task<List<string>> GetLyricsAsync(string youtubeUrl)
@@ -98,7 +79,6 @@ namespace Floaty_Music.Service
             var thumbPath = Path.Combine(outputBase, $"{id}.jpg");
 
             await DownloadAudioAsync(youtubeUrl, audioPath);
-            await DownloadThumbnailAsync(youtubeUrl, thumbPath);
             var lyrics = await GetLyricsAsync(youtubeUrl);
 
             return (audioPath, thumbPath, lyrics);
@@ -120,8 +100,24 @@ namespace Floaty_Music.Service
                     Thumbnail = video.Thumbnails.GetWithHighestResolution().Url
                 });
             }
-
             return results;
+        }
+        public static async Task<string> GetStreamVideoUrl(string yturl)
+        {
+            var videoId = VideoId.Parse(yturl);
+            var video = await client.Videos.Streams.GetManifestAsync(videoId);
+            var videostream = video.GetVideoStreams().FirstOrDefault();
+            if (videostream == null)
+                throw new Exception("No video streams found.");
+            return videostream.Url;
+        }
+
+        // Get Details from URL
+        public static async Task<Video> GetVideoDetailsAsync(string youtubeUrl)
+        {
+            var videoId = VideoId.Parse(youtubeUrl);
+            var video = await client.Videos.GetAsync(videoId);
+            return video;
         }
         public class YoutubeSearchResult
         {
