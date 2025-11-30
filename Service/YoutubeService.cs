@@ -6,6 +6,7 @@ using YoutubeExplode.Common;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.ClosedCaptions;
 using YoutubeExplode.Videos.Streams;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Floaty_Music.Service
 {
@@ -92,6 +93,11 @@ namespace Floaty_Music.Service
         // USE THIS
         public static async Task<List<YoutubeSearchResult>> SearchAsync(string query, int count = 5)
         {
+#if DEBUG
+            Stopwatch sw = new();
+            Console.WriteLine($"Start fetching : {query}");
+            sw.Start();
+#endif
             var results = new List<YoutubeSearchResult>();
             var search = client.Search.GetVideosAsync(query);
 
@@ -107,15 +113,28 @@ namespace Floaty_Music.Service
                     Thumbnail = video.Thumbnails.GetWithHighestResolution().Url
                 });
             }
+#if DEBUG
+            sw.Stop();
+            Console.WriteLine($"Elapsed time: {sw.Elapsed}");
+#endif
             return results;
         }
         public static async Task<string> GetStreamVideoUrl(string yturl)
         {
+#if DEBUG
+            Stopwatch sw = new();
+            Console.WriteLine($"Start fetching : {yturl}");
+            sw.Start();
+#endif
             var videoId = VideoId.Parse(yturl);
             var video = await client.Videos.Streams.GetManifestAsync(videoId);
             var videostream = video.GetVideoStreams().FirstOrDefault();
             if (videostream == null)
                 throw new Exception("No video streams found.");
+#if DEBUG
+            sw.Stop();
+            Console.WriteLine($"Elapsed time: {sw.Elapsed}");
+#endif
             return videostream.Url;
         }
 

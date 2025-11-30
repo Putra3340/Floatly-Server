@@ -19,7 +19,85 @@ namespace Floaty_Music.Controllers
         {
             _context = cont;
         }
-        
+        public async Task<IActionResult> Index()
+        {
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+
+            var songlist = _context.Songs
+                .Include(s => s.Album).ThenInclude(a => a.Artist)
+                .Include(s => s.SongCounter)
+                .OrderByDescending(s => s.SongCounter.TotalPlayed) // sort by plays
+                .Take(10)
+                .ToList();
+
+            var topSongs = new List<ApiSong>();
+            foreach (var x in songlist)
+            {
+                topSongs.Add(new ApiSong
+                {
+                    Id = x.Id.ToString(),
+                    Title = x.Title,
+                    ArtistName = x.Album.Artist.Name,
+                    Cover = baseUrl + x.CoverImagePath,
+                    SongLength = TimeSpan.FromSeconds((double)x.SongCounter.MusicLength).ToString(@"mm\:ss"),
+                    PlayCount = (x.SongCounter.TotalPlayed ?? 0).ToString("N0") + " Plays"
+                });
+            }
+
+
+            var topArtists = _context.Artists
+                .Select(a => new
+                {
+                    id = a.Id,
+                    name = a.Name,
+                    coverUrl = baseUrl + a.CoverImagePath,
+                    totalPlays = a.Albums
+                        .SelectMany(al => al.Songs)
+                        .Sum(s => (long?)s.SongCounter.TotalPlayed ?? 0)
+                })
+                .OrderByDescending(a => a.totalPlays)
+                .Take(6)
+                .AsEnumerable()
+                .Select(a => new
+                {
+                    a.id,
+                    a.name,
+                    a.coverUrl,
+                    totalPlays = a.totalPlays.ToString("N0") + " Plays"
+                })
+                .ToList();
+
+            var topAlbums = _context.Albums
+                .Select(al => new
+                {
+                    id = al.Id,
+                    title = al.Title,
+                    artistName = al.Artist.Name,
+                    coverUrl = baseUrl + al.CoverImagePath,
+                    totalPlays = al.Songs.Sum(s => (long?)s.SongCounter.TotalPlayed ?? 0)
+                })
+                .OrderByDescending(al => al.totalPlays)
+                .Take(10)
+                .AsEnumerable()
+                .Select(al => new
+                {
+                    id = al.id,
+                    title = al.title,
+                    artistName = al.artistName,
+                    coverUrl = al.coverUrl,
+                    totalPlays = (al.totalPlays).ToString("N0") + " Plays"
+                })
+                .ToList();
+
+
+            var result = new
+            {
+                songs = topSongs,
+                artists = topArtists,
+                albums = topAlbums
+            };
+            return Ok(result);
+        }
         [HttpGet("search")] // search
         public async Task<IActionResult> Search([FromQuery] string? anycontent)
         {
