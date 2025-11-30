@@ -4,6 +4,7 @@ using Floaty_Music.Service;
 using Floaty_Music.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using TagLib.Matroska;
 
@@ -175,14 +176,27 @@ namespace Floaty_Music.Controllers
             {
                 // Youtube
                 // TODO BITRATE AND LYRICS OPTIMIZATION
-                var streamTask = YoutubeService.StreamAudioAsync(id);
-                var videoTask = YoutubeService.GetVideoDetailsAsync(id);
-                var lyricsTask = YoutubeService.GetLyrics(id);
+                async Task<(T result, TimeSpan time)> Measure<T>(Func<Task<T>> action)
+                {
+                    var sw = Stopwatch.StartNew();
+                    var result = await action();
+                    sw.Stop();
+                    return (result, sw.Elapsed);
+                }
+                var streamTask = Measure(() => YoutubeService.StreamAudioAsync(id));
+                var videoTask = Measure(() => YoutubeService.GetVideoDetailsAsync(id));
+                var lyricsTask = Measure(() => YoutubeService.GetLyrics(id));
 
                 await Task.WhenAll(streamTask, videoTask, lyricsTask);
-                var streamurl = await streamTask;
-                var video = await videoTask;
-                var lyrics = await lyricsTask;
+
+                var (streamurl, streamTime) = await streamTask;
+                var (video, videoTime) = await videoTask;
+                var (lyrics, lyricsTime) = await lyricsTask;
+
+                Console.WriteLine($"Stream time: {streamTime}");
+                Console.WriteLine($"Video time : {videoTime}");
+                Console.WriteLine($"Lyrics time: {lyricsTime}");
+
 
                 string lyricspath = $"{Request.Scheme}://{Request.Host}/empty.srt";
                 var priority = new[] { "English", "Indonesia", "Japan", "Korea" };

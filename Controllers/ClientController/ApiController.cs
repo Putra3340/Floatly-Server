@@ -14,7 +14,7 @@ namespace Floaty_Music.Controllers.ClientController
         }
 
         [HttpGet("api/info")]
-        public IActionResult Check()
+        public async Task<IActionResult> Check()
         {
             var response = new
             {
