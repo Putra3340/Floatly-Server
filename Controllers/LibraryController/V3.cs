@@ -20,6 +20,7 @@ namespace Floaty_Music.Controllers
         {
             _context = cont;
         }
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
@@ -102,9 +103,9 @@ namespace Floaty_Music.Controllers
         [HttpGet("search")] // search
         public async Task<IActionResult> Search([FromQuery] string? anycontent)
         {
-            var list = await YoutubeService.SearchAsync(anycontent,10);
+            var list = await YoutubeService.SearchAsync(anycontent, 10);
             List<ApiSong> combinedsonglist = new();
-            foreach(var x in list)
+            foreach (var x in list)
             {
                 combinedsonglist.Add(new ApiSong
                 {
@@ -133,7 +134,7 @@ namespace Floaty_Music.Controllers
                 albumlist = _context.Albums.Include(x => x.Artist).Where(x => x.Title.ToUpper().Contains(anycontent.ToUpper())).ToList();
             }
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
-            foreach(var x in songlist)
+            foreach (var x in songlist)
             {
                 combinedsonglist.Add(new ApiSong
                 {
@@ -171,11 +172,12 @@ namespace Floaty_Music.Controllers
             int localid = 0;
             ApiSongPlay song = null;
             // check is it from youtube / database
-            
-            if(!int.TryParse(id,out localid))
+
+            if (!int.TryParse(id, out localid))
             {
                 // Youtube
                 // TODO BITRATE AND LYRICS OPTIMIZATION
+#if DEBUG
                 async Task<(T result, TimeSpan time)> Measure<T>(Func<Task<T>> action)
                 {
                     var sw = Stopwatch.StartNew();
@@ -186,6 +188,11 @@ namespace Floaty_Music.Controllers
                 var streamTask = Measure(() => YoutubeService.StreamAudioAsync(id));
                 var videoTask = Measure(() => YoutubeService.GetVideoDetailsAsync(id));
                 var lyricsTask = Measure(() => YoutubeService.GetLyrics(id));
+#else // RELEASE
+                var streamTask = YoutubeService.StreamAudioAsync(id));
+                var videoTask = YoutubeService.GetVideoDetailsAsync(id));
+                var lyricsTask = YoutubeService.GetLyrics(id));
+#endif
 
                 await Task.WhenAll(streamTask, videoTask, lyricsTask);
 
@@ -193,20 +200,23 @@ namespace Floaty_Music.Controllers
                 var (video, videoTime) = await videoTask;
                 var (lyrics, lyricsTime) = await lyricsTask;
 
+#if DEBUG
                 Console.WriteLine($"Stream time: {streamTime}");
                 Console.WriteLine($"Video time : {videoTime}");
                 Console.WriteLine($"Lyrics time: {lyricsTime}");
-
+#endif
 
                 string lyricspath = $"{Request.Scheme}://{Request.Host}/empty.srt";
                 var priority = new[] { "English", "Indonesia", "Japan", "Korea" };
                 var firstlyrics = lyrics
-                    .OrderBy(l => {
+                    .OrderBy(l =>
+                    {
                         int idx = Array.IndexOf(priority, l.Language);
                         return idx == -1 ? int.MaxValue : idx; // unknown languages go last
                     })
                     .FirstOrDefault();
-                if (firstlyrics != null) {
+                if (firstlyrics != null)
+                {
                     lyricspath = $"{Request.Scheme}://{Request.Host}" + await FileHelper.SaveIntoFileAsync($"{id}.srt", "yt", firstlyrics.Content);
                 }
 
@@ -228,6 +238,12 @@ namespace Floaty_Music.Controllers
                     //MoviePath = 
                     AlbumId = 0
                 };
+
+                // Save new song to database async
+                _ = Task.Run(async () =>
+                {
+                    await YoutubeService.DownloadEverythingToDatabaseAsync(id);
+                });
             }
             else
             {
@@ -254,7 +270,7 @@ namespace Floaty_Music.Controllers
                     PlayCount = (songdb.SongCounter.TotalPlayed ?? 0).ToString("N0") + " Plays"
                 };
             }
-                
+
             return Ok(song);
         }
         [HttpGet("lyrics/{id}")]

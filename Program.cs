@@ -14,8 +14,6 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Logging.ClearProviders();
-
 
 if (GlobalConfiguration.isSQLITE)
 {
