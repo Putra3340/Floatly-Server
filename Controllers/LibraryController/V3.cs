@@ -217,7 +217,7 @@ namespace Floaty_Music.Controllers
                     .FirstOrDefault();
                 if (firstlyrics != null)
                 {
-                    lyricspath = $"{Request.Scheme}://{Request.Host}" + await FileHelper.SaveIntoFileAsync($"{id}.srt", "yt", firstlyrics.Content);
+                    lyricspath = $"{Request.Scheme}://{Request.Host}" + await FileHelper.SaveTextAsync(firstlyrics.Content,FileHelper.UploadFolder.YT);
                 }
 
                 song = new ApiSongPlay()

@@ -30,11 +30,7 @@ namespace Floaty_Music.Service
             if (audio == null)
                 throw new Exception("No audio streams found.");
 
-            var fullPath = Path.Combine(
-                GlobalConfiguration.WebRootPath,
-                GlobalConfiguration.UploadsFolder,
-                "yt",
-                youtubeUrl);
+            var fullPath = Path.Combine();
 
             // ensure folder exists
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);

@@ -3,35 +3,18 @@ using Floaty_Music.Models;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 DotNetEnv.Env.Load();
 GlobalConfiguration.LoadConfig();
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.AddDbContext<FloatlyContext>(options =>
+    options.UseSqlServer("Data Source=WIN-BNOFJBSA8BF;Initial Catalog=Floatly;Integrated Security=True;Encrypt=True;Trust Server Certificate=True"));
 
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
 
-
-if (GlobalConfiguration.isSQLITE)
-{
-    builder.Services.AddDbContext<FloatlyContext>(options =>
-    options.UseSqlite(GlobalConfiguration.ConnectionString));
-}
-else if(GlobalConfiguration.isMySQL)
-{
-    builder.Services.AddDbContext<FloatlyContext>(options =>
-    options.UseMySql(GlobalConfiguration.ConnectionString, ServerVersion.AutoDetect(GlobalConfiguration.ConnectionString)));
-}
-else if (GlobalConfiguration.isSQLSERVER)
-{
-    builder.Services.AddDbContext<FloatlyContext>(options =>
-        options.UseSqlServer(GlobalConfiguration.ConnectionString));
-}
 builder.Services.AddControllersWithViews();
-builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthentication("MyAuth")
     .AddCookie("MyAuth", options =>
@@ -57,10 +40,8 @@ builder.Services.AddResponseCompression(options =>
 
 });
 
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -81,45 +62,18 @@ app.UseStaticFiles(new StaticFileOptions
         }
     }
 });
-//app.UseStaticFiles();
-// app.UseStaticFiles(new StaticFileOptions
-// {
-//     OnPrepareResponse = ctx =>
-//     {
-//         // cache for 30 days
-//         ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=2592000");
-//     }
-// });
-
 
 app.UseRouting();
 app.UseAuthentication();
-app.UseAuthorization();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-//app.UseHttpsRedirection(); 
+//app.UseHttpsRedirection();
 
-app.UseAuthorization();
 app.MapControllers();
 app.UseResponseCompression();
-
-if (GlobalConfiguration.isSQLITE)
-{
-    // For SQLite, ensure database file and tables are created
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<FloatlyContext>();
-    db.Database.EnsureCreated();
-}
-else if (GlobalConfiguration.isMySQL)
-{
-    // For MySQL, apply any pending migrations
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<FloatlyContext>();
-    db.Database.EnsureCreated();
-}
 
 // wakey wakey
 using (var ctx = new FloatlyContext())

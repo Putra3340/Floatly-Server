@@ -24,11 +24,11 @@ namespace Floaty_Music.Controllers
             {
                 Title = model.Title,
                 AlbumId = model.AlbumId,
-                MusicFilePath = model.MusicFile != null ? await FileHelper.SaveFileAsync(model.MusicFile, GlobalConfiguration.MusicFilePath) : null,
-                LyricsFilePath = model.LyricsFile != null ? await FileHelper.SaveFileAsync(model.LyricsFile, GlobalConfiguration.LyricsFilePath) : null,
-                CoverImagePath = model.CoverImage != null ? await FileHelper.SaveFileAsync(model.CoverImage, GlobalConfiguration.CoverImagePath) : null,
-                BannerImagePath = model.BannerImage != null ? await FileHelper.SaveFileAsync(model.BannerImage, GlobalConfiguration.BannerImagePath) : null,
-                MoviePath = model.SpecialMovie != null ? await FileHelper.SaveFileAsync(model.SpecialMovie, GlobalConfiguration.VideoPath) : null,
+                MusicFilePath = model.MusicFile != null ? await FileHelper.SaveIFormFileAsync(model.MusicFile, FileHelper.UploadFolder.Music) : null,
+                LyricsFilePath = model.LyricsFile != null ? await FileHelper.SaveIFormFileAsync(model.LyricsFile, FileHelper.UploadFolder.Lyrics) : null,
+                CoverImagePath = model.CoverImage != null ? await FileHelper.SaveIFormFileAsync(model.CoverImage, FileHelper.UploadFolder.Cover) : null,
+                BannerImagePath = model.BannerImage != null ? await FileHelper.SaveIFormFileAsync(model.BannerImage, FileHelper.UploadFolder.Banner) : null,
+                MoviePath = model.SpecialMovie != null ? await FileHelper.SaveIFormFileAsync(model.SpecialMovie, FileHelper.UploadFolder.Video) : null,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
@@ -68,16 +68,16 @@ namespace Floaty_Music.Controllers
                 using var stream = model.MusicFile.OpenReadStream();
                 var tagFile = TagLib.File.Create(new StreamFileAbstraction(model.MusicFile.FileName, stream));
                 musiclength = tagFile.Properties.Duration.TotalSeconds;
-                song.MusicFilePath = await FileHelper.SaveFileAsync(model.MusicFile, GlobalConfiguration.MusicFilePath);
+                song.MusicFilePath = await FileHelper.SaveIFormFileAsync(model.MusicFile, FileHelper.UploadFolder.Music);
             }
             if (model.LyricsFile != null)
-                song.LyricsFilePath = await FileHelper.SaveFileAsync(model.LyricsFile, GlobalConfiguration.LyricsFilePath);
+                song.LyricsFilePath = await FileHelper.SaveIFormFileAsync(model.LyricsFile, FileHelper.UploadFolder.Lyrics);
             if (model.CoverImage != null)
-                song.CoverImagePath = await FileHelper.SaveFileAsync(model.CoverImage, GlobalConfiguration.CoverImagePath);
+                song.CoverImagePath = await FileHelper.SaveIFormFileAsync(model.CoverImage, FileHelper.UploadFolder.Cover);
             if (model.BannerImage != null)
-                song.BannerImagePath = await FileHelper.SaveFileAsync(model.BannerImage, GlobalConfiguration.BannerImagePath);
+                song.BannerImagePath = await FileHelper.SaveIFormFileAsync(model.BannerImage, FileHelper.UploadFolder.Banner);
             if (model.SpecialMovie != null)
-                song.MoviePath = await FileHelper.SaveFileAsync(model.SpecialMovie, GlobalConfiguration.VideoPath);
+                song.MoviePath = await FileHelper.SaveIFormFileAsync(model.SpecialMovie, FileHelper.UploadFolder.Video);
             await _context.SaveChangesAsync();
             var songcounter = await _context.SongCounter.FirstOrDefaultAsync(x => x.SongId == song.Id);
             if (songcounter != null)

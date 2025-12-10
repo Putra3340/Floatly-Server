@@ -31,27 +31,19 @@ public partial class FloatlyContext : DbContext
 
     public virtual DbSet<Users> Users { get; set; }
 
+    public virtual DbSet<YoutubeSongs> YoutubeSongs { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (GlobalConfiguration.isSQLITE)
-        {
-            optionsBuilder.UseSqlite(GlobalConfiguration.ConnectionString);
-        }
-        else if (GlobalConfiguration.isMySQL)
-        {
-            optionsBuilder.UseMySql(GlobalConfiguration.ConnectionString, ServerVersion.AutoDetect(GlobalConfiguration.ConnectionString));
-        }
-        else if (GlobalConfiguration.isSQLSERVER)
-        {
-            optionsBuilder.UseSqlServer(GlobalConfiguration.ConnectionString);
-        }
-    }
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Data Source=WIN-BNOFJBSA8BF;Initial Catalog=Floatly;Integrated Security=True;Encrypt=True;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Albums>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Albums__97B4BE17B066FBD5");
+
+            entity.HasIndex(e => e.ArtistId, "IX_Albums_ArtistID");
 
             entity.Property(e => e.ArtistId).HasColumnName("ArtistID");
             entity.Property(e => e.CoverImagePath).HasMaxLength(200);
@@ -79,6 +71,8 @@ public partial class FloatlyContext : DbContext
         {
             entity.HasKey(e => new { e.UserId, e.SongId });
 
+            entity.HasIndex(e => e.SongId, "IX_Likes_SongId");
+
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -98,6 +92,8 @@ public partial class FloatlyContext : DbContext
         {
             entity.HasKey(e => new { e.PlaylistId, e.SongId });
 
+            entity.HasIndex(e => e.SongId, "IX_PlaylistSongs_SongId");
+
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Playlist).WithMany(p => p.PlaylistSongs)
@@ -113,6 +109,8 @@ public partial class FloatlyContext : DbContext
         modelBuilder.Entity<Playlists>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Playlist__B3016780AC87D4F8");
+
+            entity.HasIndex(e => e.UserId, "IX_Playlists_UserId");
 
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -142,6 +140,8 @@ public partial class FloatlyContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__Songs__12E3D6F7F8B323D5");
 
+            entity.HasIndex(e => e.AlbumId, "IX_Songs_AlbumID");
+
             entity.Property(e => e.AlbumId).HasColumnName("AlbumID");
             entity.Property(e => e.BannerImagePath).HasMaxLength(255);
             entity.Property(e => e.CoverImagePath).HasMaxLength(255);
@@ -167,6 +167,12 @@ public partial class FloatlyContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.Username).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<YoutubeSongs>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UrlId).HasMaxLength(50);
         });
 
         OnModelCreatingPartial(modelBuilder);
