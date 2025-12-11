@@ -361,14 +361,14 @@ namespace Floaty_Music.Controllers
         [HttpGet]
         public async Task<IActionResult> GetArtist(int start = 0, int end = 10)
         {
-            var albums = await _context.Artists.Include(x => x.Albums).ThenInclude(x => x.Songs).Skip(start).Take(end).OrderDescending().Select(x => new { x.Id, x.Name, x.Bio, x.CoverImagePath, AlbumCount = x.Albums.Count, SongCount = x.Albums.Sum(a => a.Songs.Count) }).ToListAsync();
+            var albums = await _context.Artists.Include(x => x.Albums).ThenInclude(x => x.Songs).Skip(start).Take(end).OrderDescending().Select(x => new { x.Id, x.Name, x.Bio, CoverImagePath = "/uploads/artist/" + x.CoverImagePath, AlbumCount = x.Albums.Count, SongCount = x.Albums.Sum(a => a.Songs.Count) }).ToListAsync();
             return Json(albums);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetArtistAlbum(int artistid)
         {
-            var albums = await _context.Albums.Where(a => a.ArtistId == artistid).OrderDescending().Select(a => new { a.Id, a.Title, a.ReleaseDate, a.CoverImagePath }).ToListAsync();
+            var albums = await _context.Albums.Where(a => a.ArtistId == artistid).OrderDescending().Select(a => new { a.Id, a.Title, a.ReleaseDate, CoverImagePath = "/uploads/album/" + a.CoverImagePath }).ToListAsync();
             return Json(albums);
         }
 
@@ -381,10 +381,10 @@ namespace Floaty_Music.Controllers
                 s.Id,
                 s.Title,
                 s.AlbumId,
-                musicUrl = s.MusicFilePath,
-                coverUrl = s.CoverImagePath,
-                bannerUrl = s.BannerImagePath,
-                videoUrl = s.MoviePath,
+                musicUrl = "/uploads/music/" + s.MusicFilePath,
+                coverUrl = "/uploads/cover/" + s.CoverImagePath,
+                bannerUrl = "/uploads/banner/" + s.BannerImagePath,
+                videoUrl = "/uploads/video/" + s.MoviePath,
                 Duration = s.SongCounter.MusicLength,
                 Plays = s.SongCounter.TotalPlayed,
                 Likes = s.SongCounter.TotalLikes
@@ -410,7 +410,7 @@ namespace Floaty_Music.Controllers
                     x.Id,
                     x.Name,
                     x.Bio,
-                    x.CoverImagePath,
+                    CoverImagePath = "/uploads/artist/" + x.CoverImagePath,
                     AlbumCount = x.Albums.Count,
                     SongCount = x.Albums.Sum(a => a.Songs.Count),
 
@@ -425,7 +425,7 @@ namespace Floaty_Music.Controllers
                 a.Id,
                 a.Title,
                 a.ReleaseDate,
-                a.CoverImagePath,
+                CoverImagePath = "/uploads/album/" + a.CoverImagePath,
                 SongCount = a.Songs.Count,
                 Songs = a.Songs
                     .Where(s => s.Title.ToUpper().Contains(query))
@@ -435,7 +435,7 @@ namespace Floaty_Music.Controllers
                         s.Title,
                         s.SongCounter.MusicLength,
                         s.MusicFilePath,
-                        s.CoverImagePath,
+                        CoverImagePath = "/uploads/cover/" + s.CoverImagePath,
                         s.Likes,
                         s.SongCounter.TotalLikes
                     })

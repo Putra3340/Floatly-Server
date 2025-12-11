@@ -138,7 +138,7 @@ namespace Floaty_Music.Service
             sw.Start();
 #endif
             var results = new List<YoutubeSearchResult>();
-            var search = client.Search.GetVideosAsync(query);
+            var search = client.Search.GetVideosAsync(query).Where(x=>x.Duration <= TimeSpan.FromMinutes(30)); // limit 30 minutes
 
             await foreach (var video in search.Take(count))
             {
