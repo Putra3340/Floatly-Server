@@ -10,7 +10,6 @@ jobs:
 
     env:
       DOTNET_ROOT: /home/star/.dotnet
-      PATH: /home/star/.dotnet:/home/star/.dotnet/tools:${{ env.PATH }}
       PROJECT_PATH: Floatly-Server.csproj
       PUBLISH_TMP: /tmp/floatly-publish
       PUBLISH_DIR: /var/www/floatly
@@ -18,6 +17,11 @@ jobs:
     steps:
       - name: 💕 Checkout repository
         uses: actions/checkout@v4
+
+      - name: 💿 Configure PATH for dotnet
+        run: |
+          echo "/home/star/.dotnet" >> $GITHUB_PATH
+          echo "/home/star/.dotnet/tools" >> $GITHUB_PATH
 
       - name: 💿 Verify .NET
         run: dotnet --info
