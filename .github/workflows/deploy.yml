@@ -9,6 +9,8 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
 
     env:
+      DOTNET_ROOT: /home/star/.dotnet
+      PATH: /home/star/.dotnet:/home/star/.dotnet/tools:${{ env.PATH }}
       PROJECT_PATH: Floatly-Server.csproj
       PUBLISH_TMP: /tmp/floatly-publish
       PUBLISH_DIR: /var/www/floatly
@@ -17,14 +19,11 @@ jobs:
       - name: 💕 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 💿 Verify .NET SDK
+      - name: 💿 Verify .NET
         run: dotnet --info
 
       - name: 🧰 Install LibMan CLI
         run: dotnet tool install -g Microsoft.Web.LibraryManager.Cli || true
-
-      - name: 🔧 Add .NET tools to PATH
-        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
       - name: 📦 Restore dependencies
         run: |
@@ -39,7 +38,7 @@ jobs:
           rm -rf $PUBLISH_TMP
           dotnet publish ${{ env.PROJECT_PATH }} -c Release -o $PUBLISH_TMP
 
-      - name: 🌸 Deploy to VPS & Restart
+      - name: 🌸 Deploy & Restart
         run: |
           sudo systemctl stop floatly || true
           sudo rm -rf ${{ env.PUBLISH_DIR }}/*
