@@ -25,7 +25,6 @@ namespace Floaty_Music.Controllers
 
                 return RedirectToAction("Dashboard", "Song");
             }
-
             return Unauthorized("Invalid credentials");
         }
 

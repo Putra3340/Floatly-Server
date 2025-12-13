@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using TagLib.Matroska;
+using YoutubeExplode.Common;
 
 namespace Floaty_Music.Controllers
 {
@@ -217,7 +218,8 @@ namespace Floaty_Music.Controllers
                     .FirstOrDefault();
                 if (firstlyrics != null)
                 {
-                    lyricspath = $"{Request.Scheme}://{Request.Host}" + await FileHelper.SaveIntoFileAsync($"{id}.srt", "yt", firstlyrics.Content);
+                    lyricspath = $"{Request.Scheme}://{Request.Host}/uploads/yt/" + await FileHelper.SaveTextAsync(firstlyrics.Content,FileHelper.UploadFolder.YT);
+                    Debug.WriteLine(lyricspath);
                 }
 
                 song = new ApiSongPlay()
@@ -226,7 +228,7 @@ namespace Floaty_Music.Controllers
                     Title = video.Title,
                     Music = streamurl,
                     Cover = video.Thumbnails.FirstOrDefault().Url,
-                    Banner = video.Thumbnails.FirstOrDefault().Url,
+                    Banner = video.Thumbnails.GetWithHighestResolution().Url,
                     Lyrics = lyricspath, // give default lyrics
                     UploadedBy = "YouTube",
                     SongLength = video.Duration?.ToString(@"mm\:ss") ?? "Unknown",
@@ -276,7 +278,16 @@ namespace Floaty_Music.Controllers
         [HttpGet("lyrics/{id}")]
         public async Task<IActionResult> GetLyrics(string id)
         {
-            var lyrics = await YoutubeService.GetLyrics(id);
+            List<LyricItem> lyrics = null;
+            var lyricdb = await _context.YoutubeSongs.FirstOrDefaultAsync(x =>x.UrlId == id);
+            if(lyricdb == null)
+            {
+                lyrics = await YoutubeService.GetLyrics(id);
+            }
+            else
+            {
+                // TODO FROM local
+            }
             return Ok(lyrics);
         }
     }

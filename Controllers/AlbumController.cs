@@ -24,7 +24,7 @@ namespace Floaty_Music.Controllers
                 Title = model.Title,
                 ArtistId = model.ArtistId,
                 ReleaseDate = model.ReleaseDate,
-                CoverImagePath = model.CoverImage != null ? await FileHelper.SaveFileAsync(model.CoverImage, GlobalConfiguration.AlbumCoverPath) : null,
+                CoverImagePath = model.CoverImage != null ? await FileHelper.SaveIFormFileAsync(model.CoverImage, FileHelper.UploadFolder.Album) : null,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
@@ -45,7 +45,7 @@ namespace Floaty_Music.Controllers
             if (model.ReleaseDate != null)
                 album.ReleaseDate = model.ReleaseDate;
             if (model.CoverImage != null)
-                album.CoverImagePath = await FileHelper.SaveFileAsync(model.CoverImage, GlobalConfiguration.AlbumCoverPath);
+                album.CoverImagePath = await FileHelper.SaveIFormFileAsync(model.CoverImage, FileHelper.UploadFolder.Album);
             album.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
             return Redirect("/Song/Dashboard#albums");

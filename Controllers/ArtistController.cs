@@ -22,7 +22,7 @@ namespace Floaty_Music.Controllers
             {
                 Name = model.Name,
                 Bio = model.Bio,
-                CoverImagePath = model.ProfileUrl != null ? await FileHelper.SaveFileAsync(model.ProfileUrl, GlobalConfiguration.ArtistProfilePath) : null,
+                CoverImagePath = model.ProfileUrl != null ? await FileHelper.SaveIFormFileAsync(model.ProfileUrl, FileHelper.UploadFolder.Artist) : null,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
@@ -39,7 +39,7 @@ namespace Floaty_Music.Controllers
             artist.Name = model.Name;
             artist.Bio = model.Bio;
             if (model.ProfileUrl != null)
-                artist.CoverImagePath = await FileHelper.SaveFileAsync(model.ProfileUrl, GlobalConfiguration.ArtistProfilePath);
+                artist.CoverImagePath = await FileHelper.SaveIFormFileAsync(model.ProfileUrl, FileHelper.UploadFolder.Artist);
             artist.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
             return Redirect("/Song/Dashboard#artists");

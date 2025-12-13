@@ -10,6 +10,7 @@
     <UserSecretsId>07d73ec1-36d4-411c-882f-8657896b7183</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
+    <Configurations>Debug;Release;Debug_SQLite</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
