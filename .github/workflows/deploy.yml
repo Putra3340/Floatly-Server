@@ -1,4 +1,4 @@
-name: Build & Deploy Floatly-Server (.NET 10 - Ubuntu)
+name: Build & Deploy Floatly-Server (.NET 10 - Ubuntu VPS)
 
 on:
   push:
@@ -6,29 +6,27 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: [self-hosted, Linux, X64]
 
     env:
-      DOTNET_VERSION: 10.0.x
       PROJECT_PATH: Floatly-Server.csproj
+      PUBLISH_TMP: /tmp/floatly-publish
       PUBLISH_DIR: /var/www/floatly
 
     steps:
       - name: 💕 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 💿 Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: 💿 Verify .NET SDK
+        run: dotnet --info
 
-      - name: 🧰 Install LibMan
-        run: dotnet tool install -g Microsoft.Web.LibraryManager.Cli
+      - name: 🧰 Install LibMan CLI
+        run: dotnet tool install -g Microsoft.Web.LibraryManager.Cli || true
 
-      - name: 🔧 Add tools to PATH
+      - name: 🔧 Add .NET tools to PATH
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      - name: 📦 Restore
+      - name: 📦 Restore dependencies
         run: |
           dotnet restore
           libman restore
@@ -37,11 +35,13 @@ jobs:
         run: dotnet build -c Release --no-restore
 
       - name: 🚀 Publish
-        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -o /tmp/floatly-publish
+        run: |
+          rm -rf $PUBLISH_TMP
+          dotnet publish ${{ env.PROJECT_PATH }} -c Release -o $PUBLISH_TMP
 
-      - name: 🌷 Deploy to VPS
+      - name: 🌸 Deploy to VPS & Restart
         run: |
           sudo systemctl stop floatly || true
-          rm -rf ${{ env.PUBLISH_DIR }}/*
-          cp -r /tmp/floatly-publish/* ${{ env.PUBLISH_DIR }}
+          sudo rm -rf ${{ env.PUBLISH_DIR }}/*
+          sudo cp -r $PUBLISH_TMP/* ${{ env.PUBLISH_DIR }}
           sudo systemctl start floatly
