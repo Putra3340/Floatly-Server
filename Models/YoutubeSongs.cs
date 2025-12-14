@@ -9,6 +9,8 @@ public partial class YoutubeSongs
 
     public string? UrlId { get; set; }
 
+    public string? Title { get; set; }
+
     public string? Music { get; set; }
 
     public string? Lyrics { get; set; }

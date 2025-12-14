@@ -62,6 +62,8 @@ namespace Floaty_Music
                 Directory.CreateDirectory(AlbumCoverPath);
             if (!Directory.Exists(VideoPath))
                 Directory.CreateDirectory(VideoPath);
+            if(!Directory.Exists(YoutubePath))
+                Directory.CreateDirectory(YoutubePath);
         }
     }
 }

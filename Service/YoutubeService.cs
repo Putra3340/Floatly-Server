@@ -2,6 +2,7 @@
 using Floaty_Music.Models.ApiClient;
 using System.Diagnostics;
 using System.Reflection.Metadata;
+using System.Text;
 using YoutubeExplode;
 using YoutubeExplode.Common;
 using YoutubeExplode.Videos;
@@ -14,83 +15,113 @@ namespace Floaty_Music.Service
     public static class YoutubeService
     {
         private static readonly YoutubeClient client = new YoutubeClient();
+        private static readonly FloatlyContext db = new FloatlyContext();
 
         // Always use this, but make it fire and forget
-        public static async Task<string> DownloadEverythingToDatabaseAsync(string youtubeUrl)
+        public static async Task<YoutubeSongs> DownloadAndSaveAsync(
+    string youtubeUrl)
         {
-            Songs db_song = new Songs();
-
+            var client = new YoutubeClient();
             var videoId = VideoId.Parse(youtubeUrl);
+
+            Directory.CreateDirectory(GlobalConfiguration.YoutubePath);
+            var baseName = videoId.Value;
+
+            // filenames only (what goes to DB)
+            var audioFile = baseName + ".m4a";
+            var videoFile = baseName + ".mp4";
+            var thumbFile = baseName + ".jpg";
+
+            // full disk paths
+            var audioPath = Path.Combine(GlobalConfiguration.YoutubePath, audioFile);
+            var videoPath = Path.Combine(GlobalConfiguration.YoutubePath, videoFile);
+            var thumbPath = Path.Combine(GlobalConfiguration.YoutubePath, thumbFile);
+
             var manifest = await client.Videos.Streams.GetManifestAsync(videoId);
 
-            // Audio
+            // AUDIO
             var audio = manifest.GetAudioOnlyStreams()
-                                .OrderByDescending(s => s.Bitrate)
-                                .FirstOrDefault();
-            if (audio == null)
-                throw new Exception("No audio streams found.");
+                                .GetWithHighestBitrate()
+                ?? throw new Exception("No audio stream found.");
 
-            var fullPath = Path.Combine();
+            await client.Videos.Streams.DownloadAsync(audio, audioPath);
 
-            // ensure folder exists
-            Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
-            await client.Videos.Streams.DownloadAsync(audio, fullPath + ".m4a");
-            db_song.MusicFilePath = Path.Combine();
+            // VIDEO
+            var video = manifest.GetVideoOnlyStreams()
+                                .OrderByDescending(v => v.VideoQuality)
+                                .FirstOrDefault()
+                ?? throw new Exception("No video stream found.");
 
-            // Video
-            var video = manifest.GetVideoStreams()
-                                .OrderByDescending(s => s.VideoQuality)
-                                .FirstOrDefault();
-            if (video == null)
-                throw new Exception("No video streams found.");
+            await client.Videos.Streams.DownloadAsync(video, videoPath);
 
-            await client.Videos.Streams.DownloadAsync(audio, fullPath + ".mp4");
+            // LYRICS (ALL)
+            string? lyricFile = null;
 
-            // Lyrics
-            var lyrics = await client.Videos.ClosedCaptions.GetManifestAsync(videoId);
-            var result = new List<LyricItem>();
+            var captionsManifest = await client.Videos.ClosedCaptions.GetManifestAsync(videoId);
 
-            foreach (var track in lyrics.Tracks)
+            foreach (var track in captionsManifest.Tracks)
             {
                 var captions = await client.Videos.ClosedCaptions.GetAsync(track);
 
-                // 29 NOVEMBER Parse Youtube Caption as SRT
-                // Credits by Putra3340
-                string text = string.Empty;
-
+                var sb = new StringBuilder();
                 int i = 1;
-                foreach (var item in captions.Captions)
+
+                foreach (var c in captions.Captions)
                 {
-#if DEBUG
-                    Debug.WriteLine(i);
-                    Debug.WriteLine($"{item.Offset} --> {item.Offset.Add(item.Duration)}");
-                    Debug.WriteLine(item.Text);
-#endif
-                    text += $"{i}\n" +
-                        $"{item.Offset.ToString(@"hh\:mm\:ss\,fff")} --> {(item.Offset.Add(item.Duration)).ToString(@"hh\:mm\:ss\,fff")}\n" +
-                        $"{item.Text}\n\n";
+                    sb.AppendLine(i.ToString());
+                    sb.AppendLine(
+                        $"{c.Offset:hh\\:mm\\:ss\\,fff} --> {(c.Offset + c.Duration):hh\\:mm\\:ss\\,fff}"
+                    );
+                    sb.AppendLine(c.Text);
+                    sb.AppendLine();
                     i++;
                 }
-                result.Add(new LyricItem { Language = track.Language.Name, Content = text });
-            }
-            // Save lyrics to file
-            foreach(var x in result)
-            {
-                var lyricPath = fullPath + $"_{x.Language}.srt";
-                await File.WriteAllTextAsync(lyricPath, x.Content);
-            }
-            // Thumbnail
-            var thumb = await client.Videos.GetAsync(videoId);
-            var thumbUrl = thumb.Thumbnails.GetWithHighestResolution().Url;
-            var thumbPath = fullPath + ".jpg";
-            using (var httpClient = new HttpClient())
-            {
-                var imageBytes = await httpClient.GetByteArrayAsync(thumbUrl);
-                await File.WriteAllBytesAsync(thumbPath, imageBytes);
+
+                // AUTO / DEFAULT → baseName.srt
+                // OTHERS → baseName_lang.srt
+                var fileName = track.IsAutoGenerated || track.Language.Code == "und"
+                    ? $"{baseName}.srt"
+                    : $"{baseName}_{track.Language}.srt";
+
+                var fullPath = Path.Combine(GlobalConfiguration.YoutubePath, fileName);
+                await File.WriteAllTextAsync(fullPath, sb.ToString());
+
+                // store only the base lyric filename in DB
+                lyricFile ??= $"{baseName}.srt";
             }
 
-            return fullPath;
+
+            // THUMBNAIL + AUTHOR
+            var info = await client.Videos.GetAsync(videoId);
+            var thumbUrl = info.Thumbnails.GetWithHighestResolution().Url;
+
+            using (var http = new HttpClient())
+            {
+                var bytes = await http.GetByteArrayAsync(thumbUrl);
+                await File.WriteAllBytesAsync(thumbPath, bytes);
+            }
+
+            // SAVE TO DB (ONLY FILENAMES 💕)
+            var dbSong = new YoutubeSongs
+            {
+                Title = info.Title,
+                UrlId = videoId.Value,
+                Music = audioFile,
+                Video = videoFile,
+                Lyrics = lyricFile,
+                Thumbnail = thumbFile,
+                AuthorName = info.Author.ChannelTitle,
+                AuthorCover = null,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            db.YoutubeSongs.Add(dbSong);
+            await db.SaveChangesAsync();
+
+            Console.WriteLine($"Succesfully downloaded {youtubeUrl} and saved to db");
+            return dbSong;
         }
+
         public static async Task<string> StreamAudioAsync(string youtubeUrl)
         {
             var decodedUrl = Uri.UnescapeDataString(youtubeUrl);

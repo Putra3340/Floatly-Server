@@ -177,7 +177,35 @@ namespace Floaty_Music.Controllers
             if (!int.TryParse(id, out localid))
             {
                 // Youtube
-                // TODO BITRATE AND LYRICS OPTIMIZATION
+                // TODO BITRATE
+
+                var songdb = _context.YoutubeSongs.FirstOrDefault(x => x.UrlId == id);
+                if (songdb != null)
+                {
+                    Console.WriteLine("Fetching from Database YT...");
+                    var baseUrl = $"{Request.Scheme}://{Request.Host}/uploads/yt/";
+                    song = new ApiSongPlay()
+                    {
+                        Id = id,
+                        Title = songdb.Video ?? "Unknown Title",
+                        Music = baseUrl + songdb.Music,
+                        Cover = baseUrl + songdb.Thumbnail,
+                        Banner = baseUrl + songdb.Thumbnail,
+                        Lyrics = baseUrl + songdb.Lyrics,
+                        UploadedBy = songdb.AuthorName ?? "YouTube",
+                        SongLength = "Unknown",
+                        PlayCount = "",
+                        CreatedAt = songdb.CreatedAt ?? DateTime.Now,
+                        ArtistName = songdb.AuthorName ?? "Unknown Artist",
+                        ArtistId = null,
+                        AlbumTitle = null,
+                        MoviePath = baseUrl + songdb.Video,
+                        AlbumId = 0
+                    };
+                    return Ok(song);
+                }
+
+                Console.WriteLine("Fetching from YouTube...");
 #if DEBUG
                 async Task<(T result, TimeSpan time)> Measure<T>(Func<Task<T>> action)
                 {
@@ -248,12 +276,13 @@ namespace Floaty_Music.Controllers
                 // Save new song to database async
                 _ = Task.Run(async () =>
                 {
-                    await YoutubeService.DownloadEverythingToDatabaseAsync(id);
+                    await YoutubeService.DownloadAndSaveAsync(id);
                 });
             }
             else
             {
                 // Database
+                Console.WriteLine("Fetching from Database Local...");
                 var songdb = _context.Songs.Include(x => x.SongCounter).Include(x => x.Album).ThenInclude(x => x.Artist).FirstOrDefault(x => x.Id == localid);
                 if (songdb == null)
                 {
@@ -286,11 +315,41 @@ namespace Floaty_Music.Controllers
             var lyricdb = await _context.YoutubeSongs.FirstOrDefaultAsync(x =>x.UrlId == id);
             if(lyricdb == null)
             {
+                Console.WriteLine("Fetching From Youtube");
                 lyrics = await YoutubeService.GetLyrics(id);
             }
             else
             {
-                // TODO FROM local
+                Console.WriteLine("Fetching From local");
+                lyrics = new List<LyricItem>();
+
+                if (!string.IsNullOrWhiteSpace(lyricdb.Lyrics))
+                {
+                    var baseName = Path.GetFileNameWithoutExtension(lyricdb.Lyrics);
+                    var dir = GlobalConfiguration.YoutubePath;
+
+                    var files = Directory.GetFiles(dir, baseName + "*.srt");
+
+                    foreach (var file in files)
+                    {
+                        var content = await System.IO.File.ReadAllTextAsync(file);
+
+                        var fileName = Path.GetFileNameWithoutExtension(file);
+
+                        // filename.srt -> default
+                        // filename_en.srt -> en
+                        var language = fileName == baseName
+                            ? "default"
+                            : fileName.Substring(baseName.Length + 1);
+
+                        lyrics.Add(new LyricItem
+                        {
+                            Language = language,
+                            Content = content
+                        });
+                    }
+                }
+
             }
             return Ok(lyrics);
         }
