@@ -9,8 +9,13 @@ DotNetEnv.Env.Load();
 GlobalConfiguration.LoadConfig();
 var builder = WebApplication.CreateBuilder(args);
 
+#if DEBUG
 builder.Services.AddDbContext<FloatlyContext>(options =>
     options.UseSqlServer("Data Source=WIN-BNOFJBSA8BF;Initial Catalog=Floatly;Integrated Security=True;Encrypt=True;Trust Server Certificate=True"));
+#else
+builder.Services.AddDbContext<FloatlyContext>(options =>
+    options.UseSqlite("Data Source=database.db;Foreign Keys=True;"));
+#endif
 
 builder.Services.AddControllers();
 

@@ -190,21 +190,25 @@ namespace Floaty_Music.Controllers
                 var videoTask = Measure(() => YoutubeService.GetVideoDetailsAsync(id));
                 var lyricsTask = Measure(() => YoutubeService.GetLyrics(id));
 #else // RELEASE
-                var streamTask = YoutubeService.StreamAudioAsync(id));
-                var videoTask = YoutubeService.GetVideoDetailsAsync(id));
-                var lyricsTask = YoutubeService.GetLyrics(id));
+                var streamTask = YoutubeService.StreamAudioAsync(id);
+                var videoTask = YoutubeService.GetVideoDetailsAsync(id);
+                var lyricsTask = YoutubeService.GetLyrics(id);
 #endif
 
                 await Task.WhenAll(streamTask, videoTask, lyricsTask);
 
+#if DEBUG
                 var (streamurl, streamTime) = await streamTask;
                 var (video, videoTime) = await videoTask;
                 var (lyrics, lyricsTime) = await lyricsTask;
 
-#if DEBUG
                 Console.WriteLine($"Stream time: {streamTime}");
                 Console.WriteLine($"Video time : {videoTime}");
                 Console.WriteLine($"Lyrics time: {lyricsTime}");
+#else // RELEASE
+                var streamurl = await streamTask;
+                var video = await videoTask;
+                var lyrics = await lyricsTask;
 #endif
 
                 string lyricspath = $"{Request.Scheme}://{Request.Host}/empty.srt";
