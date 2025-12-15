@@ -31,9 +31,9 @@
             return Path.GetFileName(outputPath);
         }
 
-        public static async Task<string> SaveTextAsync(string content , UploadFolder folder)
+        public static async Task<string> SaveTextAsync(string filenamewithext, string content , UploadFolder folder)
         {
-            string outputPath = Path.Combine(await GetPathByEnum(folder), await GetRandomFileName());
+            string outputPath = Path.Combine(await GetPathByEnum(folder), filenamewithext);
             await File.WriteAllTextAsync(outputPath, content);
             return Path.GetFileName(outputPath);
         }

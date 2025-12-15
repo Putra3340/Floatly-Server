@@ -184,10 +184,14 @@ namespace Floaty_Music.Controllers
                 {
                     Console.WriteLine("Fetching from Database YT...");
                     var baseUrl = $"{Request.Scheme}://{Request.Host}/uploads/yt/";
+
+                    // check if lyrics empty
+                    if (songdb.Lyrics == null || songdb.Lyrics == "")
+                        songdb.Lyrics = "empty.srt";
                     song = new ApiSongPlay()
                     {
                         Id = id,
-                        Title = songdb.Video ?? "Unknown Title",
+                        Title = songdb.Title ?? "Unknown Title",
                         Music = baseUrl + songdb.Music,
                         Cover = baseUrl + songdb.Thumbnail,
                         Banner = baseUrl + songdb.Thumbnail,
@@ -250,7 +254,11 @@ namespace Floaty_Music.Controllers
                     .FirstOrDefault();
                 if (firstlyrics != null)
                 {
-                    lyricspath = $"{Request.Scheme}://{Request.Host}/uploads/yt/" + await FileHelper.SaveTextAsync(firstlyrics.Content,FileHelper.UploadFolder.YT);
+                    string lyricname = await FileHelper.SaveTextAsync($"{id}.srt",firstlyrics.Content, FileHelper.UploadFolder.YT);
+                    if(lyricname == null || lyricname == "")
+                        lyricspath = $"{Request.Scheme}://{Request.Host}/empty.srt";
+                    else
+                        lyricspath = $"{Request.Scheme}://{Request.Host}/uploads/yt/" + lyricname;
                     Debug.WriteLine(lyricspath);
                 }
 

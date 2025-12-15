@@ -115,7 +115,7 @@ namespace Floaty_Music.Service
                 CreatedAt = DateTime.UtcNow
             };
 
-            db.YoutubeSongs.Add(dbSong);
+            await db.YoutubeSongs.AddAsync(dbSong);
             await db.SaveChangesAsync();
 
             Console.WriteLine($"Succesfully downloaded {youtubeUrl} and saved to db");
@@ -169,7 +169,7 @@ namespace Floaty_Music.Service
             sw.Start();
 #endif
             var results = new List<YoutubeSearchResult>();
-            var search = client.Search.GetVideosAsync(query).Where(x=>x.Duration <= TimeSpan.FromMinutes(30)); // limit 30 minutes
+            var search = client.Search.GetVideosAsync(query).Where(x=>x.Duration <= TimeSpan.FromMinutes(30) && x.Duration >= TimeSpan.FromSeconds(30)); // limit 30 minutes an min 30 sec
 
             await foreach (var video in search.Take(count))
             {
