@@ -24,4 +24,6 @@ public partial class YoutubeSongs
     public string? AuthorCover { get; set; }
 
     public DateTime? CreatedAt { get; set; }
+
+    public virtual ICollection<YoutubeLyrics> YoutubeLyrics { get; set; } = new List<YoutubeLyrics>();
 }

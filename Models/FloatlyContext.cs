@@ -31,6 +31,8 @@ public partial class FloatlyContext : DbContext
 
     public virtual DbSet<Users> Users { get; set; }
 
+    public virtual DbSet<YoutubeLyrics> YoutubeLyrics { get; set; }
+
     public virtual DbSet<YoutubeSongs> YoutubeSongs { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -167,6 +169,19 @@ public partial class FloatlyContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.Username).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<YoutubeLyrics>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__YoutubeL__3214EC07039B3CC4");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.FileName).HasMaxLength(260);
+            entity.Property(e => e.LanguageCode).HasMaxLength(10);
+
+            entity.HasOne(d => d.Song).WithMany(p => p.YoutubeLyrics)
+                .HasForeignKey(d => d.SongId)
+                .HasConstraintName("FK_YoutubeLyrics_YoutubeSongs");
         });
 
         modelBuilder.Entity<YoutubeSongs>(entity =>

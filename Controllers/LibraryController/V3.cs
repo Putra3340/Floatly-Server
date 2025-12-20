@@ -178,7 +178,7 @@ namespace Floaty_Music.Controllers
             {
                 // Youtube
                 // TODO BITRATE
-
+                // TODO WHEN THE YOUTUBE SONG IS ON LOCALDB, WE NEED TO SET DEFAULT NICE LYRICS NOT FROM TOP
                 var songdb = _context.YoutubeSongs.FirstOrDefault(x => x.UrlId == id);
                 if (songdb != null)
                 {
@@ -188,6 +188,7 @@ namespace Floaty_Music.Controllers
                     // check if lyrics empty
                     if (songdb.Lyrics == null || songdb.Lyrics == "")
                         songdb.Lyrics = "empty.srt";
+
                     song = new ApiSongPlay()
                     {
                         Id = id,
@@ -316,50 +317,31 @@ namespace Floaty_Music.Controllers
 
             return Ok(song);
         }
-        [HttpGet("lyrics/{id}")]
-        public async Task<IActionResult> GetLyrics(string id)
+        [HttpGet("lyrics/{urlId}")] // TODO : LOCAL DB AND IF NEW SONGS
+        public async Task<IActionResult> GetLyrics(string urlId)
         {
-            List<LyricItem> lyrics = null;
-            var lyricdb = await _context.YoutubeSongs.FirstOrDefaultAsync(x =>x.UrlId == id);
-            if(lyricdb == null)
-            {
-                Console.WriteLine("Fetching From Youtube");
-                lyrics = await YoutubeService.GetLyrics(id);
-            }
-            else
-            {
-                Console.WriteLine("Fetching From local");
-                lyrics = new List<LyricItem>();
-
-                if (!string.IsNullOrWhiteSpace(lyricdb.Lyrics))
+            var song = await _context.YoutubeSongs
+                .Where(s => s.UrlId == urlId)
+                .Select(s => new
                 {
-                    var baseName = Path.GetFileNameWithoutExtension(lyricdb.Lyrics);
-                    var dir = GlobalConfiguration.YoutubePath;
-
-                    var files = Directory.GetFiles(dir, baseName + "*.srt");
-
-                    foreach (var file in files)
+                    s.Id,
+                    s.UrlId,
+                    Lyrics = s.YoutubeLyrics.Select(l => new
                     {
-                        var content = await System.IO.File.ReadAllTextAsync(file);
+                        Language = l.LanguageCode,
+                        l.IsAuto,
+                        l.FileName,
+                        Content = System.IO.File.ReadAllText(
+                            Path.Combine(GlobalConfiguration.YoutubePath, l.FileName))
+                    })
+                })
+                .FirstOrDefaultAsync();
 
-                        var fileName = Path.GetFileNameWithoutExtension(file);
+            if (song == null)
+                return NotFound();
 
-                        // filename.srt -> default
-                        // filename_en.srt -> en
-                        var language = fileName == baseName
-                            ? "default"
-                            : fileName.Substring(baseName.Length + 1);
-
-                        lyrics.Add(new LyricItem
-                        {
-                            Language = language,
-                            Content = content
-                        });
-                    }
-                }
-
-            }
-            return Ok(lyrics);
+            return Ok(song);
         }
+
     }
 }
