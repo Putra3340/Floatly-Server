@@ -14,233 +14,219 @@ You can run it privately on your own machine or server, or make it publicly acce
 - [Features](#features)
 - [Architecture](#architecture)
 - [Getting Started](#getting-started)
-  - [Windows](#windows)
-    - [Prerequisites](#windows-prerequisites)
-    - [Installation](#windows-installation)
-    - [Configuration](#windows-configuration)
-    - [Running the Server](#windows-running-the-server)
-  - [Linux & Other Platforms](#linux--other-platforms)
-    - [Prerequisites](#linux-prerequisites)
-    - [Installation](#linux-installation)
-    - [Configuration](#linux-configuration)
-    - [Running the Server](#linux-running-the-server)
 - [API Overview](#api-overview)
+  - [Server Information](#server-information)
   - [Desktop Authentication](#desktop-authentication)
-  - [Endpoints](#endpoints)
+  - [Client Library (V3)](#client-library-v3)
+  - [Legacy Library (V1 & V2)](#legacy-library-v1--v2)
+  - [User Library Management](#user-library-management)
 - [Project Structure](#project-structure)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
+- [Controllers & Services](#controllers--services)
 - [License](#license)
 
 ---
 
 ## Features
 
-- Full CRUD support for albums, artists, and songs through a web interface  
-- Powerful search across the music library  
-- Music streaming endpoints for seamless playback  
-- Custom user authentication and authorization system  
-- Automatic login support for the desktop client  
-- RESTful API with integrated Swagger/OpenAPI documentation  
-- MVC architecture with Razor views for administration and management  
-- Configurable settings via `.env` file  
-- SMTP integration for email notifications and account registration  
-- Built-in logging and structured error handling  
-
+- **Advanced Music Management**:
+  - Full CRUD capabilities for Songs, Albums, and Artists via MVC Dashboard.
+  - **Upload & Edit**: Support for uploading new tracks and editing metadata.
+  - **Cleanup & Refresh**: Tools to clean up database discrepancies and refresh disk content.
+  - **Compression**: Utility to compress all songs for optimized streaming.
+- **YouTube Music Integration**:
+  - Search and play content directly via YouTube integration (Library V3).
+  - Fetch lyrics automatically.
+- **Powerful Search**:
+  - Deep search capabilities across local library and external sources.
+- **Robust Authentication**:
+  - **Desktop Auth**: Token-based authentication for desktop clients (Auto-login, Registration, Email Verification).
+  - **Web Auth**: Standard cookie-based authentication for the admin dashboard.
+- **Server Monitoring**:
+  - `api/info` endpoint for real-time server statistics (Uptime, Song Count, Server Time).
+- **Architecture**:
+  - Built on **ASP.NET Core** with **Ocelot**-ready patterns.
+  - **MVC** for Administration Views.
+  - **REST API** for Client Applications.
+  - **Swagger/OpenAPI** documentation support.
 
 ---
 
 ## Architecture
 
-- **Backend Framework:** ASP.NET Core
-- **API:** RESTful, documented with Swagger, and OpenAPI
-- **Views:** Razor Pages (for admin/management)
-- **Data Models:** Album, Artist, Song, User, etc.
-- **Controllers:** Handle API and view requests
-- **Authentication:** Custom desktop client authentication
-- **Configuration:** `.env` and environment-specific overrides
+- **Backend Framework:** ASP.NET Core 8.0/9.0
+- **Database:** Entity Framework Core (SQL Server / SQLite support)
+- **API:** RESTful, Versioned (V1, V2, V3)
+- **Frontend (Admin):** Razor Pages (MVC)
+- **Authentication:** Custom Token + Session Cookies
+- **External Services:** 
+  - YouTube Explode (for V3 integration)
+  - MailKit (SMTP for emails)
 
 ---
 
 ## Getting Started
 
-### Windows
-#### Windows Prerequisites
+### Prerequisites
 
-- Microsoft Visual Studio 2022 or later (with .NET workload).
-- SQL Server or SQLITE.
-#### Windows Installation
-1. **Clone the repository on Visual Studio:**
-   `https://github.com/Putra3340/Floatly-Server.git`.
-2. **Restore dependencies:**
-   - Open the solution in Visual Studio.
-   - Right-click the solution in Solution Explorer and select `Restore NuGet Packages`.
-   - Right-click the solution in Solution Explorer and select `Restore Client-Side Libraries`.
-#### Windows Configuration
-- Copy `.env.example` to `.env` and adjust settings as needed.
-- Set up your database connection string in the configuration file.
-- Configure authentication secrets and other environment variables.
-#### Windows Running the Server
-- Press `F5` in Visual Studio to build and run the server.
-- The server will start on the port specified in `Properties/launchSettings.json` (default: `http://localhost:5178`).
+- **.NET SDK** (8.0 or newer)
+- **Database**: SQL Server or SQLite
+- **Visual Studio 2022** or **VS Code**
 
-### Linux & Other Platforms
-#### Linux Prerequisites
-
-- [.NET 9+ SDK](https://dotnet.microsoft.com/download)
-- [Git](https://git-scm.com/)
-- [LibMan CLI](https://learn.microsoft.com/aspnet/core/client-side/libman/libman-cli)  
-  Install via:
-  ```bash
-  dotnet tool install -g Microsoft.Web.LibraryManager.Cli
-- SQL Server or SQLITE
-
-Ensure the .NET global tools path `~/.dotnet/tools` is included in your PATH environment variable.
-For example, in Fish shell (persistent):
-```bash
-set -U fish_user_paths $fish_user_paths $HOME/.dotnet/tools
-```
-
-#### Linux Installation
+### Installation
 
 1. **Clone the repository:**
-   ```sh
+   ```bash
    git clone https://github.com/Putra3340/Floatly-Server.git
    cd Floatly-Server
    ```
 
 2. **Restore dependencies:**
-   ```sh
+   ```bash
    dotnet restore
-   libman restore
    ```
+   *Note: If using Visual Studio, right-click the solution to restore NuGet packages.*
 
-#### Linux Configuration
+### Configuration
 
-- Copy `.env.example` to `.env` and adjust settings as needed.
-- Set up your database connection string in the configuration file.
-- Configure authentication secrets and other environment variables.
+1. Copy `.env.example` to `.env`.
+2. Configure your database connection string and SMTP settings in `.env`.
 
-#### Linux Running the Server
+### Running the Server
 
-```sh
-dotnet build
+```bash
 dotnet run
 ```
-
-The server will start on the port specified in `Properties/launchSettings.json` (default: `http://localhost:5178`).
+The server will start at `http://localhost:5178` (default).
 
 ---
 
 ## API Overview
 
+### Server Information
+
+- **GET** `/api/info`
+  - Returns server status, uptime, version, and library statistics (Total Songs, Artists, Albums).
+
 ### Desktop Authentication
 
-- **Login:** `POST /auth/desktop/login`  
-  Authenticate a user and return a custom token for authorized requests.  
+Managed by `Controllers/ClientController/AuthController.cs`.
 
-- **AutoLogin:** `POST /auth/desktop/autologin`  
-  Authenticate a user automatically using a stored token.   
+- **POST** `/auth/desktop/login`
+  - Authenticates user credentials. Returns a session token.
+- **POST** `/auth/desktop/autologin`
+  - Logs in using a valid saved token.
+- **POST** `/auth/desktop/register`
+  - Registers a new user account.
+- **POST** `/auth/desktop/verify-email`
+  - Triggers a verification email to the user.
+- **GET** `/auth/desktop/verify-token`
+  - Validates the email verification token.
 
-- **Register:** `POST /auth/desktop/register`  
-  Create a new user account.  
+### Client Library (V3)
 
-- **Request Email Verification:** `POST /auth/desktop/verify-email`  
-  Send a verification email using SMTP.  
+The latest library API with YouTube integration. Managed by `Controllers/LibraryController/V3.cs`.
 
-- **Confirm Email Verification:** `GET /auth/desktop/verify-token`  
-  Validate the verification token and confirm the user’s email address.  
+- **GET** `/api/library/v3/search`
+  - Search for songs (Local + YouTube).
+- **GET** `/api/library/v3/play/{id}`
+  - Stream a song by ID.
+- **GET** `/api/library/v3/lyrics/{urlId}`
+  - Fetch lyrics for a specific track.
 
+### Legacy Library (V1 & V2)
 
-### Endpoints
+Managed by `Controllers/LibraryController/V1.cs` and `V2.cs`.
 
-#### Library V1
+#### V2
+- **GET** `/api/library/v2` - List all songs.
+- **GET** `/api/library/v2/search` - Search local library.
+- **GET** `/api/library/v2/{id}` - Get song details.
+- **GET** `/api/library/v2/artist/{id}` - Get artist details and tracks.
+- **GET** `/api/library/v2/album/{id}` - Get album details and tracks.
 
-- `GET /api/library/v1/{id}` — Get library item by ID  
-- `GET /api/library/v1` — Get all library items  
+#### V1
+- **GET** `/api/library/v1` - List all songs.
+- **GET** `/api/library/v1/{id}` - Get song details.
 
-#### Library V2
+### User Library Management
 
-- `GET /api/library/v2` — Get all library items
-- `GET /api/library/v3/{id}` — Get library item by ID  
-- `GET /api/library/v2/artist/{id}` — Get artist details  
-- `GET /api/library/v2/album/{id}` — Get album details  
+Managed by `Controllers/ClientController`.
 
-#### Likes
+#### Playlists (`PlaylistController`)
+- **POST** `/api/playlist` - List user playlists.
+- **POST** `/api/createplaylist` - Create a new playlist.
+- **POST** `/api/deleteplaylist` - Delete a playlist.
+- **POST** `/api/addplaylistsong` - Add song to playlist.
+- **POST** `/api/removeplaylistsong` - Remove song from playlist.
+- **POST** `/api/editplaylist` - Update playlist metadata.
+- **POST** `/api/getplaylistsongs` - Retrieve playlist tracks.
 
-- `POST /api/likes` — Get user liked song list
-- `POST /api/likesong` — Like a song  
-- `POST /api/unlikesong` — Unlike a song  
+#### Likes (`LikeController`)
+- **POST** `/api/likes` - Get list of liked songs.
+- **POST** `/api/likesong` - Like a song.
+- **POST** `/api/unlikesong` - Unlike a song.
 
-#### Playlists
+---
 
-- `POST /api/playlist` — Get user playlists  
-- `POST /api/createplaylist` — Create a new playlist  
-- `POST /api/deleteplaylist` — Delete an existing playlist  
-- `POST /api/addplaylistsong` — Add a song to a playlist  
-- `POST /api/removeplaylistsong` — Remove a song from a playlist  
-- `POST /api/editplaylist` — Edit playlist details  
-- `POST /api/getplaylistsongs` — Get all songs in a playlist  
+## Controllers & Services
 
+Here is a detailed breakdown of the internal controller structure:
 
-> **Note:** All admin endpoints require web authentication.
-
-### API Documentation
-
-- Swagger UI is available at `/swagger` when running in development mode.
+| Controller | Class Name | Responsibility |
+| :--- | :--- | :--- |
+| **Song** | `SongController` | Main MVC Dashboard. Handles Uploads, Edits, Deletions, and Library cleanup. |
+| **Album** | `AlbumController` | MVC management for Albums. |
+| **Artist** | `ArtistController` | MVC management for Artists. |
+| **Auth** (Web) | `AuthController` | Web-based login/logout for the admin panel. |
+| **Library V3** | `LibraryV3Controller` | Latest client API with YouTube and external source support. |
+| **Library V2** | `LibraryV2Controller` | Optimized local library API. |
+| **Client Auth** | `ClientController.AuthController` | Dedicated stateless authentication for Desktop/Mobile clients. |
+| **Client API** | `ClientController.ApiController` | General client info and server stats. |
+| **Playlist** | `ClientController.PlaylistController` | User-created playlist management. |
+| **Like** | `ClientController.LikeController` | User "Liked Songs" management. |
 
 ---
 
 ## Project Structure
-```
+
+```text
 Floatly-Server/
-├── Controllers/             # API and MVC controllers
-│   └── LibraryController/   # API for searching the song library
-│   └── ClientController/    # API for client-side song interactions
-├── Models/                  # Database context & data models (Album, Artist, Song, User, etc.)
-├── Services/                # Third-party services (e.g., email)
-├── Utils/                   # Utility/helper classes
-├── Views/                   # Razor views for admin/management
-├── Properties/              # Project metadata & launch settings
-├── Program.cs               # Main entry point
-├── GlobalConfiguration.cs   # Reads configuration from `.env`
-├── wwwroot/                 # Public web root
-│   └── uploads/             # Uploaded music, lyrics, covers, banners
-├── .env                     # Main configuration file
-├── README.md
-├── LICENSE
-└── ...
+├── Controllers/
+│   ├── ClientController/          # Client-facing API Endpoints
+│   │   ├── ApiController.cs       # Server Stats & Info
+│   │   ├── AuthController.cs      # Desktop/Mobile Authentication mechanism
+│   │   ├── LikeController.cs      # Like/Unlike logic
+│   │   └── PlaylistController.cs  # Playlist CRUD
+│   ├── LibraryController/         # Library Data Providers
+│   │   ├── V1.cs                  # Legacy API
+│   │   ├── V2.cs                  # Standard Local API
+│   │   └── V3.cs                  # Modern API (YouTube + Local)
+│   ├── AlbumController.cs         # Admin: Album Management
+│   ├── ArtistController.cs        # Admin: Artist Management
+│   ├── AuthController.cs          # Admin: Web Login
+│   ├── HomeController.cs          # Dashboard Entry Point
+│   └── SongController.cs          # Admin: Main Song Logic (Upload, Edit, etc.)
+├── Models/                        # Database Context & Entities
+│   ├── ApiClient/                 # Models specific to API responses
+│   ├── Album.cs
+│   ├── Artist.cs
+│   ├── Song.cs
+│   ├── User.cs
+│   └── FloatlyContext.cs          # EF Core Context
+├── Services/                      # Business Logic & External Services
+├── Utils/                         # Helpers (Compression, TagLib, etc.)
+├── Views/                         # Razor Views (Admin Interface)
+├── wwwroot/                       # Static Files
+│   └── uploads/                   # Media Storage (Covers, Songs)
+├── .env.example                   # Environment Template
+├── appsettings.json               # Core Configuration
+├── GlobalConfiguration.cs         # Config Loader
+├── Program.cs                     # App Entry Point & DI Container
+└── README.md
 ```
-
----
-
-## Testing
-
-Soon
-
----
-
-## Deployment
-
-- **Docker:** Add a `Dockerfile` for containerized deployment.
-- **Cloud:** Deploy to Azure, AWS, or any cloud provider supporting .NET.
-- **Reverse Proxy:** Use Nginx or Apache for HTTPS and load balancing.
-
----
-
-## Contributing
-
-Contributions are welcome! Please open issues or submit pull requests for new features, bug fixes, or documentation improvements.
 
 ---
 
 ## License
 
-This project is licensed under the [Apache 2.0 License](LICENSE).
-
----
-
-## Contact
-
-For questions or support, open an issue on the repository
+This project is licensed under the **Apache 2.0 License**. See the `LICENSE` file for details.

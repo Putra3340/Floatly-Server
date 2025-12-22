@@ -204,7 +204,7 @@ namespace Floaty_Music.Controllers
                         ArtistName = songdb.AuthorName ?? "Unknown Artist",
                         ArtistId = null,
                         AlbumTitle = null,
-                        MoviePath = baseUrl + songdb.Video,
+                        //MoviePath = baseUrl + songdb.Video, BUGS : FOR SOME REASON IT DIDNT WANT TO PLAY FROM LOCALHOST HTTPS
                         AlbumId = 0
                     };
                     return Ok(song);
@@ -342,6 +342,11 @@ namespace Floaty_Music.Controllers
 
             return Ok(song);
         }
-
+        [HttpGet("video/{urlId}")]
+        public async Task<IActionResult> GetVideoStream(string urlId)
+        {
+            string streamurl = await YoutubeService.GetStreamVideoUrl(urlId);
+            return Ok(streamurl);
+        }
     }
 }
