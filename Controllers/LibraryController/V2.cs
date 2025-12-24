@@ -21,7 +21,7 @@ namespace Floaty_Music.Controllers
             var songlist = _context.Songs
                 .Include(s => s.Album).ThenInclude(a => a.Artist)
                 .Include(s => s.SongCounter)
-                .OrderByDescending(s => s.SongCounter.TotalPlayed) // sort by plays
+                .OrderByDescending(s => s.SongCounter.FirstOrDefault().TotalPlayed) // sort by plays
                 .Take(10)
                 .ToList();
 
@@ -35,8 +35,8 @@ namespace Floaty_Music.Controllers
                 lyrics = baseUrl + x.LyricsFilePath,
                 cover = baseUrl + x.CoverImagePath,
                 banner = baseUrl + x.BannerImagePath,
-                songLength = x.SongCounter?.MusicLength ?? 0,
-                playCount = x.SongCounter?.TotalPlayed,
+                songLength = x.SongCounter.FirstOrDefault()?.MusicLength ?? 0,
+                playCount = x.SongCounter.FirstOrDefault()?.TotalPlayed,
                 createdAt = x.CreatedAt
             }).AsEnumerable() // switch to LINQ-to-Objects
     .Select(x => new
@@ -63,7 +63,7 @@ namespace Floaty_Music.Controllers
                     coverUrl = baseUrl + a.CoverImagePath,
                     totalPlays = a.Albums
                         .SelectMany(al => al.Songs)
-                        .Sum(s => (long?)s.SongCounter.TotalPlayed ?? 0)
+                        .Sum(s => (long?)s.SongCounter.FirstOrDefault().TotalPlayed ?? 0)
                 })
                 .OrderByDescending(a => a.totalPlays)
                 .Take(6)
@@ -84,7 +84,7 @@ namespace Floaty_Music.Controllers
                     title = al.Title,
                     artistName = al.Artist.Name,
                     coverUrl = baseUrl + al.CoverImagePath,
-                    totalPlays = al.Songs.Sum(s => (long?)s.SongCounter.TotalPlayed ?? 0)
+                    totalPlays = al.Songs.Sum(s => (long?)s.SongCounter.FirstOrDefault().TotalPlayed ?? 0)
                 })
                 .OrderByDescending(al => al.totalPlays)
                 .Take(10)
@@ -140,8 +140,8 @@ namespace Floaty_Music.Controllers
                     lyrics = baseUrl + x.LyricsFilePath,
                     cover = baseUrl + x.CoverImagePath,
                     banner = baseUrl + x.BannerImagePath,
-                    songLength = x.SongCounter?.MusicLength ?? 0,
-                    playCount = x.SongCounter?.TotalPlayed,
+                    songLength = x.SongCounter.FirstOrDefault()?.MusicLength ?? 0,
+                    playCount = x.SongCounter.FirstOrDefault()?.TotalPlayed,
                     createdAt = x.CreatedAt
                 }).AsEnumerable() .Select(x => new{x.id,x.title,x.artistName,x.artistId,x.music,x.lyrics,x.cover,x.banner,songLength = TimeSpan.FromSeconds(x.songLength).ToString(@"mm\:ss"),playCount = (x.playCount ?? 0).ToString("N0") + " Plays",x.createdAt})
     .ToList(),

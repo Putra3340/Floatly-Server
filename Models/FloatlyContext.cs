@@ -33,6 +33,8 @@ public partial class FloatlyContext : DbContext
 
     public virtual DbSet<YoutubeLyrics> YoutubeLyrics { get; set; }
 
+    public virtual DbSet<YoutubeSongCounter> YoutubeSongCounter { get; set; }
+
     public virtual DbSet<YoutubeSongs> YoutubeSongs { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -126,16 +128,18 @@ public partial class FloatlyContext : DbContext
 
         modelBuilder.Entity<SongCounter>(entity =>
         {
-            entity.HasKey(e => e.SongId).HasName("PK_SongCounter_1");
+            entity.HasKey(e => e.Id).HasName("PK_SongCounter_1");
 
-            entity.Property(e => e.SongId)
-                .ValueGeneratedNever()
-                .HasColumnName("SongID");
+            entity.Property(e => e.UrlId).HasMaxLength(50);
 
-            entity.HasOne(d => d.Song).WithOne(p => p.SongCounter)
-                .HasForeignKey<SongCounter>(d => d.SongId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SongCounter_Songs1");
+            entity.HasOne(d => d.Song).WithMany(p => p.SongCounter)
+                .HasForeignKey(d => d.SongId)
+                .HasConstraintName("FK_SongCounter_Songs");
+
+            entity.HasOne(d => d.Url).WithMany(p => p.SongCounter)
+                .HasPrincipalKey(p => p.UrlId)
+                .HasForeignKey(d => d.UrlId)
+                .HasConstraintName("FK_SongCounter_YoutubeSongs");
         });
 
         modelBuilder.Entity<Songs>(entity =>
@@ -184,8 +188,15 @@ public partial class FloatlyContext : DbContext
                 .HasConstraintName("FK_YoutubeLyrics_YoutubeSongs");
         });
 
+        modelBuilder.Entity<YoutubeSongCounter>(entity =>
+        {
+            entity.HasKey(e => e.YtId);
+        });
+
         modelBuilder.Entity<YoutubeSongs>(entity =>
         {
+            entity.HasIndex(e => e.UrlId, "IX_YoutubeSongs").IsUnique();
+
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
             entity.Property(e => e.UrlId).HasMaxLength(50);
         });

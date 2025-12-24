@@ -33,5 +33,5 @@ public partial class Songs
 
     public virtual ICollection<PlaylistSongs> PlaylistSongs { get; set; } = new List<PlaylistSongs>();
 
-    public virtual SongCounter? SongCounter { get; set; }
+    public virtual ICollection<SongCounter> SongCounter { get; set; } = new List<SongCounter>();
 }

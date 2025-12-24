@@ -29,7 +29,7 @@ namespace Floaty_Music.Controllers
             var songlist = _context.Songs
                 .Include(s => s.Album).ThenInclude(a => a.Artist)
                 .Include(s => s.SongCounter)
-                .OrderByDescending(s => s.SongCounter.TotalPlayed) // sort by plays
+                .OrderByDescending(s => s.SongCounter.FirstOrDefault().TotalPlayed) // sort by plays
                 .Take(10)
                 .ToList();
 
@@ -42,8 +42,8 @@ namespace Floaty_Music.Controllers
                     Title = x.Title,
                     ArtistName = x.Album.Artist.Name,
                     Cover = baseUrl + x.CoverImagePath,
-                    SongLength = TimeSpan.FromSeconds((double)x.SongCounter.MusicLength).ToString(@"mm\:ss"),
-                    PlayCount = (x.SongCounter.TotalPlayed ?? 0).ToString("N0") + " Plays"
+                    SongLength = TimeSpan.FromSeconds((double)x.SongCounter.FirstOrDefault().MusicLength).ToString(@"mm\:ss"),
+                    PlayCount = (x.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
                 });
             }
 
@@ -56,7 +56,7 @@ namespace Floaty_Music.Controllers
                     coverUrl = baseUrl + a.CoverImagePath,
                     totalPlays = a.Albums
                         .SelectMany(al => al.Songs)
-                        .Sum(s => (long?)s.SongCounter.TotalPlayed ?? 0)
+                        .Sum(s => (long?)s.SongCounter.FirstOrDefault().TotalPlayed ?? 0)
                 })
                 .OrderByDescending(a => a.totalPlays)
                 .Take(6)
@@ -77,7 +77,7 @@ namespace Floaty_Music.Controllers
                     title = al.Title,
                     artistName = al.Artist.Name,
                     coverUrl = baseUrl + al.CoverImagePath,
-                    totalPlays = al.Songs.Sum(s => (long?)s.SongCounter.TotalPlayed ?? 0)
+                    totalPlays = al.Songs.Sum(s => (long?)s.SongCounter.FirstOrDefault().TotalPlayed ?? 0)
                 })
                 .OrderByDescending(al => al.totalPlays)
                 .Take(10)
@@ -143,8 +143,8 @@ namespace Floaty_Music.Controllers
                     Title = x.Title,
                     ArtistName = x.Album.Artist.Name,
                     Cover = baseUrl + x.CoverImagePath,
-                    SongLength = TimeSpan.FromSeconds((double)x.SongCounter.MusicLength).ToString(@"mm\:ss"),
-                    PlayCount = (x.SongCounter.TotalPlayed ?? 0).ToString("N0") + " Plays"
+                    SongLength = TimeSpan.FromSeconds((double)x.SongCounter.FirstOrDefault().MusicLength).ToString(@"mm\:ss"),
+                    PlayCount = (x.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
                 });
             }
             var result = new
@@ -178,7 +178,6 @@ namespace Floaty_Music.Controllers
             {
                 // Youtube
                 // TODO BITRATE
-                // TODO WHEN THE YOUTUBE SONG IS ON LOCALDB, WE NEED TO SET DEFAULT NICE LYRICS NOT FROM TOP
                 var songdb = _context.YoutubeSongs.FirstOrDefault(x => x.UrlId == id);
                 if (songdb != null)
                 {
@@ -310,8 +309,8 @@ namespace Floaty_Music.Controllers
                     Lyrics = songdb.LyricsFilePath != null ? $"{Request.Scheme}://{Request.Host}{songdb.LyricsFilePath}" : null,
                     Music = songdb.MusicFilePath != null ? $"{Request.Scheme}://{Request.Host}{songdb.MusicFilePath}" : null,
                     UploadedBy = songdb.UploadedBy,
-                    SongLength = TimeSpan.FromSeconds((double)songdb.SongCounter.MusicLength).ToString(@"mm\:ss"),
-                    PlayCount = (songdb.SongCounter.TotalPlayed ?? 0).ToString("N0") + " Plays"
+                    SongLength = TimeSpan.FromSeconds((double)songdb.SongCounter.FirstOrDefault().MusicLength).ToString(@"mm\:ss"),
+                    PlayCount = (songdb.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
                 };
             }
 
@@ -320,6 +319,7 @@ namespace Floaty_Music.Controllers
         [HttpGet("lyrics/{urlId}")] // TODO : LOCAL DB AND IF NEW SONGS
         public async Task<IActionResult> GetLyrics(string urlId)
         {
+            // local
             var song = await _context.YoutubeSongs
                 .Where(s => s.UrlId == urlId)
                 .Select(s => new

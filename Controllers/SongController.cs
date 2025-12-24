@@ -14,7 +14,7 @@ namespace Floaty_Music.Controllers
     {
         private static (DateTime LastUpdate, DashboardStats Stats) _cache;
         private readonly FloatlyContext _context;
-        public SongController(FloatlyContext context) => _context = context;
+        public SongController(FloatlyContext context) { _context = context; }
 
         [HttpPost]
         public async Task<IActionResult> Upload(SongUploadModel model)
@@ -41,11 +41,13 @@ namespace Floaty_Music.Controllers
                 var tagFile = TagLib.File.Create(new StreamFileAbstraction(model.MusicFile.FileName, stream));
                 return tagFile.Properties.Duration.TotalSeconds;
             });
-            song.SongCounter = new SongCounter
+            song.SongCounter = new SongCounter[]
             {
-                TotalLikes = 0,
+                new SongCounter{
+                    TotalLikes = 0,
                 TotalPlayed = 0,
                 MusicLength = (int)musiclength
+                }
             };
             await _context.Songs.AddAsync(song);
             await _context.SaveChangesAsync();
@@ -385,9 +387,9 @@ namespace Floaty_Music.Controllers
                 coverUrl = "/uploads/cover/" + s.CoverImagePath,
                 bannerUrl = "/uploads/banner/" + s.BannerImagePath,
                 videoUrl = "/uploads/video/" + s.MoviePath,
-                Duration = s.SongCounter.MusicLength,
-                Plays = s.SongCounter.TotalPlayed,
-                Likes = s.SongCounter.TotalLikes
+                Duration = s.SongCounter.FirstOrDefault().MusicLength,
+                Plays = s.SongCounter.FirstOrDefault().TotalPlayed,
+                Likes = s.SongCounter.FirstOrDefault().TotalLikes
             }).ToListAsync();
             return Json(songs);
         }
@@ -399,7 +401,7 @@ namespace Floaty_Music.Controllers
             var artist = await _context.Artists.
                 Include(x => x.Albums).
                 ThenInclude(x => x.Songs).
-                ThenInclude(x=>x.SongCounter).
+                ThenInclude(x => x.SongCounter).
                 Where(x =>
                     x.Name.ToUpper().Contains(query) || // artist search
                     x.Albums.Any(a => a.Title.ToUpper().Contains(query)) || // album search
@@ -433,11 +435,11 @@ namespace Floaty_Music.Controllers
                     {
                         s.Id,
                         s.Title,
-                        s.SongCounter.MusicLength,
+                        s.SongCounter.FirstOrDefault().MusicLength,
                         s.MusicFilePath,
                         CoverImagePath = "/uploads/cover/" + s.CoverImagePath,
                         s.Likes,
-                        s.SongCounter.TotalLikes
+                        s.SongCounter.FirstOrDefault().TotalLikes
                     })
                     .ToList()
             })
@@ -471,6 +473,11 @@ namespace Floaty_Music.Controllers
                 }
             }
             return RedirectToAction("Dashboard");
+        }
+        [HttpGet]
+        public async Task<IActionResult> GetLogs()
+        {
+            return Ok(LogCaptureFilter.Logs);
         }
     }
     public class StorageStat

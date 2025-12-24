@@ -145,7 +145,7 @@ namespace Floaty_Music.Controllers.ClientController
                 {
                     ps.Song.Id,
                     ps.Song.Title,
-                    ps.Song.SongCounter.MusicLength,
+                    ps.Song.SongCounter.FirstOrDefault().MusicLength,
                     ps.Song.CoverImagePath,
                     Album = ps.Song.Album != null ? ps.Song.Album.Title : "Unknown",
                     Artist = ps.Song.Album.Artist != null ? ps.Song.Album.Artist.Name : "Unknown"

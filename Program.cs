@@ -1,5 +1,6 @@
 using Floaty_Music;
 using Floaty_Music.Models;
+using Floaty_Music.Utils;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +20,10 @@ builder.Services.AddDbContext<FloatlyContext>(options =>
 
 builder.Services.AddControllers();
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<LogCaptureFilter>();
+});
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthentication("MyAuth")
     .AddCookie("MyAuth", options =>

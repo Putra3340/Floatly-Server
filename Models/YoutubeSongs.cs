@@ -7,7 +7,7 @@ public partial class YoutubeSongs
 {
     public long Id { get; set; }
 
-    public string? UrlId { get; set; }
+    public string UrlId { get; set; } = null!;
 
     public string? Title { get; set; }
 
@@ -24,6 +24,8 @@ public partial class YoutubeSongs
     public string? AuthorCover { get; set; }
 
     public DateTime? CreatedAt { get; set; }
+
+    public virtual ICollection<SongCounter> SongCounter { get; set; } = new List<SongCounter>();
 
     public virtual ICollection<YoutubeLyrics> YoutubeLyrics { get; set; } = new List<YoutubeLyrics>();
 }
