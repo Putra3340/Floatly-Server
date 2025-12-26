@@ -187,6 +187,9 @@ namespace Floaty_Music.Controllers
                     // check if lyrics empty
                     if (songdb.Lyrics == null || songdb.Lyrics == "")
                         songdb.Lyrics = "empty.srt";
+                    // check if there is no lyrics
+                    if(!System.IO.File.Exists(Path.Combine(GlobalConfiguration.YoutubePath, songdb.Lyrics)))
+                        songdb.Lyrics = "empty.srt";
 
                     song = new ApiSongPlay()
                     {
@@ -339,7 +342,6 @@ namespace Floaty_Music.Controllers
 
             if (song == null)
                 return NotFound();
-
             return Ok(song);
         }
         [HttpGet("video/{urlId}")]

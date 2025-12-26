@@ -39,7 +39,6 @@
   <ItemGroup>
     <Folder Include="wwwroot\images\" />
     <Folder Include="wwwroot\data\" />
-    <Folder Include="wwwroot\uploads\yt\" />
   </ItemGroup>
 
   <ItemGroup>

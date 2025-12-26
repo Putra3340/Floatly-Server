@@ -33,8 +33,6 @@ public partial class FloatlyContext : DbContext
 
     public virtual DbSet<YoutubeLyrics> YoutubeLyrics { get; set; }
 
-    public virtual DbSet<YoutubeSongCounter> YoutubeSongCounter { get; set; }
-
     public virtual DbSet<YoutubeSongs> YoutubeSongs { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -179,18 +177,12 @@ public partial class FloatlyContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__YoutubeL__3214EC07039B3CC4");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.FileName).HasMaxLength(260);
             entity.Property(e => e.LanguageCode).HasMaxLength(10);
 
             entity.HasOne(d => d.Song).WithMany(p => p.YoutubeLyrics)
                 .HasForeignKey(d => d.SongId)
                 .HasConstraintName("FK_YoutubeLyrics_YoutubeSongs");
-        });
-
-        modelBuilder.Entity<YoutubeSongCounter>(entity =>
-        {
-            entity.HasKey(e => e.YtId);
         });
 
         modelBuilder.Entity<YoutubeSongs>(entity =>

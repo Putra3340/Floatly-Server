@@ -46,15 +46,12 @@ namespace Floaty_Music.Service
 
             await client.Videos.Streams.DownloadAsync(audio, audioPath);
 
-            // VIDEO
-            var video = manifest.GetVideoOnlyStreams()
-                                .OrderByDescending(v => v.VideoQuality)
+            // VIDEO - we take the low res because it's just for visualizer, but for HD for premium which direct youtube stream
+            var video = manifest.GetVideoStreams()
                                 .FirstOrDefault()
                 ?? throw new Exception("No video stream found.");
 
             await client.Videos.Streams.DownloadAsync(video, videoPath);
-
-
 
             // THUMBNAIL + AUTHOR
             var info = await client.Videos.GetAsync(videoId);
@@ -72,6 +69,7 @@ namespace Floaty_Music.Service
 
             try
             {
+                // Save Song
                 var dbSong = new YoutubeSongs
                 {
                     Title = info.Title,
@@ -126,6 +124,15 @@ namespace Floaty_Music.Service
                     });
                 }
 
+                // Add Counter
+                var songCounter = new SongCounter
+                {
+                    Url = dbSong,
+                    TotalPlayed = 0,
+                    TotalLikes = 0,
+                    MusicLength = (int?)(info.Duration.GetValueOrDefault().TotalSeconds) ?? 0
+                };
+                await db.SongCounter.AddAsync(songCounter);
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();
             } catch (Exception ex)
