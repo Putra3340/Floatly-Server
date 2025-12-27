@@ -299,14 +299,14 @@ namespace Floaty_Music.Controllers
             ViewBag.TotalPlayed = _context.SongCounter.Sum(x => x.TotalPlayed);
             ViewBag.TotalLikes = _context.SongCounter.Sum(x => x.TotalLikes);
             ViewBag.TopSongs = _context.SongCounter
-                .OrderByDescending(x => x.TotalPlayed)
+                .OrderByDescending(x => x.TotalPlayed).Where(x => x.UrlId == null)
                 .Take(5)
                 .Include(x => x.Song)
                     .ThenInclude(s => s.Album)
                         .ThenInclude(a => a.Artist)
                 .ToList();
             ViewBag.TopSongsLikes = _context.SongCounter
-                .OrderByDescending(x => x.TotalLikes)
+                .OrderByDescending(x => x.TotalLikes).Where(x=>x.UrlId == null)
                 .Take(5)
                 .Include(x => x.Song)
                     .ThenInclude(s => s.Album)

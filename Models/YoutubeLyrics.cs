@@ -9,6 +9,8 @@ public partial class YoutubeLyrics
 
     public long SongId { get; set; }
 
+    public string Language { get; set; } = null!;
+
     public string LanguageCode { get; set; } = null!;
 
     public bool IsAuto { get; set; }

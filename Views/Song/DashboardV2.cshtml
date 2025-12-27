@@ -189,13 +189,13 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="list-group list-group-flush">
-                                        @foreach (var item in ViewBag.TopSongsLikes)
-                                        {
-                                            <div class="list-group-item bg-transparent border-0 d-flex justify-content-between">
-                                                <span>@item.Song.Title</span>
-                                                <span class="badge bg-primary">@item.TotalLikes Likes</span>
-                                            </div>
-                                        }
+                                            @foreach (var item in ViewBag.TopSongsLikes)
+                                            {
+                                                <div class="list-group-item bg-transparent border-0 d-flex justify-content-between">
+                                                    <span>@item.Song.Title</span>
+                                                    <span class="badge bg-primary">@item.TotalLikes Likes</span>
+                                                </div>
+                                            }
                                     </div>
                                 </div>
                             </div>

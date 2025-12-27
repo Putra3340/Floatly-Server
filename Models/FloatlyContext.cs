@@ -31,6 +31,8 @@ public partial class FloatlyContext : DbContext
 
     public virtual DbSet<Users> Users { get; set; }
 
+    public virtual DbSet<Youtube> Youtube { get; set; }
+
     public virtual DbSet<YoutubeLyrics> YoutubeLyrics { get; set; }
 
     public virtual DbSet<YoutubeSongs> YoutubeSongs { get; set; }
@@ -173,11 +175,22 @@ public partial class FloatlyContext : DbContext
             entity.Property(e => e.Username).HasMaxLength(50);
         });
 
+        modelBuilder.Entity<Youtube>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("Youtube");
+
+            entity.Property(e => e.LanguageCode).HasMaxLength(10);
+            entity.Property(e => e.UrlId).HasMaxLength(50);
+        });
+
         modelBuilder.Entity<YoutubeLyrics>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__YoutubeL__3214EC07039B3CC4");
 
             entity.Property(e => e.FileName).HasMaxLength(260);
+            entity.Property(e => e.Language).HasMaxLength(100);
             entity.Property(e => e.LanguageCode).HasMaxLength(10);
 
             entity.HasOne(d => d.Song).WithMany(p => p.YoutubeLyrics)

@@ -17,10 +17,22 @@ namespace Floaty_Music.Service
         private static readonly YoutubeClient client = new YoutubeClient();
         private static readonly FloatlyContext db = new FloatlyContext();
 
+        // Pending Download
+        private static readonly HashSet<string> pending = new();
+        private static readonly object _lock = new();
+
         // Always use this, but make it fire and forget
-        public static async Task DownloadAndSaveAsync(
-    string youtubeUrl)
+        public static async Task DownloadAndSaveAsync(string youtubeUrl)
         {
+            // if there is pending abort
+            lock (_lock)
+            {
+                if (!pending.Add(youtubeUrl))
+                {
+                    Console.WriteLine("Task already running: " + youtubeUrl);
+                    return;
+                }
+            }
             var client = new YoutubeClient();
             var videoId = VideoId.Parse(youtubeUrl);
 
@@ -46,7 +58,7 @@ namespace Floaty_Music.Service
 
             await client.Videos.Streams.DownloadAsync(audio, audioPath);
 
-            // VIDEO - we take the low res because it's just for visualizer, but for HD for premium which direct youtube stream
+            // VIDEO - we take the low res because it's just for visualizer, but for HD is manually converted
             var video = manifest.GetVideoStreams()
                                 .FirstOrDefault()
                 ?? throw new Exception("No video stream found.");
@@ -118,6 +130,7 @@ namespace Floaty_Music.Service
                     db.YoutubeLyrics.Add(new YoutubeLyrics
                     {
                         Song = dbSong,
+                        Language = track.Language.Name,
                         LanguageCode = lang,
                         IsAuto = isAuto,
                         FileName = fileName
@@ -139,10 +152,12 @@ namespace Floaty_Music.Service
             {
                 await transaction.RollbackAsync();
                 Console.WriteLine($"Error downloading {youtubeUrl}: {ex.Message}");
-                throw;
             }
-
-
+            finally
+            {
+                lock (_lock)
+                    pending.Remove(youtubeUrl);
+            }
             Console.WriteLine($"Succesfully downloaded {youtubeUrl} and saved to db");
         }
 
@@ -177,7 +192,7 @@ namespace Floaty_Music.Service
             {
                 var captions = await client.Videos.ClosedCaptions.GetAsync(track);
 
-                var text = string.Join("\n", captions.Captions.Select(c => c.Text));
+                var text = string.Join("\n", track.Language.Name);
                 result.Add(text);
             }
 

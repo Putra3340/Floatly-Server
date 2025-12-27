@@ -206,7 +206,7 @@ namespace Floaty_Music.Controllers
                         ArtistName = songdb.AuthorName ?? "Unknown Artist",
                         ArtistId = null,
                         AlbumTitle = null,
-                        //MoviePath = baseUrl + songdb.Video, BUGS : FOR SOME REASON IT DIDNT WANT TO PLAY FROM LOCALHOST HTTPS
+                        MoviePath = baseUrl + songdb.Video,
                         AlbumId = 0
                     };
                     return Ok(song);
@@ -331,7 +331,8 @@ namespace Floaty_Music.Controllers
                     s.UrlId,
                     Lyrics = s.YoutubeLyrics.Select(l => new
                     {
-                        Language = l.LanguageCode,
+                        Language = l.Language,
+                        LanguageCode = l.LanguageCode,
                         l.IsAuto,
                         l.FileName,
                         Content = System.IO.File.ReadAllText(
@@ -341,13 +342,19 @@ namespace Floaty_Music.Controllers
                 .FirstOrDefaultAsync();
 
             if (song == null)
-                return NotFound();
+                return Ok(await YoutubeService.GetLyricsAsync(urlId));
             return Ok(song);
         }
         [HttpGet("video/{urlId}")]
         public async Task<IActionResult> GetVideoStream(string urlId)
         {
-            string streamurl = await YoutubeService.GetStreamVideoUrl(urlId);
+            string streamurl = "";
+            var video = await _context.YoutubeSongs.Where(s => s.UrlId == urlId).FirstOrDefaultAsync();
+            if (video != null)
+            {
+                streamurl = $"{Request.Scheme}://{Request.Host}/uploads/yt/{video.Video}";
+            }
+            else { streamurl = await YoutubeService.GetStreamVideoUrl(urlId); }
             return Ok(streamurl);
         }
     }

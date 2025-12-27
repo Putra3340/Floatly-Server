@@ -23,7 +23,7 @@ namespace Floaty_Music.Controllers
                 var principal = new ClaimsPrincipal(identity);
                 await HttpContext.SignInAsync("MyAuth", principal);
 
-                return RedirectToAction("Dashboard", "Song");
+                return RedirectToAction("DashboardV2", "Song");
             }
             return Unauthorized("Invalid credentials");
         }
