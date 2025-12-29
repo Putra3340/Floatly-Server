@@ -9,11 +9,6 @@
     {
       "library": "bootstrap-icons@1.13.1",
       "destination": "wwwroot/lib/bootstrap-icons/"
-    },
-    {
-      "provider": "cdnjs",
-      "library": "jquery@3.7.1",
-      "destination": "wwwroot/jquery/"
     }
   ]
 }

@@ -208,19 +208,36 @@ namespace Floaty_Music.Service
             sw.Start();
 #endif
             var results = new List<YoutubeSearchResult>();
-            var search = client.Search.GetVideosAsync(query).Where(x=>x.Duration <= TimeSpan.FromMinutes(30) && x.Duration >= TimeSpan.FromSeconds(30)); // limit 30 minutes an min 30 sec
-
-            await foreach (var video in search.Take(count))
+            int trycount = 1;
+        retry:
+            try
             {
-                results.Add(new YoutubeSearchResult
+                var search = client.Search.GetVideosAsync(query).Where(x => x.Duration <= TimeSpan.FromMinutes(30) && x.Duration >= TimeSpan.FromSeconds(30)); // limit 30 minutes an min 30 sec
+
+                await foreach (var video in search.Take(count))
                 {
-                    Id = video.Id.Value,
-                    Url = $"https://youtu.be/{video.Id.Value}",
-                    Title = video.Title,
-                    Author = video.Author.ChannelTitle,
-                    Duration = video.Duration?.ToString(@"mm\:ss") ?? "Unknown",
-                    Thumbnail = video.Thumbnails.GetWithHighestResolution().Url
-                });
+                    results.Add(new YoutubeSearchResult
+                    {
+                        Id = video.Id.Value,
+                        Url = $"https://youtu.be/{video.Id.Value}",
+                        Title = video.Title,
+                        Author = video.Author.ChannelTitle,
+                        Duration = video.Duration?.ToString(@"mm\:ss") ?? "Unknown",
+                        Thumbnail = video.Thumbnails.GetWithHighestResolution().Url
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("known"))
+                {
+                    if (trycount <= 3)
+                    {
+                        trycount++;
+                        Console.WriteLine("Trying again, Try Count : " + trycount);
+                        goto retry;
+                    }
+                }
             }
 #if DEBUG
             sw.Stop();
@@ -244,6 +261,28 @@ namespace Floaty_Music.Service
             sw.Stop();
             Console.WriteLine($"Elapsed time: {sw.Elapsed}");
 #endif
+            return videostream.Url;
+        }
+        public static async Task<string> GetHDStreamVideoUrl(string yturl)
+        {
+#if DEBUG
+            Stopwatch sw = new();
+            Console.WriteLine($"Start fetching : {yturl}");
+            sw.Start();
+#endif
+            var videoId = VideoId.Parse(yturl);
+            var video = await client.Videos.Streams.GetManifestAsync(videoId);
+            var videostream = video.GetVideoStreams()
+    .Where(s => s.VideoResolution.Height == 720)
+    .OrderByDescending(s => s.Bitrate)
+    .FirstOrDefault();
+            if (videostream == null)
+                throw new Exception("No video streams found.");
+#if DEBUG
+            sw.Stop();
+            Console.WriteLine($"Elapsed time: {sw.Elapsed}");
+#endif
+            await FFmpegHelper.DownloadToMp4Async(videostream.Url, Path.Combine(GlobalConfiguration.YoutubePath,$"{yturl}_HD.mp4"));
             return videostream.Url;
         }
 

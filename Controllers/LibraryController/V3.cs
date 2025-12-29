@@ -357,5 +357,15 @@ namespace Floaty_Music.Controllers
             else { streamurl = await YoutubeService.GetStreamVideoUrl(urlId); }
             return Ok(streamurl);
         }
+        [HttpGet("hdvideo/{urlId}")]
+        public async Task<IActionResult> GetHDVideoStream(string urlId)
+        {
+            string streamurl = $"{Request.Scheme}://{Request.Host}/uploads/yt/{urlId}_HD.mp4";
+            if (System.IO.File.Exists(Path.Combine(GlobalConfiguration.YoutubePath, $"{urlId}_HD.mp4"))){ 
+                return Ok(streamurl);
+            }
+            await YoutubeService.GetHDStreamVideoUrl(urlId);
+            return Ok(streamurl);
+        }
     }
 }
