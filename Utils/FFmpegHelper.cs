@@ -52,7 +52,7 @@ public static class FFmpegHelper
         string args =
             $"-y -loglevel error -stats " +
             $"-i \"{videoPath}\" -i \"{audioPath}\" " +
-            $"-c copy " +
+            $"-c:v copy -c:a aac -b:a 192k " +
             $"\"{outputMp4}\"";
 
         return RunAsync(args);
