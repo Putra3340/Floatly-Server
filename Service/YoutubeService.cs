@@ -3,6 +3,8 @@ using Floaty_Music.Models.ApiClient;
 using System.Diagnostics;
 using System.Reflection.Metadata;
 using System.Text;
+using TagLib.Mpeg;
+using Xabe.FFmpeg;
 using YoutubeExplode;
 using YoutubeExplode.Common;
 using YoutubeExplode.Videos;
@@ -72,7 +74,7 @@ namespace Floaty_Music.Service
             using (var http = new HttpClient())
             {
                 var bytes = await http.GetByteArrayAsync(thumbUrl);
-                await File.WriteAllBytesAsync(thumbPath, bytes);
+                await System.IO.File.WriteAllBytesAsync(thumbPath, bytes);
             }
 
 
@@ -125,7 +127,7 @@ namespace Floaty_Music.Service
                         : $"{baseName}_{lang}.srt";
 
                     var fullPath = Path.Combine(GlobalConfiguration.YoutubePath, fileName);
-                    await File.WriteAllTextAsync(fullPath, sb.ToString());
+                    await System.IO.File.WriteAllTextAsync(fullPath, sb.ToString());
 
                     db.YoutubeLyrics.Add(new YoutubeLyrics
                     {
@@ -265,25 +267,37 @@ namespace Floaty_Music.Service
         }
         public static async Task<string> GetHDStreamVideoUrl(string yturl)
         {
+            var audioFile = yturl + "_temp.m4a";
+            var videoFile = yturl + "_temp.mp4";
+            var audioPath = Path.Combine(GlobalConfiguration.YoutubePath, audioFile);
+            var videoPath = Path.Combine(GlobalConfiguration.YoutubePath, videoFile);
 #if DEBUG
             Stopwatch sw = new();
             Console.WriteLine($"Start fetching : {yturl}");
             sw.Start();
 #endif
             var videoId = VideoId.Parse(yturl);
-            var video = await client.Videos.Streams.GetManifestAsync(videoId);
-            var videostream = video.GetVideoStreams()
+            var manifest = await client.Videos.Streams.GetManifestAsync(videoId);
+            var videostream = manifest.GetVideoStreams()
     .Where(s => s.VideoResolution.Height == 720)
-    .OrderByDescending(s => s.Bitrate)
     .FirstOrDefault();
             if (videostream == null)
                 throw new Exception("No video streams found.");
+
+            await client.Videos.Streams.DownloadAsync(videostream, videoPath);
+            // AUDIO
+            var audio = manifest.GetAudioOnlyStreams()
+                                .GetWithHighestBitrate()
+                ?? throw new Exception("No audio stream found.");
+
+            await client.Videos.Streams.DownloadAsync(audio, audioPath);
+
 #if DEBUG
             sw.Stop();
             Console.WriteLine($"Elapsed time: {sw.Elapsed}");
 #endif
-            await FFmpegHelper.DownloadToMp4Async(videostream.Url, Path.Combine(GlobalConfiguration.YoutubePath,$"{yturl}_HD.mp4"));
-            return videostream.Url;
+            await FFmpegHelper.MuxAsync(videoPath, audioPath, Path.Combine(GlobalConfiguration.YoutubePath, $"{yturl}_HD.mp4"));
+            return Path.Combine(GlobalConfiguration.YoutubePath, $"{yturl}_HD.mp4");
         }
 
         // Get Details from URL

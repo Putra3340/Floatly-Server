@@ -12,6 +12,8 @@ using YoutubeExplode.Common;
 namespace Floaty_Music.Controllers
 {
     // V3 - Youtube Music Library API
+    // BIG TODO : SECURE THIS API
+    // ADD PLAY COUNT
     [Route("api/library/v3")]
     [ApiController]
     public class LibraryV3Controller : ControllerBase
