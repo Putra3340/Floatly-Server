@@ -53,7 +53,9 @@ public static class FFmpegHelper
             $"-y -loglevel error -stats " +
             $"-i \"{videoPath}\" -i \"{audioPath}\" " +
             $"-c:v copy -c:a aac -b:a 192k " +
+            $"-movflags +faststart " +
             $"\"{outputMp4}\"";
+
 
         return RunAsync(args);
     }

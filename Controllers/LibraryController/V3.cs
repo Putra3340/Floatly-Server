@@ -2,6 +2,7 @@
 using Floaty_Music.Models.ApiClient;
 using Floaty_Music.Service;
 using Floaty_Music.Utils;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
@@ -26,19 +27,15 @@ namespace Floaty_Music.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
-
-            var songlist = _context.Songs
-                .Include(s => s.Album).ThenInclude(a => a.Artist)
-                .Include(s => s.SongCounter)
-                .OrderByDescending(s => s.SongCounter.FirstOrDefault().TotalPlayed) // sort by plays
-                .Take(10)
-                .ToList();
-
-            var topSongs = new List<ApiSong>();
+            List<ApiSong> combinedsonglist = new();
+            var songlist = _context.Songs.Include(x => x.Album).ThenInclude(x => x.Artist).Include(x => x.SongCounter).Take(20).ToList();
+            var ytlist = _context.YoutubeSongs.Include(x => x.SongCounter).Take(20).ToList();
+            var artistlist = _context.Artists.Take(5).ToList();
+            var albumlist = _context.Albums.Include(x => x.Artist).Take(20).ToList();
+            var baseUrl = $"{Request.Scheme}://{Request.Host}/";
             foreach (var x in songlist)
             {
-                topSongs.Add(new ApiSong
+                combinedsonglist.Add(new ApiSong
                 {
                     Id = x.Id.ToString(),
                     Title = x.Title,
@@ -48,58 +45,35 @@ namespace Floaty_Music.Controllers
                     PlayCount = (x.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
                 });
             }
-
-
-            var topArtists = _context.Artists
-                .Select(a => new
+            foreach (var x in ytlist)
+            {
+                combinedsonglist.Add(new ApiSong
                 {
-                    id = a.Id,
-                    name = a.Name,
-                    coverUrl = baseUrl + a.CoverImagePath,
-                    totalPlays = a.Albums
-                        .SelectMany(al => al.Songs)
-                        .Sum(s => (long?)s.SongCounter.FirstOrDefault().TotalPlayed ?? 0)
-                })
-                .OrderByDescending(a => a.totalPlays)
-                .Take(6)
-                .AsEnumerable()
-                .Select(a => new
-                {
-                    a.id,
-                    a.name,
-                    a.coverUrl,
-                    totalPlays = a.totalPlays.ToString("N0") + " Plays"
-                })
-                .ToList();
-
-            var topAlbums = _context.Albums
-                .Select(al => new
-                {
-                    id = al.Id,
-                    title = al.Title,
-                    artistName = al.Artist.Name,
-                    coverUrl = baseUrl + al.CoverImagePath,
-                    totalPlays = al.Songs.Sum(s => (long?)s.SongCounter.FirstOrDefault().TotalPlayed ?? 0)
-                })
-                .OrderByDescending(al => al.totalPlays)
-                .Take(10)
-                .AsEnumerable()
-                .Select(al => new
-                {
-                    id = al.id,
-                    title = al.title,
-                    artistName = al.artistName,
-                    coverUrl = al.coverUrl,
-                    totalPlays = (al.totalPlays).ToString("N0") + " Plays"
-                })
-                .ToList();
-
-
+                    Id = x.UrlId.ToString(),
+                    Title = x.Title,
+                    ArtistName = x.AuthorName,
+                    Cover = baseUrl + "uploads/yt/" + x.Thumbnail,
+                    SongLength = TimeSpan.FromSeconds((double)x.SongCounter.FirstOrDefault().MusicLength).ToString(@"mm\:ss"),
+                    PlayCount = (x.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
+                });
+            }
+            combinedsonglist = combinedsonglist.OrderByDescending(x => int.Parse(x.PlayCount.Split(" Plays")[0])).ToList();
             var result = new
             {
-                songs = topSongs,
-                artists = topArtists,
-                albums = topAlbums
+                songs = combinedsonglist,
+                artists = artistlist.Select(x => new
+                {
+                    id = x.Id,
+                    name = x.Name,
+                    coverUrl = baseUrl + x.CoverImagePath,
+                }).ToList(),
+                albums = albumlist.Select(x => new
+                {
+                    id = x.Id,
+                    title = x.Title,
+                    artistName = x.Artist.Name,
+                    coverUrl = baseUrl + x.CoverImagePath
+                }).ToList()
             };
             return Ok(result);
         }
@@ -179,8 +153,7 @@ namespace Floaty_Music.Controllers
             if (!int.TryParse(id, out localid))
             {
                 // Youtube
-                // TODO BITRATE
-                var songdb = _context.YoutubeSongs.FirstOrDefault(x => x.UrlId == id);
+                var songdb = _context.YoutubeSongs.Include(x=>x.SongCounter).FirstOrDefault(x => x.UrlId == id);
                 if (songdb != null)
                 {
                     Console.WriteLine("Fetching from Database YT...");
@@ -211,6 +184,16 @@ namespace Floaty_Music.Controllers
                         MoviePath = baseUrl + songdb.Video,
                         AlbumId = 0
                     };
+                    // increment play count
+                    if (songdb?.SongCounter != null)
+                    {
+                        var counter = songdb.SongCounter.FirstOrDefault();
+                        if(counter != null)
+                        {
+                            counter.TotalPlayed += 1;
+                            await _context.SaveChangesAsync();
+                        }
+                    }
                     return Ok(song);
                 }
 
@@ -282,7 +265,6 @@ namespace Floaty_Music.Controllers
                     ArtistName = video.Author.ChannelTitle,
                     ArtistId = null,
                     AlbumTitle = null,
-                    //MoviePath = 
                     AlbumId = 0
                 };
 
@@ -301,22 +283,35 @@ namespace Floaty_Music.Controllers
                 {
                     return NotFound();
                 }
+                var baseUrl = $"{Request.Scheme}://{Request.Host}/uploads/";
                 song = new ApiSongPlay()
                 {
                     AlbumId = songdb.Album.Id,
                     AlbumTitle = songdb.Album.Title,
                     ArtistId = songdb.Album.Artist.Id.ToString(),
                     ArtistName = songdb.Album.Artist.Name,
-                    Cover = $"{Request.Scheme}://{Request.Host}{songdb.CoverImagePath}",
+                    Cover = $"{baseUrl}/cover/{songdb.CoverImagePath}",
+                    Banner = $"{baseUrl}/banner/{songdb.BannerImagePath}",
                     CreatedAt = songdb.CreatedAt ?? DateTime.Now,
                     Id = songdb.Id.ToString(),
                     Title = songdb.Title,
-                    Lyrics = songdb.LyricsFilePath != null ? $"{Request.Scheme}://{Request.Host}{songdb.LyricsFilePath}" : null,
-                    Music = songdb.MusicFilePath != null ? $"{Request.Scheme}://{Request.Host}{songdb.MusicFilePath}" : null,
+                    Lyrics = songdb.LyricsFilePath != null ? $"{baseUrl}/lyrics/{songdb.LyricsFilePath}" : null,
+                    Music = songdb.MusicFilePath != null ? $"{baseUrl}/music/{songdb.MusicFilePath}" : null,
+                    MoviePath = songdb.MoviePath != null ? $"{baseUrl}/video/{songdb.MoviePath}" : null,
                     UploadedBy = songdb.UploadedBy,
                     SongLength = TimeSpan.FromSeconds((double)songdb.SongCounter.FirstOrDefault().MusicLength).ToString(@"mm\:ss"),
                     PlayCount = (songdb.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
                 };
+                // increment play count
+                if (songdb?.SongCounter != null)
+                {
+                    var counter = songdb.SongCounter.FirstOrDefault();
+                    if (counter != null)
+                    {
+                        counter.TotalPlayed += 1;
+                        await _context.SaveChangesAsync();
+                    }
+                }
             }
 
             return Ok(song);
@@ -325,7 +320,11 @@ namespace Floaty_Music.Controllers
         public async Task<IActionResult> GetLyrics(string urlId)
         {
             // local
-            var song = await _context.YoutubeSongs
+            int localid = 0;
+            if (!int.TryParse(urlId, out localid))
+            {
+
+                var song = await _context.YoutubeSongs
                 .Where(s => s.UrlId == urlId)
                 .Select(s => new
                 {
@@ -343,31 +342,53 @@ namespace Floaty_Music.Controllers
                 })
                 .FirstOrDefaultAsync();
 
-            if (song == null)
-                return Ok(await YoutubeService.GetLyricsAsync(urlId));
-            return Ok(song);
+                if (song == null)
+                    return Ok(await YoutubeService.GetLyricsAsync(urlId));
+                return Ok(song);
+            }
+            return NotFound();
         }
         [HttpGet("video/{urlId}")]
         public async Task<IActionResult> GetVideoStream(string urlId)
         {
             string streamurl = "";
-            var video = await _context.YoutubeSongs.Where(s => s.UrlId == urlId).FirstOrDefaultAsync();
-            if (video != null)
+            int localid = 0;
+            if (!int.TryParse(urlId, out localid))
             {
-                streamurl = $"{Request.Scheme}://{Request.Host}/uploads/yt/{video.Video}";
+                var video = await _context.YoutubeSongs.Where(s => s.UrlId == urlId).FirstOrDefaultAsync();
+                if (video != null)
+                {
+                    streamurl = $"{Request.Scheme}://{Request.Host}/uploads/yt/{video.Video}";
+                }
+                else { streamurl = await YoutubeService.GetStreamVideoUrl(urlId); }
             }
-            else { streamurl = await YoutubeService.GetStreamVideoUrl(urlId); }
+            else
+            {
+                var video = await _context.Songs.FindAsync(localid);
+                if (video != null)
+                {
+                    streamurl = $"{Request.Scheme}://{Request.Host}/uploads/video/{video.MoviePath}";
+                }
+                else
+                    return NotFound();
+            }
             return Ok(streamurl);
         }
         [HttpGet("hdvideo/{urlId}")]
         public async Task<IActionResult> GetHDVideoStream(string urlId)
         {
-            string streamurl = $"{Request.Scheme}://{Request.Host}/uploads/yt/{urlId}_HD.mp4";
+            int localid = 0;
+            if (!int.TryParse(urlId, out localid))
+            {
+                string streamurl = $"{Request.Scheme}://{Request.Host}/uploads/yt/{urlId}_HD.mp4";
             if (System.IO.File.Exists(Path.Combine(GlobalConfiguration.YoutubePath, $"{urlId}_HD.mp4"))){ 
                 return Ok(streamurl);
             }
             await YoutubeService.GetHDStreamVideoUrl(urlId);
             return Ok(streamurl);
+
+            }
+            return NotFound();
         }
     }
 }

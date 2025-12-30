@@ -33,14 +33,12 @@ namespace Floaty_Music.Controllers
                 UpdatedAt = DateTime.Now
             };
             // Extract duration from MP3 file
-            if (!Path.GetExtension(model.MusicFile.FileName).Equals(".mp3", StringComparison.OrdinalIgnoreCase))
-                return BadRequest("Only MP3 allowed");
-            musiclength = await Task.Run(() =>
-            {
-                using var stream = model.MusicFile.OpenReadStream();
-                var tagFile = TagLib.File.Create(new StreamFileAbstraction(model.MusicFile.FileName, stream));
-                return tagFile.Properties.Duration.TotalSeconds;
-            });
+            //musiclength = await Task.Run(() =>
+            //{
+            //    using var stream = model.MusicFile.OpenReadStream();
+            //    var tagFile = TagLib.File.Create(new StreamFileAbstraction(model.MusicFile.FileName, stream));
+            //    return tagFile.Properties.Duration.TotalSeconds;
+            //});
             song.SongCounter = new SongCounter[]
             {
                 new SongCounter{
@@ -65,8 +63,6 @@ namespace Floaty_Music.Controllers
             if (model.MusicFile != null)
             {
                 // Extract duration from MP3 file
-                if (!Path.GetExtension(model.MusicFile.FileName).Equals(".mp3", StringComparison.OrdinalIgnoreCase))
-                    return BadRequest("Only MP3 allowed");
                 using var stream = model.MusicFile.OpenReadStream();
                 var tagFile = TagLib.File.Create(new StreamFileAbstraction(model.MusicFile.FileName, stream));
                 musiclength = tagFile.Properties.Duration.TotalSeconds;

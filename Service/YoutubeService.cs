@@ -278,9 +278,7 @@ namespace Floaty_Music.Service
 #endif
             var videoId = VideoId.Parse(yturl);
             var manifest = await client.Videos.Streams.GetManifestAsync(videoId);
-            var videostream = manifest.GetVideoStreams()
-    .Where(s => s.VideoResolution.Height == 720)
-    .FirstOrDefault();
+            var videostream = manifest.GetVideoStreams().GetWithHighestVideoQuality();
             if (videostream == null)
                 throw new Exception("No video streams found.");
 
