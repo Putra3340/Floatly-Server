@@ -29,8 +29,6 @@ public partial class Songs
 
     public virtual Albums? Album { get; set; }
 
-    public virtual ICollection<Likes> Likes { get; set; } = new List<Likes>();
-
     public virtual ICollection<PlaylistSongs> PlaylistSongs { get; set; } = new List<PlaylistSongs>();
 
     public virtual ICollection<SongCounter> SongCounter { get; set; } = new List<SongCounter>();

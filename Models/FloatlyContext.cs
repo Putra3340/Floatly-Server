@@ -19,8 +19,6 @@ public partial class FloatlyContext : DbContext
 
     public virtual DbSet<Artists> Artists { get; set; }
 
-    public virtual DbSet<Likes> Likes { get; set; }
-
     public virtual DbSet<PlaylistSongs> PlaylistSongs { get; set; }
 
     public virtual DbSet<Playlists> Playlists { get; set; }
@@ -71,34 +69,10 @@ public partial class FloatlyContext : DbContext
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
         });
 
-        modelBuilder.Entity<Likes>(entity =>
-        {
-            entity.HasKey(e => new { e.UserId, e.SongId });
-
-            entity.HasIndex(e => e.SongId, "IX_Likes_SongId");
-
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-
-            entity.HasOne(d => d.Song).WithMany(p => p.Likes)
-                .HasForeignKey(d => d.SongId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Likes_Songs");
-
-            entity.HasOne(d => d.User).WithMany(p => p.Likes)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Likes_Users");
-        });
-
         modelBuilder.Entity<PlaylistSongs>(entity =>
         {
-            entity.HasKey(e => new { e.PlaylistId, e.SongId });
-
-            entity.HasIndex(e => e.SongId, "IX_PlaylistSongs_SongId");
-
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UrlId).HasMaxLength(50);
 
             entity.HasOne(d => d.Playlist).WithMany(p => p.PlaylistSongs)
                 .HasForeignKey(d => d.PlaylistId)
@@ -108,6 +82,11 @@ public partial class FloatlyContext : DbContext
             entity.HasOne(d => d.Song).WithMany(p => p.PlaylistSongs)
                 .HasForeignKey(d => d.SongId)
                 .HasConstraintName("FK_PlaylistSongs_Songs");
+
+            entity.HasOne(d => d.Url).WithMany(p => p.PlaylistSongs)
+                .HasPrincipalKey(p => p.UrlId)
+                .HasForeignKey(d => d.UrlId)
+                .HasConstraintName("FK_PlaylistSongs_YoutubeSongs");
         });
 
         modelBuilder.Entity<Playlists>(entity =>
@@ -123,6 +102,7 @@ public partial class FloatlyContext : DbContext
 
             entity.HasOne(d => d.User).WithMany(p => p.Playlists)
                 .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Playlists_Users");
         });
 

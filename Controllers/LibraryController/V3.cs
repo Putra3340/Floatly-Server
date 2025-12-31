@@ -5,6 +5,7 @@ using Floaty_Music.Utils;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using TagLib.Matroska;
@@ -19,6 +20,7 @@ namespace Floaty_Music.Controllers
     public class LibraryV3Controller : ControllerBase
     {
         private readonly FloatlyContext _context;
+        private static List<UserRateLimit> PlayCountCooldown = new(); // temp store email verify request
         public LibraryV3Controller(FloatlyContext cont)
         {
             _context = cont;
@@ -40,7 +42,7 @@ namespace Floaty_Music.Controllers
                     Id = x.Id.ToString(),
                     Title = x.Title,
                     ArtistName = x.Album.Artist.Name,
-                    Cover = baseUrl + x.CoverImagePath,
+                    Cover = baseUrl + "uploads/cover/" + x.CoverImagePath,
                     SongLength = TimeSpan.FromSeconds((double)x.SongCounter.FirstOrDefault().MusicLength).ToString(@"mm\:ss"),
                     PlayCount = (x.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
                 });
@@ -52,7 +54,7 @@ namespace Floaty_Music.Controllers
                         Id = x.Id.ToString(),
                         Title = x.Title,
                         ArtistName = x.Album.Artist.Name,
-                        Cover = baseUrl + x.CoverImagePath,
+                        Cover = baseUrl + "uploads/cover/" + x.CoverImagePath,
                         SongLength = TimeSpan.FromSeconds((double)x.SongCounter.FirstOrDefault().MusicLength).ToString(@"mm\:ss"),
                         PlayCount = (x.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
                     });
@@ -92,8 +94,11 @@ namespace Floaty_Music.Controllers
             return Ok(result);
         }
         [HttpGet("search")] // search
-        public async Task<IActionResult> Search([FromQuery] string? anycontent)
+        public async Task<IActionResult> Search([FromQuery] string? anycontent, [FromQuery] string? token)
         {
+            // dont allow unknown access
+            if (!await IsAuthValid(token))
+                return Unauthorized();
             var list = await YoutubeService.SearchAsync(anycontent, 10);
             List<ApiSong> combinedsonglist = new();
             List<Songs>? songlist = null;
@@ -119,7 +124,7 @@ namespace Floaty_Music.Controllers
                     Id = x.Id.ToString(),
                     Title = x.Title,
                     ArtistName = x.Album.Artist.Name,
-                    Cover = baseUrl + x.CoverImagePath,
+                    Cover = baseUrl + "uploads/cover/" + x.CoverImagePath,
                     SongLength = TimeSpan.FromSeconds((double)x.SongCounter.FirstOrDefault().MusicLength).ToString(@"mm\:ss"),
                     PlayCount = (x.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
                 });
@@ -155,10 +160,10 @@ namespace Floaty_Music.Controllers
             };
             return Ok(result);
         }
-
         [HttpGet("play/{id}")]
-        public async Task<IActionResult> GetSong(string id)
+        public async Task<IActionResult> GetSong(string id, [FromQuery] string? token)
         {
+            // dont auth here - allow public access but for local downloaded only not fetching from youtube
             int localid = 0;
             ApiSongPlay song = null;
             // check is it from youtube / database
@@ -198,7 +203,7 @@ namespace Floaty_Music.Controllers
                         AlbumId = 0
                     };
                     // increment play count
-                    if (songdb?.SongCounter != null)
+                    if (songdb?.SongCounter != null && await IsPlayCountNotCooldown(token))
                     {
                         var counter = songdb.SongCounter.FirstOrDefault();
                         if(counter != null)
@@ -209,7 +214,8 @@ namespace Floaty_Music.Controllers
                     }
                     return Ok(song);
                 }
-
+                if (!await IsAuthValid(token)) // dont allow anonymous fetch from youtube
+                    return Unauthorized();
                 Console.WriteLine("Fetching from YouTube...");
 #if DEBUG
                 async Task<(T result, TimeSpan time)> Measure<T>(Func<Task<T>> action)
@@ -316,7 +322,7 @@ namespace Floaty_Music.Controllers
                     PlayCount = (songdb.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
                 };
                 // increment play count
-                if (songdb?.SongCounter != null)
+                if (songdb?.SongCounter != null && await IsPlayCountNotCooldown(token))
                 {
                     var counter = songdb.SongCounter.FirstOrDefault();
                     if (counter != null)
@@ -329,9 +335,11 @@ namespace Floaty_Music.Controllers
 
             return Ok(song);
         }
-        [HttpGet("lyrics/{urlId}")] // TODO : LOCAL DB AND IF NEW SONGS
-        public async Task<IActionResult> GetLyrics(string urlId)
+        [HttpGet("lyrics/{urlId}")]
+        public async Task<IActionResult> GetLyrics(string urlId, [FromQuery] string? token)
         {
+            if (!await IsAuthValid(token))
+                return Unauthorized();
             // local
             int localid = 0;
             if (!int.TryParse(urlId, out localid))
@@ -362,8 +370,10 @@ namespace Floaty_Music.Controllers
             return NotFound();
         }
         [HttpGet("video/{urlId}")]
-        public async Task<IActionResult> GetVideoStream(string urlId)
+        public async Task<IActionResult> GetVideoStream(string urlId, [FromQuery] string? token)
         {
+            if (!await IsAuthValid(token))
+                return Unauthorized();
             string streamurl = "";
             int localid = 0;
             if (!int.TryParse(urlId, out localid))
@@ -388,8 +398,10 @@ namespace Floaty_Music.Controllers
             return Ok(streamurl);
         }
         [HttpGet("hdvideo/{urlId}")]
-        public async Task<IActionResult> GetHDVideoStream(string urlId)
+        public async Task<IActionResult> GetHDVideoStream(string urlId, [FromQuery] string? token)
         {
+            if (!await IsAuthValid(token))
+                return Unauthorized();
             int localid = 0;
             if (!int.TryParse(urlId, out localid))
             {
@@ -402,6 +414,60 @@ namespace Floaty_Music.Controllers
 
             }
             return NotFound();
+        }
+
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public async Task<bool> IsAuthValid(string token)
+        {
+            if (token.IsNullOrEmpty())
+                return false;
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
+            if (user == null)
+                return false;
+            // check if expired return 
+            string exp = string.Empty;
+            if (!HashHelper.TryDecodeBase64(user.Token, out exp))
+                return false;
+            if (exp.IsNullOrEmpty())
+                return false;
+            exp = exp.Split("|").Last();
+            if (long.TryParse(exp, out long epoch))
+            {
+                var dateTime = DateTimeOffset.FromUnixTimeSeconds(epoch).UtcDateTime;
+                if (dateTime <= DateTime.UtcNow)
+                    return false;
+            }
+            else
+            {
+                return false;
+            }
+            return true;
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public async Task<bool> IsPlayCountNotCooldown(string token)
+        {
+            if (token.IsNullOrEmpty())
+                return false;
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
+            if (user == null)
+                return false;
+            PlayCountCooldown.RemoveAll(x => x.Expired <= DateTime.Now); // remove expired requests
+            // check if expired return 
+            var alreadyRequested = PlayCountCooldown.FirstOrDefault(x => x.Token == token && x.Expired > DateTime.Now);
+            if (alreadyRequested != default) // on cooldown
+                return false;
+            PlayCountCooldown.Add(new UserRateLimit
+            {
+                Token = token,
+                Expired = DateTime.Now.AddSeconds(120) // 120 seconds cooldown
+            });
+            return true;
+        }
+
+        public class UserRateLimit
+        {
+            public string Token { get; set; }
+            public DateTime Expired { get; set; } = DateTime.Now;
         }
     }
 }

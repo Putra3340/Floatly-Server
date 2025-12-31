@@ -85,24 +85,24 @@ namespace Floaty_Music.Controllers
             }
             return Ok();
         }
-        [HttpPost]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var song = await _context.Songs.FindAsync(id);
-            var songcount = await _context.SongCounter.FindAsync(id);
-            if (song == null) return NotFound();
-            if (songcount == null) return NotFound();
-            var likes = await _context.Likes.Where(x => x.SongId == id).ToListAsync();
-            if (likes.Any())
-                _context.Likes.RemoveRange(likes);
-            var playlist = await _context.PlaylistSongs.Where(x => x.SongId == id).ToListAsync();
-            if (playlist.Any())
-                _context.PlaylistSongs.RemoveRange(playlist);
-            _context.SongCounter.Remove(songcount);
-            _context.Songs.Remove(song);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        //[HttpPost]
+        //public async Task<IActionResult> Delete(int id)
+        //{
+        //    var song = await _context.Songs.FindAsync(id);
+        //    var songcount = await _context.SongCounter.FindAsync(id);
+        //    if (song == null) return NotFound();
+        //    if (songcount == null) return NotFound();
+        //    var likes = await _context.Likes.Where(x => x.SongId == id).ToListAsync();
+        //    if (likes.Any())
+        //        _context.Likes.RemoveRange(likes);
+        //    var playlist = await _context.PlaylistSongs.Where(x => x.SongId == id).ToListAsync();
+        //    if (playlist.Any())
+        //        _context.PlaylistSongs.RemoveRange(playlist);
+        //    _context.SongCounter.Remove(songcount);
+        //    _context.Songs.Remove(song);
+        //    await _context.SaveChangesAsync();
+        //    return Ok();
+        //}
 
         public async Task<IActionResult> CleanUp()
         {
@@ -434,7 +434,7 @@ namespace Floaty_Music.Controllers
                         s.SongCounter.FirstOrDefault().MusicLength,
                         s.MusicFilePath,
                         CoverImagePath = "/uploads/cover/" + s.CoverImagePath,
-                        s.Likes,
+                        //s.Likes,
                         s.SongCounter.FirstOrDefault().TotalLikes
                     })
                     .ToList()

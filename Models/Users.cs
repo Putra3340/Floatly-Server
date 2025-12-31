@@ -11,13 +11,13 @@ public partial class Users
 
     public string Email { get; set; } = null!;
 
+    public int Role { get; set; }
+
     public string PasswordHash { get; set; } = null!;
 
     public string? Token { get; set; }
 
     public DateTime? CreatedAt { get; set; }
-
-    public virtual ICollection<Likes> Likes { get; set; } = new List<Likes>();
 
     public virtual ICollection<Playlists> Playlists { get; set; } = new List<Playlists>();
 }

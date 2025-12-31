@@ -25,6 +25,8 @@ public partial class YoutubeSongs
 
     public DateTime? CreatedAt { get; set; }
 
+    public virtual ICollection<PlaylistSongs> PlaylistSongs { get; set; } = new List<PlaylistSongs>();
+
     public virtual ICollection<SongCounter> SongCounter { get; set; } = new List<SongCounter>();
 
     public virtual ICollection<YoutubeLyrics> YoutubeLyrics { get; set; } = new List<YoutubeLyrics>();
