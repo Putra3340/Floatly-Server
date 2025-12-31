@@ -6,7 +6,7 @@ using System.Buffers.Text;
 
 namespace Floaty_Music.Controllers.ClientController
 {
-
+    [Route("api/playlist")]
     public class PlaylistController : ControllerBase
     {
         private readonly FloatlyContext _context;
@@ -14,20 +14,26 @@ namespace Floaty_Music.Controllers.ClientController
         {
             _context = cont;
         }
-        [HttpPost("api/playlist")]
-        public async Task<IActionResult> GetPlaylist([FromForm] string token)
+        [HttpGet]
+        public async Task<IActionResult> GetPlaylist([FromQuery] string token)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
             if (user == null) return Unauthorized("Invalid Token");
 
-            var playlists = await _context.Playlists
+            var playlists = await _context.Playlists.Include(x=>x.PlaylistSongs)
                 .Where(x => x.UserId == user.Id)
                 .ToListAsync();
 
-            return Ok(playlists);
+            return Ok(playlists.Select(p => new {
+                p.Id,
+                p.Name,
+                TotalSongs = p.PlaylistSongs.Count().ToString() + " Songs",
+                p.CreatedAt
+            }));
+
         }
-        [HttpPost("api/getplaylistsongs")]
-        public async Task<IActionResult> GetPlaylistSongs([FromForm] string token, [FromForm] int playlistId)
+        [HttpGet("getsongs")]
+        public async Task<IActionResult> GetPlaylistSongs([FromQuery] string token, [FromQuery] int playlistId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
             if (user == null) return Unauthorized("Invalid Token");
@@ -68,7 +74,7 @@ namespace Floaty_Music.Controllers.ClientController
                 {
                     combinedsong.Add(new ApiSong
                     {
-                        Id = pl.Url.Id.ToString(),
+                        Id = pl.Url.UrlId.ToString(),
                         Title = pl.Url.Title,
                         ArtistName = pl.Url.AuthorName,
                         Cover = baseUrl + "uploads/yt/" + pl.Url.Thumbnail,
@@ -79,12 +85,10 @@ namespace Floaty_Music.Controllers.ClientController
             }
             return Ok(new
             {
-                PlaylistId = playlist.Id,
-                PlaylistName = playlist.Name,
                 Songs = combinedsong
             });
         }
-        [HttpPost("api/createplaylist")]
+        [HttpPost("create")]
         public async Task<IActionResult> CreatePlaylist([FromForm] string token, [FromForm] string name)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
@@ -101,7 +105,7 @@ namespace Floaty_Music.Controllers.ClientController
             await _context.SaveChangesAsync();
             return Ok(new { message = "Playlist created successfully"});
         }
-        [HttpPost("api/editplaylist")]
+        [HttpPost("edit")]
         public async Task<IActionResult> EditPlaylist([FromForm] string token, [FromForm] int playlistId, [FromForm] string name)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
@@ -118,7 +122,7 @@ namespace Floaty_Music.Controllers.ClientController
 
             return Ok(new { message = "Playlist updated successfully" });
         }
-        [HttpPost("api/deleteplaylist")]
+        [HttpPost("delete")]
         public async Task<IActionResult> DeletePlaylist([FromForm] string token, [FromForm] int playlistId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
@@ -138,7 +142,7 @@ namespace Floaty_Music.Controllers.ClientController
 
             return Ok(new { message = "Playlist deleted successfully" });
         }
-        [HttpPost("api/addplaylistsong")]
+        [HttpPost("addsong")]
         public async Task<IActionResult> AddPlaylistSong([FromForm] string token, [FromForm] int playlistId, [FromForm] string songId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
@@ -177,7 +181,7 @@ namespace Floaty_Music.Controllers.ClientController
             await _context.SaveChangesAsync();
             return Ok(new { message = "Song added to playlist successfully" });
         }
-        [HttpPost("api/removeplaylistsong")]
+        [HttpPost("removesong")]
         public async Task<IActionResult> RemovePlaylistSong([FromForm] string token, [FromForm] int playlistId, [FromForm] int songId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
