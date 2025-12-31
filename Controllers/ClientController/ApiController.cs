@@ -20,18 +20,16 @@ namespace Floaty_Music.Controllers.ClientController
             {
                 status = GlobalConfiguration.ServerStatus,
                 message = GlobalConfiguration.ServerDetail,
-                version = "PREVIEW-1.0.0",
+                version = "EarlyRelease-1.0.0",
                 uptime = DateTime.Now - Process.GetCurrentProcess().StartTime,
                 serverTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                 serverName = Environment.MachineName,
                 serverdetail = "Development Server",
-                totalsong = _context.Songs.Count(),
+                totalsong = _context.Songs.Count() + _context.YoutubeSongs.Count(),
                 totalartist = _context.Artists.Count(),
                 totalalbums = _context.Albums.Count()
             };
             return Json(response);
         }
-
-        
     }
 }

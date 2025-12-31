@@ -143,7 +143,7 @@ namespace Floaty_Music.Service
                 var songCounter = new SongCounter
                 {
                     Url = dbSong,
-                    TotalPlayed = 0,
+                    TotalPlayed = 1,
                     TotalLikes = 0,
                     MusicLength = (int?)(info.Duration.GetValueOrDefault().TotalSeconds) ?? 0
                 };
@@ -278,11 +278,20 @@ namespace Floaty_Music.Service
 #endif
             var videoId = VideoId.Parse(yturl);
             var manifest = await client.Videos.Streams.GetManifestAsync(videoId);
-            var videostream = manifest.GetVideoStreams().GetWithHighestVideoQuality();
-            if (videostream == null)
+            var videoStreams = manifest.GetVideoStreams();
+
+            var videoStream =
+    videoStreams.FirstOrDefault(v => v.VideoQuality.Label == "720p60")
+    ?? videoStreams.FirstOrDefault(v => v.VideoQuality.Label == "720p")
+    ?? videoStreams
+        .OrderByDescending(v => v.VideoQuality.MaxHeight)
+        .FirstOrDefault();
+
+            if (videoStream == null)
                 throw new Exception("No video streams found.");
 
-            await client.Videos.Streams.DownloadAsync(videostream, videoPath);
+
+            await client.Videos.Streams.DownloadAsync(videoStream, videoPath);
             // AUDIO
             var audio = manifest.GetAudioOnlyStreams()
                                 .GetWithHighestBitrate()

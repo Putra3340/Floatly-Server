@@ -14,7 +14,6 @@ namespace Floaty_Music.Controllers
 {
     // V3 - Youtube Music Library API
     // BIG TODO : SECURE THIS API
-    // ADD PLAY COUNT
     [Route("api/library/v3")]
     [ApiController]
     public class LibraryV3Controller : ControllerBase
@@ -28,6 +27,7 @@ namespace Floaty_Music.Controllers
         public async Task<IActionResult> Index()
         {
             List<ApiSong> combinedsonglist = new();
+            List<ApiSong> exsonglist = new();
             var songlist = _context.Songs.Include(x => x.Album).ThenInclude(x => x.Artist).Include(x => x.SongCounter).Take(20).ToList();
             var ytlist = _context.YoutubeSongs.Include(x => x.SongCounter).Take(20).ToList();
             var artistlist = _context.Artists.Take(5).ToList();
@@ -44,6 +44,19 @@ namespace Floaty_Music.Controllers
                     SongLength = TimeSpan.FromSeconds((double)x.SongCounter.FirstOrDefault().MusicLength).ToString(@"mm\:ss"),
                     PlayCount = (x.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
                 });
+                // if the id is integer, add to exsonglist
+                if (int.TryParse(x.Id.ToString(), out int parsedId))
+                {
+                    exsonglist.Add(new ApiSong
+                    {
+                        Id = x.Id.ToString(),
+                        Title = x.Title,
+                        ArtistName = x.Album.Artist.Name,
+                        Cover = baseUrl + x.CoverImagePath,
+                        SongLength = TimeSpan.FromSeconds((double)x.SongCounter.FirstOrDefault().MusicLength).ToString(@"mm\:ss"),
+                        PlayCount = (x.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
+                    });
+                }
             }
             foreach (var x in ytlist)
             {
@@ -61,6 +74,7 @@ namespace Floaty_Music.Controllers
             var result = new
             {
                 songs = combinedsonglist,
+                songsex = exsonglist,
                 artists = artistlist.Select(x => new
                 {
                     id = x.Id,
@@ -82,19 +96,6 @@ namespace Floaty_Music.Controllers
         {
             var list = await YoutubeService.SearchAsync(anycontent, 10);
             List<ApiSong> combinedsonglist = new();
-            foreach (var x in list)
-            {
-                combinedsonglist.Add(new ApiSong
-                {
-                    Id = x.Id,
-                    Title = x.Title,
-                    ArtistName = x.Author,
-                    Cover = x.Thumbnail,
-                    SongLength = x.Duration,
-                    PlayCount = ""
-                });
-            }
-
             List<Songs>? songlist = null;
             List<Artists> artistlist = null;
             List<Albums> albumlist = null;
@@ -110,7 +111,7 @@ namespace Floaty_Music.Controllers
                 artistlist = _context.Artists.Where(x => x.Name.ToUpper().Contains(anycontent.ToUpper())).ToList();
                 albumlist = _context.Albums.Include(x => x.Artist).Where(x => x.Title.ToUpper().Contains(anycontent.ToUpper())).ToList();
             }
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var baseUrl = $"{Request.Scheme}://{Request.Host}/";
             foreach (var x in songlist)
             {
                 combinedsonglist.Add(new ApiSong
@@ -121,6 +122,18 @@ namespace Floaty_Music.Controllers
                     Cover = baseUrl + x.CoverImagePath,
                     SongLength = TimeSpan.FromSeconds((double)x.SongCounter.FirstOrDefault().MusicLength).ToString(@"mm\:ss"),
                     PlayCount = (x.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
+                });
+            }
+            foreach (var x in list)
+            {
+                combinedsonglist.Add(new ApiSong
+                {
+                    Id = x.Id,
+                    Title = x.Title,
+                    ArtistName = x.Author,
+                    Cover = x.Thumbnail,
+                    SongLength = x.Duration,
+                    PlayCount = ""
                 });
             }
             var result = new
