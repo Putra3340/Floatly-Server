@@ -134,7 +134,7 @@ namespace Floaty_Music.Controllers.ClientController
         public IActionResult VerifyToken([FromQuery] string token)
         {
             // cleanup expired requests first
-            emailverifyreq.RemoveAll(x => x.expiredtime <= DateTime.UtcNow);
+            emailverifyreq.RemoveAll(x => x.expiredtime <= DateTime.Now);
 
             var match = emailverifyreq.FirstOrDefault(x => x.verifytoken == token);
             if (match == default)

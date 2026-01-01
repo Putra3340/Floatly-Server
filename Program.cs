@@ -91,4 +91,27 @@ using (var ctx = new FloatlyContext())
     ctx.Database.GetDbConnection().Open();
     ctx.Songs.FirstOrDefault(); // triggers model & query compilation
 }
+
+// For debugging purposes
+#if DEBUG
+app.Use(async (context, next) =>
+{
+    var originalBody = context.Response.Body;
+
+    using var memStream = new MemoryStream();
+    context.Response.Body = memStream;
+
+    await next();
+
+    memStream.Position = 0;
+    var responseText = await new StreamReader(memStream).ReadToEndAsync();
+
+    if (context.Response.ContentType?.Contains("application/json") == true)
+        Console.WriteLine(responseText);
+
+    memStream.Position = 0;
+    await memStream.CopyToAsync(originalBody);
+    context.Response.Body = originalBody;
+});
+#endif
 app.Run();

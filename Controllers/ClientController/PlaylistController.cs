@@ -197,5 +197,61 @@ namespace Floaty_Music.Controllers.ClientController
 
             return Ok(new { message = "Song removed from playlist successfully" });
         }
+        [HttpPost("addlikesong")]
+        public async Task<IActionResult> AddLikePlaylistSong([FromForm] string token, [FromForm] string songId)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
+            if (user == null) return Unauthorized("Invalid Token");
+
+            var playlist = await _context.Playlists.FirstOrDefaultAsync(p => p.SpecialPlaylist == true && p.UserId == user.Id);
+            if (playlist == null) return NotFound("Playlist not found");
+
+            if (int.TryParse(songId,out int songint))
+            {
+                var song = await _context.Songs.FirstOrDefaultAsync(x=>x.Id == songint);
+                if (song == null) return NotFound("Song not found");
+                var exists = await _context.PlaylistSongs.AnyAsync(ps => ps.PlaylistId == playlist.Id && ps.SongId == songint);
+                if (exists) return Conflict("Song already in playlist");
+                _context.PlaylistSongs.Add(new PlaylistSongs
+                {
+                    PlaylistId = playlist.Id,
+                    SongId = songint,
+                    CreatedAt = DateTime.Now
+                });
+            }
+            else
+            {
+                var song = await _context.YoutubeSongs.FirstOrDefaultAsync(x=>x.UrlId == songId);
+                if (song == null) return NotFound("Song not found");
+                var exists = await _context.PlaylistSongs.AnyAsync(ps => ps.PlaylistId == playlist.Id && ps.UrlId == songId);
+                if (exists) return Conflict("Song already in playlist");
+                _context.PlaylistSongs.Add(new PlaylistSongs
+                {
+                    PlaylistId = playlist.Id,
+                    UrlId = songId,
+                    CreatedAt = DateTime.Now
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Song added to playlist successfully" });
+        }
+        [HttpPost("removelikesong")]
+        public async Task<IActionResult> RemoveLikePlaylistSong([FromForm] string token, [FromForm] int songId)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
+            if (user == null) return Unauthorized("Invalid Token");
+            var playlist = await _context.Playlists.FirstOrDefaultAsync(p => p.SpecialPlaylist == true && p.UserId == user.Id);
+            if (user == null) return Unauthorized("Contact the admin");
+            var entry = await _context.PlaylistSongs
+                .FirstOrDefaultAsync(ps => ps.PlaylistId == playlist.Id && ps.SongId == songId && ps.Playlist.UserId == user.Id);
+
+            if (entry == null) return NotFound("Song not found in playlist");
+
+            _context.PlaylistSongs.Remove(entry);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Song removed from playlist successfully" });
+        }
     }
 }
