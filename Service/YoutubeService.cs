@@ -202,7 +202,7 @@ namespace Floaty_Music.Service
         }
 
         // USE THIS
-        public static async Task<List<YoutubeSearchResult>> SearchAsync(string query, int count = 5)
+        public static async Task<List<YoutubeSearchResult>> SearchAsync(string query = "official music video", int count = 5)
         {
 #if DEBUG
             Stopwatch sw = new();

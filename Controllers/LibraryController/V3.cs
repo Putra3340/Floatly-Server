@@ -408,9 +408,14 @@ namespace Floaty_Music.Controllers
             if (System.IO.File.Exists(Path.Combine(GlobalConfiguration.YoutubePath, $"{urlId}_HD.mp4"))){ 
                 return Ok(streamurl);
             }
-            await YoutubeService.GetHDStreamVideoUrl(urlId);
-            return Ok(streamurl);
-
+                await YoutubeService.GetHDStreamVideoUrl(urlId);
+                return Ok(streamurl);
+            }
+            var song = _context.Songs.FirstOrDefault(x => x.Id == localid);
+            if(song != null)
+            {
+                string streamurl = $"{Request.Scheme}://{Request.Host}/uploads/video/";
+                return Ok(streamurl + song.MoviePath);
             }
             return NotFound();
         }

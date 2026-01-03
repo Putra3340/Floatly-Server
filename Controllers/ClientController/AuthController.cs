@@ -95,14 +95,26 @@ namespace Floaty_Music.Controllers.ClientController
                 return Conflict("Username or Email already exists");
             string hashedpass = HashHelper.Argon2Hash(password);
             string token = HashHelper.GenerateLoginToken(); // save like a session token
-            _context.Users.Add(new Users
+
+            var user = new Users
             {
                 Username = username,
                 Email = email,
+                Role = (int)Users.UserRole.User,
                 PasswordHash = hashedpass,
                 Token = token,
                 CreatedAt = DateTime.Now
-            });
+            };
+            _context.Users.Add(user);
+            var playlist = new Playlists
+            {
+                Name = "Liked",
+                SpecialPlaylist = true,
+                CreatedAt = DateTime.Now,
+                User = user,
+            };
+            _context.Playlists.Add(playlist);
+
             await _context.SaveChangesAsync();
             return Ok(new { Message = "Account Successfully Created", Token = token });
         }
@@ -119,6 +131,7 @@ namespace Floaty_Music.Controllers.ClientController
             if (alreadyRequested != default)
                 return Conflict("Verification already requested, wait a few minutes to request new verification link");
             // This will send a verification url to the user's email (random token)
+            Console.WriteLine("Sending Email..");
             string token = HashHelper.GenerateRandomLongToken();
             string verify_url = $"{Request.Scheme}://{Request.Host}/auth/desktop/verify-token?token={token}";
             emailverifyreq.Add((DateTime.Now.AddMinutes(5), email, token)); // expires in 5 minutes, after 5 minutes user need to request again

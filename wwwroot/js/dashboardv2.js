@@ -463,7 +463,67 @@
         container.appendChild(tableWrapper);
     };
 
+    window.loadYtSongs = async function (start = 0, end = pageSize) {
+        console.log("Loading Youtube...");
 
+        const container = document.querySelector("#ytsong-container");
+        container.innerHTML = "<p class='text-muted'>Loading Youtube Songs...</p>";
+
+        const response = await fetch(`/Song/GetYtSong?start=${start}&end=${end}`);
+        const ytsongs = await response.json();
+
+        if (!ytsongs.length) {
+            container.innerHTML = "<p class='text-muted'>No youtube songs found.</p>";
+            return;
+        }
+
+        container.innerHTML = "";
+
+        for (const song of ytsongs) {
+            const safeName = encode(song.title);
+
+            const songCard = document.createElement("div");
+            songCard.className = "col-md-12 mb-3 song-card";
+            songCard.id = `song-${song.id}`;
+
+            songCard.innerHTML = `
+            <div class="card p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        ${song.coverUrl
+                    ? `<img src="${song.coverUrl}" class="me-3" style="width: 140px; height: 80px; object-fit: cover;" />`
+                    : `<div class="bg-primary d-flex align-items-center justify-content-center me-3"
+                                       style="width: 80px; height: 80px;">
+                                       <i class="bi bi-person fs-1 text-white"></i>
+                                   </div>`
+                }
+                        <div>
+                            <h5 class="mb-1">${song.title}</h5>
+                            <small class="text-muted">
+                                ${song.authorName}
+                            </small>
+                            <div class="text-muted small mt-1">
+                                <strong>${song.plays}</strong> Plays - 
+                                <strong>${song.likes}</strong> Likes -
+                                on <strong>${song.playlistCount}</strong> Playlists -
+                                ${song.id} (${song.urlId})
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        
+                        <button type="button" class="btn btn-outline-danger btn-sm delete-btn" onclick="openDeleteModal(${song.id},4,decodeURIComponent('${safeName}'))">Delete</button>
+                    </div>
+                </div>
+
+                <div class="row albums-container" style="display: none"></div>
+            </div>
+        `;
+
+            container.appendChild(songCard);
+        }
+    };
 
     /* -------------------------
         Toast Notification
@@ -592,6 +652,8 @@
             titleElement.textContent = "Delete Album ?";
         } else if (type === 3) {
             titleElement.textContent = "Delete Song ?";
+        } else if (type === 4) {
+            titleElement.textContent = "Delete Youtube Song ?";
         }
 
         // Reset form
@@ -724,6 +786,7 @@
 
     updateInputs();
     updateArtists();
+    loadYtSongs();
 
 
     /* -------------------------
@@ -889,6 +952,8 @@
             url = "/Album/Delete";
         } else if (ref == 3) {
             url = "/Song/Delete";
+        } else if (ref == 4) {
+            url = "/Song/DeleteYT";
         } else {
             alert("Unknown action — please reopen the modal.");
             return;
@@ -910,7 +975,12 @@
                 } else if (ref == 3) {
                     showToast("Song deleted successfully!", "success");
                     setTimeout(() => loadSongs(albumId)); // refresh album list
-                } else {
+                } else if (ref == 4) {
+                    showToast("Youtube Song deleted successfully!", "success");
+                    setTimeout(() => loadYtSongs()); // refresh album list
+                }
+
+                else {
                     alert("Unknown action — please refresh the page.");
                     return;
                 }

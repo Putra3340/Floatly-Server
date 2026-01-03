@@ -85,24 +85,21 @@ namespace Floaty_Music.Controllers
             }
             return Ok();
         }
-        //[HttpPost]
-        //public async Task<IActionResult> Delete(int id)
-        //{
-        //    var song = await _context.Songs.FindAsync(id);
-        //    var songcount = await _context.SongCounter.FindAsync(id);
-        //    if (song == null) return NotFound();
-        //    if (songcount == null) return NotFound();
-        //    var likes = await _context.Likes.Where(x => x.SongId == id).ToListAsync();
-        //    if (likes.Any())
-        //        _context.Likes.RemoveRange(likes);
-        //    var playlist = await _context.PlaylistSongs.Where(x => x.SongId == id).ToListAsync();
-        //    if (playlist.Any())
-        //        _context.PlaylistSongs.RemoveRange(playlist);
-        //    _context.SongCounter.Remove(songcount);
-        //    _context.Songs.Remove(song);
-        //    await _context.SaveChangesAsync();
-        //    return Ok();
-        //}
+        [HttpPost]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var song = await _context.Songs.FindAsync(id);
+            var songcount = await _context.SongCounter.FindAsync(id);
+            if (song == null) return NotFound();
+            if (songcount == null) return NotFound();
+            var playlist = await _context.PlaylistSongs.Where(x => x.SongId == id).ToListAsync();
+            if (playlist.Any())
+                _context.PlaylistSongs.RemoveRange(playlist);
+            _context.SongCounter.Remove(songcount);
+            _context.Songs.Remove(song);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
 
         public async Task<IActionResult> CleanUp()
         {
@@ -289,6 +286,9 @@ namespace Floaty_Music.Controllers
         }
         public async Task<IActionResult> DashboardV2()
         {
+            // BIG BUGS : TOO MANY CONTEXT HERE, IT CANT HANDLE, IT TIMEOUTS
+            // TODO OPTIMIZE CONTEXT USAGE
+
             ViewBag.TotalSongs = _context.Songs.Count();
             ViewBag.TotalAlbums = _context.Albums.Count();
             ViewBag.TotalArtists = _context.Artists.Count();
@@ -470,6 +470,48 @@ namespace Floaty_Music.Controllers
             }
             return RedirectToAction("Dashboard");
         }
+        #region Youtube
+        [HttpGet]
+        public async Task<IActionResult> GetYtSong(int start = 1, int end = 10)
+        {
+            var songs = await _context.YoutubeSongs.Include(x=>x.SongCounter).Skip(start).Take(end).OrderDescending().Select(s =>
+            new
+            {
+                s.Id,
+                s.Title,
+                s.UrlId,
+                s.AuthorName,
+                s.AuthorCover,
+                musicUrl = "/uploads/yt/" + s.Music,
+                coverUrl = "/uploads/yt/" + s.Thumbnail,
+                bannerUrl = "/uploads/yt/" + s.AuthorCover,
+                videoUrl = "/uploads/yt/" + s.Video,
+                Duration = s.SongCounter.FirstOrDefault().MusicLength,
+                PlaylistCount = _context.PlaylistSongs.Where(x=>x.UrlId == s.UrlId).Count(),
+                Plays = s.SongCounter.FirstOrDefault().TotalPlayed,
+                Likes = s.SongCounter.FirstOrDefault().TotalLikes
+            }).ToListAsync();
+            return Json(songs);
+        }
+        [HttpPost]
+        public async Task<IActionResult> DeleteYT(int id)
+        {
+            var song = await _context.YoutubeSongs.Where(x=>x.Id == id).FirstOrDefaultAsync();
+            var songcount = await _context.SongCounter.Where(x=>x.UrlId == song.UrlId).FirstOrDefaultAsync();
+            if (song == null) return NotFound();
+            if (songcount == null) return NotFound();
+            var playlist = await _context.PlaylistSongs.Where(x => x.UrlId == song.UrlId).ToListAsync();
+            if (playlist.Any())
+                _context.PlaylistSongs.RemoveRange(playlist);
+            _context.SongCounter.Remove(songcount);
+            var lyrics = await _context.YoutubeLyrics.Where(x => x.SongId == id).ToListAsync();
+            if (lyrics.Any())
+                _context.YoutubeLyrics.RemoveRange(lyrics);
+            _context.YoutubeSongs.Remove(song);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+        #endregion
         [HttpGet]
         public async Task<IActionResult> GetLogs()
         {

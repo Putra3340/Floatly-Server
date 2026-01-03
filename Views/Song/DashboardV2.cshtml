@@ -39,6 +39,24 @@
                                 Library Manager
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#ytmanager" data-section="ytmanager">
+                                <i class="bi bi-youtube me-2"></i>
+                                Youtube Manager
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#adsmanager" data-section="adsmanager">
+                                <i class="bi bi-broadcast me-2"></i>
+                                Ads Manager
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#subsmanager" data-section="subsmanager">
+                                <i class="bi bi-people me-2"></i>
+                                Subscription Manager
+                            </a>
+                        </li>
                     </ul>
 
                     <hr class="my-4">
@@ -222,6 +240,114 @@
                 </div>
                 <!-- Music Section -->
                 <div id="manager" class="content-section">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Library Management</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <button type="button" class="btn btn-primary" onclick='openArtistModal()'>
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Add New Artist
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <input type="text" class="form-control search-box" id="searchcontext" placeholder="Search anything... (min. 3 char)">
+                        </div>
+                        <div class="d-flex align-items-center justify-content-center my-3 gap-3">
+                            <button id="prevPage" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-chevron-left"></i> Prev
+                            </button>
+
+                            <div class="d-flex align-items-center">
+                                <input id="startInput" type="number" class="form-control form-control-sm text-center" value="0" style="width: 70px;">
+                                <span class="mx-2">/</span>
+                                <input id="endInput" type="number" class="form-control form-control-sm text-center" value="19" style="width: 70px;">
+                                <span class="ms-2 text-muted">of <span id="totalCount"></span></span>
+                            </div>
+
+                            <button id="nextPage" class="btn btn-outline-primary btn-sm">
+                                Next <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="artists-container" class="row">
+                    </div>
+
+
+                </div>
+                <!-- Youtube Section -->
+                <div id="ytmanager" class="content-section">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Youtube Management</h1>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <input type="text" class="form-control search-box" id="searchcontext" placeholder="Search anything... (min. 3 char)">
+                        </div>
+                        <div class="d-flex align-items-center justify-content-center my-3 gap-3">
+                            <button id="prevPage" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-chevron-left"></i> Prev
+                            </button>
+
+                            <div class="d-flex align-items-center">
+                                <input id="startInput" type="number" class="form-control form-control-sm text-center" value="0" style="width: 70px;">
+                                <span class="mx-2">/</span>
+                                <input id="endInput" type="number" class="form-control form-control-sm text-center" value="19" style="width: 70px;">
+                                <span class="ms-2 text-muted">of <span id="totalCount"></span></span>
+                            </div>
+
+                            <button id="nextPage" class="btn btn-outline-primary btn-sm">
+                                Next <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="ytsong-container" class="row">
+                    </div>
+
+
+                </div>
+                <!-- Ads Section -->
+                <div id="adsmanager" class="content-section">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Library Management</h1>
+                        <div class="btn-toolbar mb-2 mb-md-0">
+                            <button type="button" class="btn btn-primary" onclick='openArtistModal()'>
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Add New Artist
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <input type="text" class="form-control search-box" id="searchcontext" placeholder="Search anything... (min. 3 char)">
+                        </div>
+                        <div class="d-flex align-items-center justify-content-center my-3 gap-3">
+                            <button id="prevPage" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-chevron-left"></i> Prev
+                            </button>
+
+                            <div class="d-flex align-items-center">
+                                <input id="startInput" type="number" class="form-control form-control-sm text-center" value="0" style="width: 70px;">
+                                <span class="mx-2">/</span>
+                                <input id="endInput" type="number" class="form-control form-control-sm text-center" value="19" style="width: 70px;">
+                                <span class="ms-2 text-muted">of <span id="totalCount"></span></span>
+                            </div>
+
+                            <button id="nextPage" class="btn btn-outline-primary btn-sm">
+                                Next <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="artists-container" class="row">
+                    </div>
+
+
+                </div>
+                <!-- Subscription Section -->
+                <div id="subsmanager" class="content-section">
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                         <h1 class="h2">Library Management</h1>
                         <div class="btn-toolbar mb-2 mb-md-0">

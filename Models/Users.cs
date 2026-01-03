@@ -5,6 +5,10 @@ namespace Floaty_Music.Models;
 
 public partial class Users
 {
+    public enum UserRole
+    {
+        User, Premium
+    }
     public int Id { get; set; }
 
     public string Username { get; set; } = null!;
