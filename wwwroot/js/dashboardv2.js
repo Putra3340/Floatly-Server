@@ -644,21 +644,41 @@
         for (const song of ytsongs) {
             const safeName = encode(song.title);
 
+            songCard = document.createElement("div");
             songCard.innerHTML = `
             <div class="list-group-item">
                                                     <div class="d-flex justify-content-between align-items-center">
-                                                        <strong>Song Alpha</strong>
-                                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                                    </div>
+    <strong>${song.title}</strong>
+
+    <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-primary" data-music="${song.musicFilePath}">
+            <i class="bi bi-play-fill"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-danger">Delete</button>
+    </div>
+</div>
+
 
                                                     <div class="d-flex gap-4 mt-2">
                                                         <div class="form-check form-switch">
-                                                            <input class="form-check-input" type="checkbox">
+                                                                                    <input
+                            class="form-check-input high-adssong-switch"
+                            type="checkbox"
+                            role="switch"
+                            data-song-id="${song.id}"
+                            ${song.highlighted ? "checked" : ""}
+                        />
                                                             <label class="form-check-label">Highlighted (Ads)</label>
                                                         </div>
 
                                                         <div class="form-check form-switch">
-                                                            <input class="form-check-input" type="checkbox" checked>
+                                                                                    <input
+                            class="form-check-input hide-adssong-switch"
+                            type="checkbox"
+                            role="switch"
+                            data-song-id="${song.id}"
+                            ${song.hidden ? "checked" : ""}
+                        />
                                                             <label class="form-check-label">Enabled</label>
                                                         </div>
                                                     </div>
@@ -1262,4 +1282,94 @@
         }
     });
 
+    /* -------------------------
+        Ads Song Form
+    ------------------------- */
+    document.getElementById("adsSongForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const form = this;
+        const title = form.querySelector(".modal-title").textContent.trim();
+        const formData = new FormData(form);
+
+        let url = "/Ads/Upload";
+
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                body: formData
+            });
+
+            if (response.ok) {
+                bootstrap.Modal
+                    .getInstance(document.getElementById("songModal"))
+                    ?.hide();
+
+                showToast("Ads saved successfully!", "success");
+                loadAdsSongs();
+            } else {
+                const error = await response.text();
+                alert("Error: " + error);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("An unexpected error occurred, my love.");
+        }
+    });
+    /* -------------------------
+            Ads Hide Song
+        ------------------------- */
+    document.addEventListener("change", async (e) => {
+        if (!e.target.matches(".hide-adssong-switch")) return;
+
+        const songId = e.target.dataset.songId;
+        const isHidden = e.target.checked;
+        try {
+            const res = await fetch("/ads/hidesong", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    id: Number(songId),
+                    hidden: isHidden
+                })
+            });
+
+
+            if (!res.ok) throw new Error("Request failed");
+        } catch (err) {
+            e.target.checked = !isHidden; // revert on failure
+            console.error(err);
+            alert("Failed to update song state");
+        }
+    });
+    /* -------------------------
+            Ads Highlight Song
+        ------------------------- */
+    document.addEventListener("change", async (e) => {
+        if (!e.target.matches(".high-adssong-switch")) return;
+
+        const songId = e.target.dataset.songId;
+        const isHidden = e.target.checked;
+        try {
+            const res = await fetch("/ads/highsong", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    id: Number(songId),
+                    hidden: isHidden
+                })
+            });
+
+
+            if (!res.ok) throw new Error("Request failed");
+        } catch (err) {
+            e.target.checked = !isHidden; // revert on failure
+            console.error(err);
+            alert("Failed to update song state");
+        }
+    });
 });
