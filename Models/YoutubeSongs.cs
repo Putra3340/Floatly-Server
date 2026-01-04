@@ -23,9 +23,9 @@ public partial class YoutubeSongs
 
     public string? AuthorCover { get; set; }
 
-    public bool? Hidden { get; set; }
+    public bool Hidden { get; set; }
 
-    public DateTime? CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     public virtual ICollection<PlaylistSongs> PlaylistSongs { get; set; } = new List<PlaylistSongs>();
 

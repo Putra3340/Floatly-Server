@@ -4,6 +4,7 @@ using Floaty_Music.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics;
 using TagLib;
 
@@ -489,7 +490,8 @@ namespace Floaty_Music.Controllers
                 Duration = s.SongCounter.FirstOrDefault().MusicLength,
                 PlaylistCount = _context.PlaylistSongs.Where(x=>x.UrlId == s.UrlId).Count(),
                 Plays = s.SongCounter.FirstOrDefault().TotalPlayed,
-                Likes = s.SongCounter.FirstOrDefault().TotalLikes
+                Likes = s.SongCounter.FirstOrDefault().TotalLikes,
+                Hidden = s.Hidden
             }).ToListAsync();
             return Json(songs);
         }
@@ -511,6 +513,72 @@ namespace Floaty_Music.Controllers
             await _context.SaveChangesAsync();
             return Ok();
         }
+        [HttpPost]
+        public async Task<IActionResult> HideSong([FromBody] HideSongRequest req)
+        {
+            var song = await _context.YoutubeSongs.Where(x=>x.Id == req.Id).FirstOrDefaultAsync();
+            song.Hidden = req.Hidden;
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+        [HttpGet]
+        public async Task<IActionResult> GetYtLibrarySearch(string query)
+        {
+            if (query.IsNullOrEmpty())
+            {
+                var songs = await _context.YoutubeSongs.Include(x => x.SongCounter).Skip(0).Take(10).OrderDescending().Select(s =>
+             new
+            {
+                s.Id,
+                s.Title,
+                s.UrlId,
+                s.AuthorName,
+                s.AuthorCover,
+                musicUrl = "/uploads/yt/" + s.Music,
+                coverUrl = "/uploads/yt/" + s.Thumbnail,
+                bannerUrl = "/uploads/yt/" + s.AuthorCover,
+                videoUrl = "/uploads/yt/" + s.Video,
+                Duration = s.SongCounter.FirstOrDefault().MusicLength,
+                PlaylistCount = _context.PlaylistSongs.Where(x => x.UrlId == s.UrlId).Count(),
+                Plays = s.SongCounter.FirstOrDefault().TotalPlayed,
+                Likes = s.SongCounter.FirstOrDefault().TotalLikes,
+                Hidden = s.Hidden
+            }).ToListAsync();
+                return Json(songs);
+            }
+            else
+            {
+
+                query = query.ToUpper();
+            var songs = await _context.YoutubeSongs
+        .Include(x => x.SongCounter)
+        .Where(s =>
+            s.Title.ToUpper().Contains(query) ||
+            s.AuthorName.ToUpper().Contains(query) ||
+            s.UrlId.ToUpper().Contains(query)
+        ).OrderDescending().Select(s =>
+            new
+            {
+                s.Id,
+                s.Title,
+                s.UrlId,
+                s.AuthorName,
+                s.AuthorCover,
+                musicUrl = "/uploads/yt/" + s.Music,
+                coverUrl = "/uploads/yt/" + s.Thumbnail,
+                bannerUrl = "/uploads/yt/" + s.AuthorCover,
+                videoUrl = "/uploads/yt/" + s.Video,
+                Duration = s.SongCounter.FirstOrDefault().MusicLength,
+                PlaylistCount = _context.PlaylistSongs.Where(x => x.UrlId == s.UrlId).Count(),
+                Plays = s.SongCounter.FirstOrDefault().TotalPlayed,
+                Likes = s.SongCounter.FirstOrDefault().TotalLikes,
+                Hidden = s.Hidden
+            }).ToListAsync();
+            return Json(songs);
+            }
+            return BadRequest();
+        }
+        public record HideSongRequest(int Id, bool Hidden);
         #endregion
         [HttpGet]
         public async Task<IActionResult> GetLogs()

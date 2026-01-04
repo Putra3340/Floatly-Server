@@ -511,14 +511,158 @@
                         </div>
                     </div>
 
-                    <div class="btn-group">
-                        
-                        <button type="button" class="btn btn-outline-danger btn-sm delete-btn" onclick="openDeleteModal(${song.id},4,decodeURIComponent('${safeName}'))">Delete</button>
+                    <div class="d-flex align-items-center gap-3">
+                    <div class="form-check form-switch mb-0">
+                        <input
+                            class="form-check-input hide-song-switch"
+                            type="checkbox"
+                            role="switch"
+                            data-song-id="${song.id}"
+                            ${song.hidden ? "checked" : ""}
+                        />
+
+                        <label class="form-check-label" for="hiddenSwitch_${song.id}">
+                            Hidden
+                        </label>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="btn btn-outline-danger btn-sm px-3"
+                            onclick="openDeleteModal(${song.id}, 4, decodeURIComponent('${safeName}'))"
+                        >
+                            Delete
+                        </button>
                     </div>
                 </div>
 
                 <div class="row albums-container" style="display: none"></div>
             </div>
+        `;
+
+            container.appendChild(songCard);
+        }
+    };
+    window.loadYtSearch = async function (query = "") {
+        console.log("Loading Youtube...");
+
+        const container = document.querySelector("#ytsong-container");
+        container.innerHTML = "<p class='text-muted'>Loading Youtube Songs...</p>";
+
+        const response = await fetch(`/Song/getYtLibrarySearch?query=${query}`);
+        const ytsongs = await response.json();
+
+        if (!ytsongs.length) {
+            container.innerHTML = "<p class='text-muted'>No youtube songs found.</p>";
+            return;
+        }
+
+        container.innerHTML = "";
+
+        for (const song of ytsongs) {
+            const safeName = encode(song.title);
+
+            const songCard = document.createElement("div");
+            songCard.className = "col-md-12 mb-3 song-card";
+            songCard.id = `song-${song.id}`;
+
+            songCard.innerHTML = `
+            <div class="card p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        ${song.coverUrl
+                    ? `<img src="${song.coverUrl}" class="me-3" style="width: 140px; height: 80px; object-fit: cover;" />`
+                    : `<div class="bg-primary d-flex align-items-center justify-content-center me-3"
+                                       style="width: 80px; height: 80px;">
+                                       <i class="bi bi-person fs-1 text-white"></i>
+                                   </div>`
+                }
+                        <div>
+                            <h5 class="mb-1">${song.title}</h5>
+                            <small class="text-muted">
+                                ${song.authorName}
+                            </small>
+                            <div class="text-muted small mt-1">
+                                <strong>${song.plays}</strong> Plays - 
+                                <strong>${song.likes}</strong> Likes -
+                                on <strong>${song.playlistCount}</strong> Playlists -
+                                ${song.id} (${song.urlId})
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3">
+                    <div class="form-check form-switch mb-0">
+                        <input
+                            class="form-check-input hide-song-switch"
+                            type="checkbox"
+                            role="switch"
+                            data-song-id="${song.id}"
+                            ${song.hidden ? "checked" : ""}
+                        />
+
+                        <label class="form-check-label" for="hiddenSwitch_${song.id}">
+                            Hidden
+                        </label>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="btn btn-outline-danger btn-sm px-3"
+                            onclick="openDeleteModal(${song.id}, 4, decodeURIComponent('${safeName}'))"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row albums-container" style="display: none"></div>
+            </div>
+        `;
+
+            container.appendChild(songCard);
+        }
+    }
+
+    window.loadAdsSongs = async function () {
+        console.log("Loading Youtube...");
+
+        const container = document.querySelector("#adslist_container");
+        container.innerHTML = "<p class='text-muted'>Loading Ads Songs...</p>";
+
+        container.innerHTML = "<p class='text-muted'>Ads initialization is done. Refresh the page...</p>";
+        const response = await fetch(`/Ads/GetAdsSong`);
+        const ytsongs = await response.json();
+
+        if (!ytsongs.length) {
+            container.innerHTML = "<p class='text-muted'>Ads Initialized, No Ads found.</p>";
+            return;
+        }
+
+        container.innerHTML = "";
+
+        for (const song of ytsongs) {
+            const safeName = encode(song.title);
+
+            songCard.innerHTML = `
+            <div class="list-group-item">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <strong>Song Alpha</strong>
+                                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                                    </div>
+
+                                                    <div class="d-flex gap-4 mt-2">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox">
+                                                            <label class="form-check-label">Highlighted (Ads)</label>
+                                                        </div>
+
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" checked>
+                                                            <label class="form-check-label">Enabled</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
         `;
 
             container.appendChild(songCard);
@@ -785,8 +929,10 @@
     total = el?.getAttribute("artisttotal");
 
     updateInputs();
+    updateYtInputs();
     updateArtists();
-    loadYtSongs();
+    updateYt();
+    loadAdsSongs();
 
 
     /* -------------------------
@@ -832,6 +978,44 @@
         updateInputs();
         updateArtists();
     });
+    function updateYt() {
+        loadYtSongs(start, end);
+    }
+    document.getElementById("prevytPage").addEventListener("click", () => {
+        if (start > 0) {
+            start = Math.max(0, start - pageSize);
+            end = Math.min(total - 1, start + pageSize - 1);
+            updateInputs();
+            updateYt();
+        }
+    });
+    document.getElementById("nextytPage").addEventListener("click", () => {
+        if (end < total - 1) {
+            start = Math.min(total - pageSize, start + pageSize);
+            end = Math.min(total - 1, start + pageSize - 1);
+            updateInputs();
+            updateYt();
+        }
+    });
+    function updateYtInputs() {
+        document.getElementById("startytInput").value = start;
+        document.getElementById("endytInput").value = end;
+
+        // disable buttons if at edges
+        document.getElementById("prevytPage").disabled = start <= 0;
+        document.getElementById("nextytPage").disabled = end >= total - 1;
+    }
+    document.getElementById("startytInput").addEventListener("change", e => {
+        start = Math.max(0, parseInt(e.target.value) || 0);
+        end = Math.min(total - 1, start + pageSize - 1);
+        updateInputs();
+        updateYt();
+    });
+    document.getElementById("endytInput").addEventListener("change", e => {
+        end = Math.min(total - 1, parseInt(e.target.value) || end);
+        updateInputs();
+        updateYt();
+    });
 
     /* -------------------------
             Search
@@ -841,6 +1025,15 @@
     searchInput.addEventListener("input", e => {
         const query = e.target.value.trim();
         loadSearch(query);
+    });
+    /* -------------------------
+            Youtube Search
+        ------------------------- */
+
+    const searchytInput = document.getElementById("searchytcontext");
+    searchytInput.addEventListener("input", e => {
+        const query = e.target.value.trim();
+        loadYtSearch(query);
     });
 
     /* -------------------------
@@ -1040,4 +1233,33 @@
     songModal.addEventListener('hide.bs.modal', () => {
         document.activeElement.blur();
     });
+    /* -------------------------
+            Youtube Hide Song
+        ------------------------- */
+    document.addEventListener("change", async (e) => {
+        if (!e.target.matches(".hide-song-switch")) return;
+
+        const songId = e.target.dataset.songId;
+        const isHidden = e.target.checked;
+        try {
+            const res = await fetch("/song/hidesong", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    id: Number(songId),
+                    hidden: isHidden
+                })
+            });
+
+
+            if (!res.ok) throw new Error("Request failed");
+        } catch (err) {
+            e.target.checked = !isHidden; // revert on failure
+            console.error(err);
+            alert("Failed to update song state");
+        }
+    });
+
 });

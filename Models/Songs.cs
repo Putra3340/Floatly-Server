@@ -11,21 +11,25 @@ public partial class Songs
 
     public int? AlbumId { get; set; }
 
-    public string? MusicFilePath { get; set; }
+    public string MusicFilePath { get; set; } = null!;
 
-    public string? LyricsFilePath { get; set; }
+    public string LyricsFilePath { get; set; } = null!;
 
-    public string? CoverImagePath { get; set; }
+    public string CoverImagePath { get; set; } = null!;
 
-    public string? BannerImagePath { get; set; }
+    public string BannerImagePath { get; set; } = null!;
 
     public string? MoviePath { get; set; }
 
+    public bool Hidden { get; set; }
+
+    public bool Highlighted { get; set; }
+
     public string? UploadedBy { get; set; }
 
-    public DateTime? CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     public virtual Albums? Album { get; set; }
 
