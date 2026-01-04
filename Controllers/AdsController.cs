@@ -137,5 +137,20 @@ namespace Floaty_Music.Controllers
             await _context.SaveChangesAsync();
             return Ok();
         }
+        [HttpPost]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var song = await _context.Songs.Where(x => x.Id == id).FirstOrDefaultAsync();
+            var songcount = await _context.SongCounter.Where(x => x.SongId == song.Id).FirstOrDefaultAsync();
+            if (song == null) return NotFound();
+            if (songcount == null) return NotFound();
+            var playlist = await _context.PlaylistSongs.Where(x => x.SongId == song.Id).ToListAsync();
+            if (playlist.Any())
+                _context.PlaylistSongs.RemoveRange(playlist);
+            _context.SongCounter.Remove(songcount);
+            _context.Songs.Remove(song);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
     }
 }

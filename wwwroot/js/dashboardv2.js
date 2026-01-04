@@ -654,7 +654,7 @@
         <button class="btn btn-sm btn-outline-primary" data-music="${song.musicFilePath}">
             <i class="bi bi-play-fill"></i>
         </button>
-        <button class="btn btn-sm btn-outline-danger">Delete</button>
+        <button class="btn btn-sm btn-outline-danger" onclick="openDeleteModal(${song.id}, 5, decodeURIComponent('${safeName}'))">Delete</button>
     </div>
 </div>
 
@@ -818,6 +818,8 @@
             titleElement.textContent = "Delete Song ?";
         } else if (type === 4) {
             titleElement.textContent = "Delete Youtube Song ?";
+        } else if (type === 5) {
+            titleElement.textContent = "Delete Ads ?";
         }
 
         // Reset form
@@ -1167,6 +1169,8 @@
             url = "/Song/Delete";
         } else if (ref == 4) {
             url = "/Song/DeleteYT";
+        } else if (ref == 5) {
+            url = "/Ads/Delete";
         } else {
             alert("Unknown action — please reopen the modal.");
             return;
@@ -1191,6 +1195,9 @@
                 } else if (ref == 4) {
                     showToast("Youtube Song deleted successfully!", "success");
                     setTimeout(() => loadYtSongs()); // refresh album list
+                } else if (ref == 5) {
+                    showToast("Ads deleted successfully!", "success");
+                    setTimeout(() => loadAdsSongs()); // refresh album list
                 }
 
                 else {
