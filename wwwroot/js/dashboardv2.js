@@ -688,6 +688,54 @@
             container.appendChild(songCard);
         }
     };
+    window.loadUsers = async function () {
+        console.log("Loading Youtube...");
+
+        const container = document.querySelector("#subs-container");
+        container.innerHTML = "<p class='text-muted'>Loading User...</p>";
+        const response = await fetch(`/User/GetUser`);
+        const ytsongs = await response.json();
+
+        if (!ytsongs.length) {
+            container.innerHTML = "<p class='text-muted'>User not found.</p>";
+            return;
+        }
+
+        container.innerHTML = "";
+
+        for (const song of ytsongs) {
+            const safeName = encode(song.title);
+
+            songCard = document.createElement("div");
+            songCard.className = "col-md-12 mb-3 card p-3";
+            songCard.innerHTML = `
+            <div class="list-group-item">
+                                                    <div class="d-flex justify-content-between align-items-center">
+    <strong>${song.username}</strong>
+    </div>
+    
+</div>
+
+
+                                                    <div class="d-flex gap-4 mt-2">
+                                                        <div class="form-check form-switch">
+                                                                                    <input
+                            class="form-check-input user-role-switch"
+                            type="checkbox"
+                            role="switch"
+                            data-song-id="${song.id}"
+                            ${song.role == 1 ? "checked" : ""}
+                        />
+                                                            <label class="form-check-label">Highlighted (Ads)</label>
+                                                        </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+        `;
+
+            container.appendChild(songCard);
+        }
+    };
 
     /* -------------------------
         Toast Notification
@@ -955,7 +1003,7 @@
     updateArtists();
     updateYt();
     loadAdsSongs();
-
+    loadUsers();
 
     /* -------------------------
             Pagination Thing
@@ -1377,6 +1425,32 @@
             e.target.checked = !isHidden; // revert on failure
             console.error(err);
             alert("Failed to update song state");
+        }
+    });
+    /* -------------------------
+            User Premium
+        ------------------------- */
+    document.addEventListener("change", async (e) => {
+        if (!e.target.matches(".user-role-switch")) return;
+
+        const songId = e.target.dataset.songId;
+        const role = e.target.checked ? 1 : 0; // or whatever role logic you want
+
+        const formData = new FormData();
+        formData.append("id", songId);
+        formData.append("role", role);
+
+        try {
+            const res = await fetch("/user/setrole", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!res.ok) throw new Error("Request failed");
+        } catch (err) {
+            e.target.checked = !e.target.checked; // revert on failure
+            console.error(err);
+            alert("Failed to update role");
         }
     });
 });
