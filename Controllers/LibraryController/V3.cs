@@ -99,6 +99,8 @@ namespace Floaty_Music.Controllers
             // dont allow unknown access
             if (!await IsAuthValid(token))
                 return Unauthorized();
+            if (anycontent.IsNullOrEmpty())
+                anycontent = "official music video";
             var list = await YoutubeService.SearchAsync(anycontent, 10);
             List<ApiSong> combinedsonglist = new();
             List<Songs>? songlist = null;

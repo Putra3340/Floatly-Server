@@ -30,18 +30,19 @@ namespace Floaty_Music.Controllers.ClientController
                 return Unauthorized();
             var user = _context.Users.FirstOrDefault(x => x.Username == username || x.Email == username);
             if (user == null)
-                return Unauthorized(new { Message = "User not found" });
+                return Unauthorized("User not found");
 
             // verify password
             bool valid = Argon2.Verify(user.PasswordHash, password);
             if (!valid)
-                return Unauthorized(new { Message = "Invalid password" });
+                return Unauthorized("Invalid password");
             user.Token = HashHelper.GenerateLoginToken();
             await _context.SaveChangesAsync();
             return Ok(new
             {
                 id = user.Id,
                 username = user.Username,
+                role = user.Role,
                 email = user.Email,
                 token = user.Token,
                 createdAt = user.CreatedAt
@@ -54,13 +55,13 @@ namespace Floaty_Music.Controllers.ClientController
                 return Unauthorized();
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
             if (user == null)
-                return Unauthorized(new { Message = "Invalid Token" });
+                return Unauthorized("Invalid Token");
             // check if expired return 
             string exp = string.Empty;
             if (!HashHelper.TryDecodeBase64(user.Token, out exp))
-                return BadRequest(new { message = "Invalid or malformed token" });
+                return BadRequest("Invalid or malformed token");
             if (exp.IsNullOrEmpty())
-                return BadRequest(new { message = "Invalid or malformed token" });
+                return BadRequest("Invalid or malformed token");
             exp = exp.Split("|").Last();
             if (long.TryParse(exp, out long epoch))
             {
@@ -77,6 +78,7 @@ namespace Floaty_Music.Controllers.ClientController
             {
                 id = user.Id,
                 username = user.Username,
+                role = user.Role,
                 email = user.Email,
                 token = user.Token,
                 createdAt = user.CreatedAt

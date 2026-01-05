@@ -63,7 +63,7 @@ namespace Floaty_Music.Controllers
                 await Init();
                 return BadRequest();
             }
-            var songs = await _context.Songs.Include(x => x.SongCounter).OrderDescending().Select(s =>
+            var songs = await _context.Songs.Include(x => x.SongCounter).Include(x=>x.Album).ThenInclude(x=>x.Artist).Where(x=>x.Album.Title == album.Title && x.Album.Artist.Name == artist.Name).OrderDescending().Select(s =>
             new
             {
                 s.Id,
