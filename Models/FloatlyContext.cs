@@ -27,6 +27,8 @@ public partial class FloatlyContext : DbContext
 
     public virtual DbSet<Songs> Songs { get; set; }
 
+    public virtual DbSet<Transaction> Transaction { get; set; }
+
     public virtual DbSet<Users> Users { get; set; }
 
     public virtual DbSet<Youtube> Youtube { get; set; }
@@ -144,6 +146,18 @@ public partial class FloatlyContext : DbContext
                 .HasConstraintName("FK__Songs__AlbumID__3F466844");
         });
 
+        modelBuilder.Entity<Transaction>(entity =>
+        {
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 0)");
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.OrderId).IsUnicode(false);
+            entity.Property(e => e.SnapToken).IsUnicode(false);
+
+            entity.HasOne(d => d.User).WithMany(p => p.Transaction)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_Transaction_Users");
+        });
+
         modelBuilder.Entity<Users>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Users__1788CCAC7A3CD2E1");
@@ -152,6 +166,7 @@ public partial class FloatlyContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.Email).HasMaxLength(100);
+            entity.Property(e => e.PremiumExpired).HasColumnType("datetime");
             entity.Property(e => e.Username).HasMaxLength(50);
         });
 

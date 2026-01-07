@@ -26,7 +26,7 @@ namespace Floaty_Music.Controllers
                 x.Id,
                 x.Username,
                 x.Email,
-                x.Role,
+                x.PremiumExpired,
             }
             ).ToListAsync();
             return Json(users);
@@ -35,7 +35,7 @@ namespace Floaty_Music.Controllers
         public async Task<IActionResult> SetRole(int id,int role)
         {
             var user = await _context.Users.Where(x => x.Id == id).FirstOrDefaultAsync();
-            user.Role = role;
+            user.PremiumExpired = DateTime.Now.AddDays(7);
             await _context.SaveChangesAsync();
             return Ok();
         }

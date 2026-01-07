@@ -42,7 +42,7 @@ namespace Floaty_Music.Controllers.ClientController
             {
                 id = user.Id,
                 username = user.Username,
-                role = user.Role,
+                premium = user.PremiumExpired >= DateTime.Now,
                 email = user.Email,
                 token = user.Token,
                 createdAt = user.CreatedAt
@@ -78,7 +78,7 @@ namespace Floaty_Music.Controllers.ClientController
             {
                 id = user.Id,
                 username = user.Username,
-                role = user.Role,
+                role = user.PremiumExpired >= DateTime.Now,
                 email = user.Email,
                 token = user.Token,
                 createdAt = user.CreatedAt
@@ -102,7 +102,7 @@ namespace Floaty_Music.Controllers.ClientController
             {
                 Username = username,
                 Email = email,
-                Role = (int)Users.UserRole.User,
+                PremiumExpired = DateTime.Now, // not premium
                 PasswordHash = hashedpass,
                 Token = token,
                 CreatedAt = DateTime.Now

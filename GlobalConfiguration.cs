@@ -26,6 +26,8 @@ namespace Floaty_Music
         public static string TOKEN_EXPIRED_IN_DAYS;
         public static string ServerStatus;
         public static string ServerDetail;
+        public static string ServerKey;
+        public static string ClientKey;
 
         public static bool isSQLSERVER = false;
         public static bool isSQLITE = false;
@@ -33,6 +35,8 @@ namespace Floaty_Music
         public static void LoadConfig()
         {
             Env.Load();
+            ServerKey = Env.GetString("SERVER_KEY", "FLOATLY_DEFAULT_SERVER_KEY");
+            ClientKey = Env.GetString("CLIENT_KEY", "FLOATLY_DEFAULT_CLIENT_KEY");
             ConnectionString = Env.GetString("FLOATLY_CONNECTION", ConnectionString);
             ADMIN_USERNAME = Env.GetString("ADMIN_USERNAME", "admin");
             ADMIN_PASSWORD = Env.GetString("ADMIN_PASSWORD", "password");

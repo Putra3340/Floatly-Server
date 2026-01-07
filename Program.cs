@@ -4,6 +4,7 @@ using Floaty_Music.Utils;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
+using Sindika.AspNet.Midtrans.Extensions;
 using System;
 
 DotNetEnv.Env.Load();
@@ -36,6 +37,13 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 });
+builder.Services.AddMidtrans(options =>
+{
+    options.ServerKey = GlobalConfiguration.ServerKey;
+    options.ClientKey = GlobalConfiguration.ClientKey;
+    options.IsProduction = false; // true when live
+});
+
 builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true; // also compress HTTPS
@@ -81,7 +89,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 //app.UseHttpsRedirection();
 
-app.MapControllers();
 app.UseResponseCompression();
 
 // wakey wakey
