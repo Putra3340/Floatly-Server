@@ -576,7 +576,6 @@ namespace Floaty_Music.Controllers
             }).ToListAsync();
             return Json(songs);
             }
-            return BadRequest();
         }
         public record HideSongRequest(int Id, bool Hidden);
         #endregion

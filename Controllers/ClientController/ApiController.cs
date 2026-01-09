@@ -54,25 +54,7 @@ namespace Floaty_Music.Controllers.ClientController
                 return BadRequest();
             }
             var songdb = songs[new Random().Next(songs.Count)];
-            var baseUrl = $"{Request.Scheme}://{Request.Host}/uploads/";
-            var song = new ApiSongPlay()
-            {
-                AlbumId = songdb.Album.Id,
-                AlbumTitle = songdb.Album.Title,
-                ArtistId = songdb.Album.Artist.Id.ToString(),
-                ArtistName = songdb.Album.Artist.Name,
-                Cover = $"{baseUrl}/cover/{songdb.CoverImagePath}",
-                Banner = $"{baseUrl}/banner/{songdb.BannerImagePath}",
-                CreatedAt = songdb.CreatedAt,
-                Id = songdb.Id.ToString(),
-                Title = songdb.Title,
-                Lyrics = songdb.LyricsFilePath != null ? $"{baseUrl}/lyrics/{songdb.LyricsFilePath}" : null,
-                Music = songdb.MusicFilePath != null ? $"{baseUrl}/music/{songdb.MusicFilePath}" : null,
-                MoviePath = songdb.MoviePath != null ? $"{baseUrl}/video/{songdb.MoviePath}" : null,
-                UploadedBy = songdb.UploadedBy,
-                SongLength = TimeSpan.FromSeconds((double)songdb.SongCounter.FirstOrDefault().MusicLength).ToString(@"mm\:ss"),
-                PlayCount = (songdb.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
-            };
+            
             // increment play count
             if (songdb?.SongCounter != null)
             {
@@ -83,7 +65,7 @@ namespace Floaty_Music.Controllers.ClientController
                     await _context.SaveChangesAsync();
                 }
             }
-            return Json(song);
+            return Ok(songdb.Id);
         }
     }
 }

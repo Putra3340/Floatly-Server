@@ -95,10 +95,9 @@ namespace Floaty_Music.Controllers
                 Title = title,
                 AlbumId = album.Id,
                 MusicFilePath = file != null ? await FileHelper.SaveIFormFileAsync(file, FileHelper.UploadFolder.Music) : null,
-                LyricsFilePath = "ads.png",
+                LyricsFilePath = "empty.srt",
                 CoverImagePath = "ads.png",
                 BannerImagePath = "ads.png",
-                MoviePath = "",
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };

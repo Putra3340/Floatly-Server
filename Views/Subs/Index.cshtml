@@ -755,9 +755,15 @@
         <p>&copy; 2025 Premium+. All rights reserved.</p>
         <p><a href="#" style="color: #6366f1; text-decoration: none;">Privacy Policy</a> | <a href="#" style="color: #6366f1; text-decoration: none;">Terms of Service</a></p>
     </footer>
-    <script src="https://app.sandbox.midtrans.com/snap/snap.js"
-            data-client-key="@GlobalConfiguration.ClientKey"></script>
-
+    @{
+        #if DEBUG
+        <script src="https://app.sandbox.midtrans.com/snap/snap.js"
+                data-client-key="@GlobalConfiguration.ClientKey"></script>
+                #else
+        <script src="https://app.midtrans.com/snap/snap.js"
+                data-client-key="@GlobalConfiguration.ClientKey"></script>
+                #endif
+    }
     <script>
         async function startPayment() {
             const username = document.getElementById('username').value;
