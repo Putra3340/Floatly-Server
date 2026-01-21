@@ -178,7 +178,7 @@ namespace Floaty_Music.Controllers
                 {
                     Console.WriteLine("Fetching from Database YT...");
                     var baseUrl = $"{Request.Scheme}://{Request.Host}/uploads/yt/";
-
+                    
                     // check if lyrics empty
                     if (songdb.Lyrics == null || songdb.Lyrics == "")
                         songdb.Lyrics = "empty.srt";
@@ -202,7 +202,8 @@ namespace Floaty_Music.Controllers
                         ArtistId = null,
                         AlbumTitle = null,
                         MoviePath = baseUrl + songdb.Video,
-                        AlbumId = 0
+                        AlbumId = 0,
+                        IsLiked = await IsUserLiked(id, token)
                     };
                     // increment play count
                     if (songdb?.SongCounter != null && await IsPlayCountNotCooldown(token))
@@ -290,7 +291,8 @@ namespace Floaty_Music.Controllers
                     ArtistName = video.Author.ChannelTitle,
                     ArtistId = null,
                     AlbumTitle = null,
-                    AlbumId = 0
+                    AlbumId = 0,
+                    IsLiked = false
                 };
 
                 // Save new song to database async
@@ -325,7 +327,8 @@ namespace Floaty_Music.Controllers
                     MoviePath = songdb.MoviePath != null ? $"{baseUrl}/video/{songdb.MoviePath}" : null,
                     UploadedBy = songdb.UploadedBy,
                     SongLength = TimeSpan.FromSeconds((double)songdb.SongCounter.FirstOrDefault().MusicLength).ToString(@"mm\:ss"),
-                    PlayCount = (songdb.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays"
+                    PlayCount = (songdb.SongCounter.FirstOrDefault().TotalPlayed ?? 0).ToString("N0") + " Plays",
+                    IsLiked = await IsUserLiked(songdb.Id.ToString(), token)
                 };
                 // increment play count
                 if (songdb?.SongCounter != null && await IsPlayCountNotCooldown(token))
@@ -472,6 +475,36 @@ namespace Floaty_Music.Controllers
                 Expired = DateTime.Now.AddSeconds(120) // 120 seconds cooldown
             });
             return true;
+        }
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public async Task<bool> IsUserLiked(string songId,string token = "")
+        {
+            if (token.IsNullOrEmpty())
+                return false;
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
+            if (user == null)
+                return false;
+            if (int.TryParse(songId, out int songint))
+            {
+                var playlist = await _context.Playlists
+    .Include(p => p.PlaylistSongs)
+    .FirstOrDefaultAsync(p =>
+        p.SpecialPlaylist &&
+        p.UserId == user.Id &&
+        p.PlaylistSongs.Any(x=>x.SongId == songint));
+                if (playlist == null) return false;
+            }
+            else
+            {
+                var playlist = await _context.Playlists
+    .Include(p => p.PlaylistSongs)
+    .FirstOrDefaultAsync(p =>
+        p.SpecialPlaylist &&
+        p.UserId == user.Id &&
+        p.PlaylistSongs.Any(x => x.UrlId == songId));
+                if (playlist == null) return false;
+            }
+                return true;
         }
 
         public class UserRateLimit

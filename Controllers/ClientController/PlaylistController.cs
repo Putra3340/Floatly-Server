@@ -182,18 +182,34 @@ namespace Floaty_Music.Controllers.ClientController
             return Ok(new { message = "Song added to playlist successfully" });
         }
         [HttpPost("removesong")]
-        public async Task<IActionResult> RemovePlaylistSong([FromForm] string token, [FromForm] int playlistId, [FromForm] int songId)
+        public async Task<IActionResult> RemovePlaylistSong([FromForm] string token, [FromForm] int playlistId, [FromForm] string songId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
             if (user == null) return Unauthorized("Invalid Token");
 
-            var entry = await _context.PlaylistSongs
-                .FirstOrDefaultAsync(ps => ps.PlaylistId == playlistId && ps.SongId == songId && ps.Playlist.UserId == user.Id);
+            if (int.TryParse(songId, out int songint))
+            {
+                var entry = await _context.PlaylistSongs
+                .FirstOrDefaultAsync(ps => ps.PlaylistId == playlistId && ps.SongId == songint && ps.Playlist.UserId == user.Id);
 
-            if (entry == null) return NotFound("Song not found in playlist");
+                if (entry == null) return NotFound("Song not found in playlist");
 
-            _context.PlaylistSongs.Remove(entry);
-            await _context.SaveChangesAsync();
+                _context.PlaylistSongs.Remove(entry);
+                await _context.SaveChangesAsync();
+
+            }
+            else
+            {
+                var entry = await _context.PlaylistSongs
+.FirstOrDefaultAsync(ps => ps.PlaylistId == playlistId && ps.UrlId == songId && ps.Playlist.UserId == user.Id);
+
+                if (entry == null) return NotFound("Song not found in playlist");
+
+                _context.PlaylistSongs.Remove(entry);
+                await _context.SaveChangesAsync();
+
+            }
+
 
             return Ok(new { message = "Song removed from playlist successfully" });
         }
@@ -237,21 +253,33 @@ namespace Floaty_Music.Controllers.ClientController
             return Ok(new { message = "Song added to playlist successfully" });
         }
         [HttpPost("removelikesong")]
-        public async Task<IActionResult> RemoveLikePlaylistSong([FromForm] string token, [FromForm] int songId)
+        public async Task<IActionResult> RemoveLikePlaylistSong([FromForm] string token, [FromForm] string songId)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
             if (user == null) return Unauthorized("Invalid Token");
             var playlist = await _context.Playlists.FirstOrDefaultAsync(p => p.SpecialPlaylist == true && p.UserId == user.Id);
             if (user == null) return Unauthorized("Contact the admin");
-            var entry = await _context.PlaylistSongs
-                .FirstOrDefaultAsync(ps => ps.PlaylistId == playlist.Id && ps.SongId == songId && ps.Playlist.UserId == user.Id);
+            if (int.TryParse(songId, out int songint))
+            {
 
-            if (entry == null) return NotFound("Song not found in playlist");
+                var entry = await _context.PlaylistSongs
+                .FirstOrDefaultAsync(ps => ps.PlaylistId == playlist.Id && ps.SongId == songint && ps.Playlist.UserId == user.Id);
 
-            _context.PlaylistSongs.Remove(entry);
-            await _context.SaveChangesAsync();
+                if (entry == null) return NotFound("Song not found in playlist");
+                _context.PlaylistSongs.Remove(entry);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                var entry = await _context.PlaylistSongs
+                .FirstOrDefaultAsync(ps => ps.PlaylistId == playlist.Id && ps.UrlId == songId && ps.Playlist.UserId == user.Id);
 
-            return Ok(new { message = "Song removed from playlist successfully" });
+                if (entry == null) return NotFound("Song not found in playlist");
+                _context.PlaylistSongs.Remove(entry);
+                await _context.SaveChangesAsync();
+            }
+
+                return Ok(new { message = "Song removed from playlist successfully" });
         }
     }
 }

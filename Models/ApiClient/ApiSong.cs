@@ -26,6 +26,7 @@
         public string? ArtistId { get => field; set;}
         public string? AlbumTitle { get => field; set;}
         public int AlbumId { get => field; set;}
+        public bool IsLiked { get => field; set; }
     }
     public class LyricItem
     {
