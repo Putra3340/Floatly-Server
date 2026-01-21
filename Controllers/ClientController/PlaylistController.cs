@@ -20,15 +20,26 @@ namespace Floaty_Music.Controllers.ClientController
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Token == token);
             if (user == null) return Unauthorized("Invalid Token");
 
-            var playlists = await _context.Playlists.Include(x=>x.PlaylistSongs)
+            var playlists = await _context.Playlists
+                .Include(x => x.PlaylistSongs).ThenInclude(x => x.Song)
+                .Include(x => x.PlaylistSongs).ThenInclude(x => x.Url)
                 .Where(x => x.UserId == user.Id)
                 .ToListAsync();
 
-            return Ok(playlists.Select(p => new {
-                p.Id,
-                p.Name,
-                TotalSongs = p.PlaylistSongs.Count().ToString() + " Songs",
-                p.CreatedAt
+            return Ok(playlists.Select(p =>
+            {
+                var first = p.PlaylistSongs.FirstOrDefault();
+
+                return new
+                {
+                    p.Id,
+                    p.Name,
+                    Cover = !string.IsNullOrEmpty(first?.Song?.CoverImagePath)
+                        ? $"{Request.Scheme}://{Request.Host}/uploads/cover/" + first.Song.CoverImagePath
+                        : $"{Request.Scheme}://{Request.Host}/uploads/yt/" + first?.Url?.Thumbnail,
+                    TotalSongs = $"{p.PlaylistSongs.Count} Songs",
+                    p.CreatedAt
+                };
             }));
 
         }
