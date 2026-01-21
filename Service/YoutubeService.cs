@@ -53,6 +53,16 @@ namespace Floaty_Music.Service
 
             var manifest = await client.Videos.Streams.GetManifestAsync(videoId);
 
+
+            // check if video has higher than 30 minutes duration
+            var videoInfo = await client.Videos.GetAsync(videoId);
+            if (videoInfo.Duration.HasValue && videoInfo.Duration.Value.TotalMinutes > 30)
+            {
+                Console.WriteLine($"Video duration exceeds 30 minutes. Skipping download: {youtubeUrl}");
+                lock (_lock)
+                    pending.Remove(youtubeUrl);
+                return;
+            }
             // AUDIO
             var audio = manifest.GetAudioOnlyStreams()
                                 .GetWithHighestBitrate()
@@ -214,7 +224,8 @@ namespace Floaty_Music.Service
         retry:
             try
             {
-                var search = client.Search.GetVideosAsync(query).Where(x => x.Duration <= TimeSpan.FromMinutes(30) && x.Duration >= TimeSpan.FromSeconds(30)); // limit 30 minutes an min 30 sec
+                // 20 January 2025 - dont limit the duration just make if higher than 30 minutes dont cache/download it
+                var search = client.Search.GetVideosAsync(query).Where(x=>x.Duration >= TimeSpan.FromSeconds(30));
 
                 await foreach (var video in search.Take(count))
                 {
@@ -224,7 +235,11 @@ namespace Floaty_Music.Service
                         Url = $"https://youtu.be/{video.Id.Value}",
                         Title = video.Title,
                         Author = video.Author.ChannelTitle,
-                        Duration = video.Duration?.ToString(@"mm\:ss") ?? "Unknown",
+                        Duration = video.Duration is TimeSpan d
+                                    ? (d.Hours > 0
+                                        ? d.ToString(@"hh\:mm\:ss")
+                                        : d.ToString(@"mm\:ss"))
+                                    : "Unknown",
                         Thumbnail = video.Thumbnails.GetWithHighestResolution().Url
                     });
                 }

@@ -280,7 +280,11 @@ namespace Floaty_Music.Controllers
                     Banner = video.Thumbnails.GetWithHighestResolution().Url,
                     Lyrics = lyricspath, // give default lyrics
                     UploadedBy = "YouTube",
-                    SongLength = video.Duration?.ToString(@"mm\:ss") ?? "Unknown",
+                    SongLength = video.Duration is TimeSpan d
+                                    ? (d.Hours > 0
+                                        ? d.ToString(@"hh\:mm\:ss")
+                                        : d.ToString(@"mm\:ss"))
+                                    : "Unknown",
                     PlayCount = "",
                     CreatedAt = DateTime.Now,
                     ArtistName = video.Author.ChannelTitle,
@@ -421,7 +425,7 @@ namespace Floaty_Music.Controllers
             }
             return NotFound();
         }
-
+       
         [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<bool> IsAuthValid(string token)
         {
