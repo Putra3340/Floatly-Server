@@ -34,10 +34,15 @@ namespace Floaty_Music.Controllers.ClientController
                 {
                     p.Id,
                     p.Name,
-                    Cover = !string.IsNullOrEmpty(first?.Song?.CoverImagePath)
-                        ? $"{Request.Scheme}://{Request.Host}/uploads/cover/" + first.Song.CoverImagePath
-                        : $"{Request.Scheme}://{Request.Host}/uploads/yt/" + first?.Url?.Thumbnail,
-                    TotalSongs = $"{p.PlaylistSongs.Count} Songs",
+                    Cover =
+                    p.SpecialPlaylist ? "/Assets/Images/icon-liked-cover.png" :
+    !string.IsNullOrEmpty(first?.Song?.CoverImagePath)
+        ? $"{Request.Scheme}://{Request.Host}/uploads/cover/{first.Song.CoverImagePath}"
+        : !string.IsNullOrEmpty(first?.Url?.Thumbnail)
+            ? $"{Request.Scheme}://{Request.Host}/uploads/yt/{first.Url.Thumbnail}"
+            : "/Assets/Images/default.png",
+
+                TotalSongs = $"{p.PlaylistSongs.Count} Songs",
                     p.CreatedAt
                 };
             }));
