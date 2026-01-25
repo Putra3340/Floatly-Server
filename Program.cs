@@ -26,7 +26,16 @@ builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add<LogCaptureFilter>();
 });
+
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<ImportPlaylistWorker>();
+builder.Services.AddSingleton<IImportPlaylistJobQueue>(
+    sp => sp.GetRequiredService<ImportPlaylistWorker>()
+);
+builder.Services.AddHostedService(
+    sp => sp.GetRequiredService<ImportPlaylistWorker>()
+);
+
 
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthentication("MyAuth")
