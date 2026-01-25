@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Threading.Channels;
 using YoutubeExplode.Common;
+using YoutubeExplode.Videos;
 
 namespace Floaty_Music.Service
 {
@@ -82,6 +83,7 @@ namespace Floaty_Music.Service
                 if (!exists)
                     await YoutubeService.DownloadAndSaveAsync(video.Id.ToString());
 
+                
                 songs.Add(new PlaylistSongs
                 {
                     PlaylistId = playlist.Id,
@@ -89,8 +91,14 @@ namespace Floaty_Music.Service
                     CreatedAt = DateTime.Now
                 });
             }
-
-            await db.PlaylistSongs.AddRangeAsync(songs);
+            foreach(var song in songs)
+            {
+                var existss = await db.YoutubeSongs
+                    .AnyAsync(x => x.UrlId == song.UrlId);
+                if (!existss)
+                    continue;
+                await db.PlaylistSongs.AddAsync(song);
+            }
             await db.SaveChangesAsync();
 
             await SafeSend(job.ConnectionId, "Import completed 🌸");
