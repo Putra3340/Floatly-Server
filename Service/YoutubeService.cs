@@ -1,5 +1,6 @@
 ﻿using Floaty_Music.Models;
 using Floaty_Music.Models.ApiClient;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Reflection.Metadata;
 using System.Text;
@@ -51,7 +52,17 @@ namespace Floaty_Music.Service
             var videoPath = Path.Combine(GlobalConfiguration.YoutubePath, videoFile);
             var thumbPath = Path.Combine(GlobalConfiguration.YoutubePath, thumbFile);
 
-            var manifest = await client.Videos.Streams.GetManifestAsync(videoId);
+            StreamManifest? manifest = null;
+            try
+            {
+                manifest = await client.Videos.Streams.GetManifestAsync(videoId);
+
+            }catch (Exception ex)
+            {
+                lock (_lock)
+                    pending.Remove(youtubeUrl);
+                return;
+            }
 
 
             // check if video has higher than 30 minutes duration
@@ -173,6 +184,7 @@ namespace Floaty_Music.Service
             Console.WriteLine($"Succesfully downloaded {youtubeUrl} and saved to db");
         }
 
+       
         public static async Task<string> StreamAudioAsync(string youtubeUrl)
         {
             var decodedUrl = Uri.UnescapeDataString(youtubeUrl);

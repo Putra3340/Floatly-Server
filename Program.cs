@@ -1,5 +1,6 @@
 using Floaty_Music;
 using Floaty_Music.Models;
+using Floaty_Music.Service;
 using Floaty_Music.Utils;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.StaticFiles;
@@ -25,6 +26,8 @@ builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add<LogCaptureFilter>();
 });
+builder.Services.AddSignalR();
+
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthentication("MyAuth")
     .AddCookie("MyAuth", options =>
@@ -90,6 +93,8 @@ app.MapControllerRoute(
 //app.UseHttpsRedirection();
 
 app.UseResponseCompression();
+
+app.MapHub<StatusHub>("/statusHub");
 
 // wakey wakey
 using (var ctx = new FloatlyContext())
