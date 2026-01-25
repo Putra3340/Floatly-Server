@@ -101,7 +101,7 @@ namespace Floaty_Music.Controllers
                 return Unauthorized();
             if (anycontent.IsNullOrEmpty())
                 anycontent = "official music video";
-            var list = await YoutubeService.SearchAsync(anycontent, 10);
+            var list = await YoutubeService.SearchAsync(anycontent, 15);
             List<ApiSong> combinedsonglist = new();
             List<Songs>? songlist = null;
             List<Artists> artistlist = null;

@@ -43,6 +43,7 @@ namespace Floaty_Music.Controllers.ClientController
             : "/Assets/Images/default.png",
 
                 TotalSongs = $"{p.PlaylistSongs.Count} Songs",
+                IsSpecial = p.SpecialPlaylist,
                     p.CreatedAt
                 };
             }));
