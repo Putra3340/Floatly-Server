@@ -21,14 +21,14 @@ namespace Floaty_Music.Controllers
             {
                 Name = "Floaty",
                 Bio = "Official advertisement channel for Floaty Music.",
-                CoverImagePath = "/images/ads/floaty_ads_artist.jpg",
+                CoverImagePath = "floatly_ads_artist.png",
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
             var album = new Albums
             {
                 Title = "Advertisements",
-                CoverImagePath = "/images/ads/floaty_ads_cover.jpg",
+                CoverImagePath = "floatly_ads_album.png",
                 ReleaseDate = DateOnly.FromDateTime(DateTime.Now),
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
@@ -39,7 +39,6 @@ namespace Floaty_Music.Controllers
             {
                 return;
             }
-
 
             _context.Artists.Add(artist);
             await _context.SaveChangesAsync();

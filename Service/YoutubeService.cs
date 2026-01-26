@@ -1,5 +1,6 @@
 ﻿using Floaty_Music.Models;
 using Floaty_Music.Models.ApiClient;
+using Floaty_Music.Utils;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Reflection.Metadata;
@@ -171,6 +172,20 @@ namespace Floaty_Music.Service
                 await db.SongCounter.AddAsync(songCounter);
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                var lyrics = await GetLyrics(youtubeUrl);
+                var priority = new[] { "English", "Indonesia", "Japan", "Korea" };
+                var firstlyrics = lyrics
+                    .OrderBy(l =>
+                    {
+                        int idx = Array.IndexOf(priority, l.Language);
+                        return idx == -1 ? int.MaxValue : idx; // unknown languages go last
+                    })
+                    .FirstOrDefault();
+                if (firstlyrics != null)
+                {
+                    string lyricname = await FileHelper.SaveTextAsync($"{youtubeUrl}.srt", firstlyrics.Content, FileHelper.UploadFolder.YT);
+                }
             } catch (Exception ex)
             {
                 await transaction.RollbackAsync();

@@ -19,12 +19,16 @@
             <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
                 <div class="position-sticky pt-3">
                     <div class="text-center mb-4">
-                        <h4 class="navbar-brand mb-0">
-                            <i class="bi bi-music-note-beamed me-2"></i>
-                            FloatLy
-                        </h4>
+                        <div class="d-flex justify-content-center mb-2">
+                            <img src="~/icon-logo.png"
+                                 alt="FloatLy Logo"
+                                 class="rounded-3 shadow-sm" style="width: 48px;height: 48px;transform: scale(1.55);">
+                        </div>
+
+                        <h4 class="navbar-brand mb-0 fw-semibold">FloatLy</h4>
                         <small class="text-muted">Management Dashboard</small>
                     </div>
+
 
                     <ul class="nav flex-column">
                         <li class="nav-item">
@@ -62,12 +66,12 @@
                     <hr class="my-4">
 
                     <ul class="nav flex-column">
-                        <li class="nav-item">
+                        @* <li class="nav-item">
                             <a class="nav-link" href="#">
                                 <i class="bi bi-gear me-2"></i>
                                 Settings
                             </a>
-                        </li>
+                        </li> *@
                         <li class="nav-item">
                             <a class="nav-link" href="/Auth/Logout">
                                 <i class="bi bi-box-arrow-right me-2"></i>
