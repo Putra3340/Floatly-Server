@@ -30,7 +30,7 @@ namespace Floaty_Music.Controllers
         {
             List<ApiSong> combinedsonglist = new();
             List<ApiSong> exsonglist = new();
-            var songlist = _context.Songs.Include(x => x.Album).ThenInclude(x => x.Artist).Include(x => x.SongCounter).Take(20).ToList();
+            var songlist = _context.Songs.Include(x => x.Album).ThenInclude(x => x.Artist).Include(x => x.SongCounter).Where(x=>!x.Hidden).Take(20).ToList();
             var ytlist = _context.YoutubeSongs.Include(x => x.SongCounter).Take(20).ToList();
             var artistlist = _context.Artists.Take(5).ToList();
             var albumlist = _context.Albums.Include(x => x.Artist).Take(20).ToList();

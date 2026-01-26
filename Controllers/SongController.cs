@@ -178,7 +178,7 @@ namespace Floaty_Music.Controllers
                 Artist = new StorageStat { FileCount = results[5].FileCount, TotalSize = results[5].TotalSize }
             };
             _cache.LastUpdate = DateTime.Now;
-            return RedirectToAction("Dashboard");
+            return RedirectToAction("DashboardV2");
         }
 
         public async Task<IActionResult> RefreshDisk()
@@ -206,7 +206,7 @@ namespace Floaty_Music.Controllers
             };
             _cache.LastUpdate = DateTime.Now;
 
-            return RedirectToAction("Dashboard");
+            return RedirectToAction("DashboardV2");
         }
 
         public async Task<IActionResult> Dashboard()
@@ -287,29 +287,65 @@ namespace Floaty_Music.Controllers
         }
         public async Task<IActionResult> DashboardV2()
         {
-            // BIG BUGS : TOO MANY CONTEXT HERE, IT CANT HANDLE, IT TIMEOUTS
-            // TODO OPTIMIZE CONTEXT USAGE
+            var ctx = _context;
 
-            ViewBag.TotalSongs = _context.Songs.Count();
-            ViewBag.TotalAlbums = _context.Albums.Count();
-            ViewBag.TotalArtists = _context.Artists.Count();
-            ViewBag.TotalPlayed = _context.SongCounter.Sum(x => x.TotalPlayed);
-            ViewBag.TotalLikes = _context.SongCounter.Sum(x => x.TotalLikes);
-            ViewBag.TopSongs = _context.SongCounter
-                .OrderByDescending(x => x.TotalPlayed).Where(x => x.UrlId == null)
+            var vm = new DashboardViewModel();
+
+            // ---- COUNTS ----
+            vm.TotalSongs = await ctx.Songs.AsNoTracking().CountAsync();
+            vm.TotalAlbums = await ctx.Albums.AsNoTracking().CountAsync();
+            vm.TotalArtists = await ctx.Artists.AsNoTracking().CountAsync();
+
+            // ---- TOTAL PLAY / LIKE (single scan) ----
+            var totals = await ctx.SongCounter
+                .AsNoTracking()
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    TotalPlayed = g.Sum(x => x.TotalPlayed),
+                    TotalLikes = g.Sum(x => x.TotalLikes)
+                })
+                .FirstOrDefaultAsync();
+
+            vm.TotalPlayed = totals?.TotalPlayed ?? 0;
+            vm.TotalLikes = totals?.TotalLikes ?? 0;
+
+            // ---- BASE QUERY ----
+            var topSongsBase = ctx.SongCounter
+                .AsNoTracking()
+                .Where(x => x.UrlId == null)
+                .Select(x => new TopSongVm
+                {
+                    SongId = x.Song.Id,
+                    Title = x.Song.Title,
+                    Album = x.Song.Album.Title,
+                    Artist = x.Song.Album.Artist.Name,
+                    TotalPlayed = (long)x.TotalPlayed,
+                    TotalLikes = (long)x.TotalLikes
+                });
+
+            vm.TopSongs = await topSongsBase
+                .OrderByDescending(x => x.TotalPlayed)
                 .Take(5)
-                .Include(x => x.Song)
-                    .ThenInclude(s => s.Album)
-                        .ThenInclude(a => a.Artist)
-                .ToList();
-            ViewBag.TopSongsLikes = _context.SongCounter
-                .OrderByDescending(x => x.TotalLikes).Where(x=>x.UrlId == null)
+                .ToListAsync();
+
+            vm.TopSongsLikes = await topSongsBase
+                .OrderByDescending(x => x.TotalLikes)
                 .Take(5)
-                .Include(x => x.Song)
-                    .ThenInclude(s => s.Album)
-                        .ThenInclude(a => a.Artist)
-                .ToList();
-            ViewBag.Artists = _context.Artists.Include(x => x.Albums).OrderDescending().ToList();
+                .ToListAsync();
+
+            // ---- ARTISTS ----
+            vm.Artists = await ctx.Artists
+                .AsNoTracking()
+                .Select(a => new ArtistVm
+                {
+                    Id = a.Id,
+                    Name = a.Name,
+                    AlbumCount = a.Albums.Count
+                })
+                .OrderByDescending(a => a.AlbumCount)
+                .ToListAsync();
+
 
             // SLOW OPERATION, SO CACHE IT FOR 10 MINUTES
             if (_cache.Stats == null || (DateTime.Now - _cache.LastUpdate).TotalMinutes > 10)
@@ -352,7 +388,36 @@ namespace Floaty_Music.Controllers
                               + _cache.Stats.Album.TotalSize
                               + _cache.Stats.Artist.TotalSize;
             ViewBag.LastUpdate = _cache.LastUpdate;
-            return View();
+            return View(vm);
+        }
+        public class DashboardViewModel
+        {
+            public int TotalSongs { get; set; }
+            public int TotalAlbums { get; set; }
+            public int TotalArtists { get; set; }
+            public long TotalPlayed { get; set; }
+            public long TotalLikes { get; set; }
+
+            public List<TopSongVm> TopSongs { get; set; } = [];
+            public List<TopSongVm> TopSongsLikes { get; set; } = [];
+            public List<ArtistVm> Artists { get; set; } = [];
+        }
+
+        public class TopSongVm
+        {
+            public int SongId { get; set; }
+            public string Title { get; set; }
+            public string Album { get; set; }
+            public string Artist { get; set; }
+            public long TotalPlayed { get; set; }
+            public long TotalLikes { get; set; }
+        }
+
+        public class ArtistVm
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public int AlbumCount { get; set; }
         }
 
 

@@ -237,10 +237,37 @@ namespace Floaty_Music.Service
             try
             {
                 // 20 January 2025 - dont limit the duration just make if higher than 30 minutes dont cache/download it
-                var search = client.Search.GetVideosAsync(query).Where(x=>x.Duration >= TimeSpan.FromSeconds(30));
+                var minDuration = TimeSpan.FromSeconds(30);
 
-                await foreach (var video in search.Take(count))
+                // take a bit more in case many are filtered out
+                var videos = await client.Search
+                    .GetVideosAsync(query)
+                    .Where(v => v.Duration >= minDuration)
+                    .Take(count * 2)
+                    .ToListAsync();
+
+                // collect ids once
+                var ids = videos
+                    .Select(v => v.Id.Value)
+                    .ToList();
+
+                // fetch hidden ids in ONE query
+                var hiddenIds = await db.YoutubeSongs
+                    .AsNoTracking()
+                    .Where(x => x.Hidden && ids.Contains(x.UrlId))
+                    .Select(x => x.UrlId)
+                    .ToListAsync();
+
+                var hiddenSet = hiddenIds.ToHashSet();
+
+                foreach (var video in videos)
                 {
+                    if (results.Count >= count)
+                        break;
+
+                    if (hiddenSet.Contains(video.Id.Value))
+                        continue;
+
                     results.Add(new YoutubeSearchResult
                     {
                         Id = video.Id.Value,
@@ -248,11 +275,13 @@ namespace Floaty_Music.Service
                         Title = video.Title,
                         Author = video.Author.ChannelTitle,
                         Duration = video.Duration is TimeSpan d
-                                    ? (d.Hours > 0
-                                        ? d.ToString(@"hh\:mm\:ss")
-                                        : d.ToString(@"mm\:ss"))
-                                    : "Unknown",
-                        Thumbnail = video.Thumbnails.GetWithHighestResolution().Url
+                            ? (d.Hours > 0
+                                ? d.ToString(@"hh\:mm\:ss")
+                                : d.ToString(@"mm\:ss"))
+                            : "Unknown",
+                        Thumbnail = video.Thumbnails
+                            .GetWithHighestResolution()
+                            .Url
                     });
                 }
             }
