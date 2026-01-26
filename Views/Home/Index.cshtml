@@ -111,6 +111,81 @@
             justify-content: center;
             margin-bottom: 1.5rem;
         }
+
+        .footer-glass {
+            background: linear-gradient( to top, rgba(79,70,229,0.08), rgba(255,255,255,0.02) );
+            backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .footer-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            background: linear-gradient(to tr, var(--primary-color), var(--accent-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .footer-logo img {
+                width: 22px;
+                height: 22px;
+            }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+            .footer-links a {
+                color: rgba(255,255,255,0.5);
+                font-size: 0.9rem;
+                text-decoration: none;
+                transition: color 0.2s ease;
+            }
+
+                .footer-links a:hover {
+                    color: #fff;
+                }
+
+        .footer-social {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            justify-content-md-end;
+        }
+
+            .footer-social a {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                background: rgba(255,255,255,0.05);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: transform 0.2s ease, background 0.2s ease;
+            }
+
+                .footer-social a:hover {
+                    transform: translateY(-3px);
+                    background: rgba(255,255,255,0.12);
+                }
+
+            .footer-social svg {
+                width: 16px;
+                height: 16px;
+                fill: white;
+                opacity: 0.7;
+            }
+
+        .footer-divider {
+            height: 1px;
+            background: linear-gradient( to right, transparent, rgba(255,255,255,0.15), transparent );
+        }
+
     </style>
 </head>
 <body>
@@ -120,8 +195,8 @@
     <nav id="navbar" class="navbar navbar-expand-md navbar-dark fixed-top nav-custom">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2" href="#">
-                <div class="rounded-3 bg-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: linear-gradient(to tr, var(--primary-color), var(--accent-color));">
-                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: linear-gradient(to tr, var(--primary-color), var(--accent-color));">
+                    <img src="~/icon-logo.png" width="80" height="80"/>
                 </div>
                 <span class="fw-bold">Floatly</span>
             </a>
@@ -132,15 +207,16 @@
                 <ul class="navbar-nav ms-auto align-items-center gap-md-4">
                     <li class="nav-item"><a class="nav-link text-white-50" href="#features">Features</a></li>
                     <li class="nav-item"><a class="nav-link text-white-50" href="#showcase">Showcase</a></li>
-                    <li class="nav-item"><a class="nav-link text-white-50" href="/Subs">Subscription</a></li>
-                    <li class="nav-item">
+                    <li class="nav-item"><a class="nav-link text-white-50" href="/Auth/Login">Admin</a></li>
+                    @* <li class="nav-item"><a class="nav-link text-white-50" href="/Subs">Subscription</a></li> *@
+                    @* <li class="nav-item">
                         <a class="nav-link text-white-50 d-flex align-items-center gap-2" href="#">
                             <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" /></svg>
                             GitHub
                         </a>
-                    </li>
+                    </li> *@
                     <li class="nav-item ms-md-2">
-                        <button class="btn btn-gradient">Get Started</button>
+                        <button class="btn btn-gradient">Download</button>
                     </li>
                 </ul>
             </div>
@@ -169,14 +245,14 @@
                         <button class="btn btn-gradient btn-lg d-flex align-items-center gap-2">
                             Download Player <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                         </button>
-                        <button class="btn btn-outline-light btn-lg rounded-pill px-4 glass text-white fw-bold">
-                            View on GitHub
-                        </button>
+                        <a href='https://ko-fi.com/R5R81T0C2X' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
                     </div>
                 </div>
                 <div class="col-lg-5 text-center">
                     <div class="animate-float position-relative">
-                        <div class="glass mx-auto overflow-hidden shadow-lg" style="max-width: 450px; aspect-ratio: 1; border-radius: 2rem;">
+                        <div class="glass mx-auto overflow-hidden shadow-lg"
+                             style="max-width: 450px; aspect-ratio: 16 / 10; border-radius: 2rem;">
+
                             <!-- Header Bar -->
                             <div class="d-flex align-items-center justify-content-between px-3 py-2 bg-white-10" style="background: rgba(255,255,255,0.05);">
                                 <div class="d-flex gap-1">
@@ -187,20 +263,9 @@
                                 <div style="font-size: 10px; opacity: 0.3; font-weight: 600;">FLOATLY PLAYER</div>
                             </div>
                             <!-- Video Area -->
-                            <div class="d-flex align-items-center justify-content-center h-100 position-relative" style="background: rgba(0,0,0,0.3);">
-                                <div class="rounded-circle glass d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
-                                    <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24" class="ms-1 text-white"><path d="M8 5v14l11-7z" /></svg>
-                                </div>
-                                <!-- Controls Overlay -->
-                                <div class="position-absolute bottom-0 start-0 end-0 p-4" style="background: linear-gradient(transparent, rgba(0,0,0,0.8));">
-                                    <div class="progress mb-2" style="height: 4px; background: rgba(255,255,255,0.1);">
-                                        <div class="progress-bar" style="width: 35%; background: var(--primary-color);"></div>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="rounded-pill bg-white-50" style="width: 80px; height: 8px; opacity: 0.4;"></div>
-                                        <div class="rounded-pill bg-white-50" style="width: 30px; height: 8px; opacity: 0.2;"></div>
-                                    </div>
-                                </div>
+                            <div class="d-flex align-items-center justify-content-center position-relative"
+                                 style="background: rgba(0,0,0,0.3);">
+                                <img src="~/preview.png" style="object-fit: contain;width:100%;height:100%;" />
                             </div>
                         </div>
                     </div>
@@ -229,7 +294,8 @@
                 </div>
                 <div class="col-lg-6">
                     <div class="glass p-5 d-flex align-items-center justify-content-center" style="min-height: 300px;">
-                        <svg width="100" height="100" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.1; color: var(--accent-color);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        <img src="~/preview2.png" style="object-fit: contain;width:100%;height:100%;" />
+
                     </div>
                 </div>
             </div>
@@ -244,7 +310,8 @@
                 </div>
                 <div class="col-lg-6">
                     <div class="glass p-5 d-flex align-items-center justify-content-center" style="min-height: 300px;">
-                        <svg width="100" height="100" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.1; color: var(--primary-color);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
+                        <img src="~/preview3.png" style="object-fit: contain;width:100%;height:100%;" />
+
                     </div>
                 </div>
             </div>
@@ -252,7 +319,7 @@
     </section>
 
     <!-- Showcase -->
-    <section id="showcase" class="py-5">
+    <section id="showcase" class="py-2">
         <div class="container py-5">
             <div class="glass p-5 p-md-5 text-center position-relative overflow-hidden" style="border-radius: 3rem;background-color:transparent;">
                 <h2 class="display-4 fw-bold mb-4 mt-5">Experience <span class="gradient-text">Seamless</span> Overlays</h2>
@@ -260,37 +327,53 @@
                     Stop switching windows. Start floating. Floatly provides a persistent workspace that stays exactly where you need it.
                 </p>
                 <div class="glass bg-white-5 border-white-5 d-flex flex-column align-items-center justify-content-center mx-auto mb-5" style="max-width: 800px; height: 350px;">
-                    <div class="d-flex gap-3">
-                        <div class="rounded-circle glass animate-float" style="width: 60px; height: 60px;"></div>
-                        <div class="rounded-circle glass animate-float" style="width: 60px; height: 60px; animation-delay: 0.3s;"></div>
-                        <div class="rounded-circle glass animate-float" style="width: 60px; height: 60px; animation-delay: 0.6s;"></div>
-                    </div>
-                    <div class="mt-4 text-white-50 fw-bold letter-spacing-widest" style="font-size: 0.7rem; letter-spacing: 0.3em; opacity: 0.3;">FLOATLY CORE ENGINE</div>
+                    <img src="~/preview.png" style="object-fit: contain;width:100%;height:100%;" />
+
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="py-5 border-top border-white-10" style="border-color: rgba(255,255,255,0.05) !important;">
-        <div class="container text-center">
-            <p>Floatly - The Floating Media Player</p>
-            <div class="footer-links">
-                <a href="#">Privacy Policy</a>
-                <a href="#">Terms of Use</a>
-                <a href="#">Documentation</a>
-                <a href="#">Changelog</a>
-            </div>
-            <div class="social-icons">
-                <a href="#"><i class="fab fa-twitter"></i></a>
-                <a href="#"><i class="fab fa-discord"></i></a>
-                <a href="#"><i class="fab fa-reddit"></i></a>
-                <a href="#"><i class="fab fa-youtube"></i></a>
-            </div>
-            <p>&copy; 2026 Floatly. All rights reserved.</p>
-        </div>
+    <footer class="footer-glass mt-5">
+        <div class="container py-5">
+            <div class="row g-4 align-items-center">
+                <!-- Brand -->
+                <div class="col-md-4 text-center text-md-start">
+                    <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2 mb-2">
+                        <div class="footer-logo">
+                            <img src="~/icon-logo.png" alt="Floatly" />
+                        </div>
+                        <span class="fw-bold fs-5">Floatly</span>
+                    </div>
+                    <p class="text-white-50 small mb-0">
+                        A floating media player made to stay out of your way.
+                    </p>
+                </div>
 
+                <!-- Links -->
+                <div class="col-md-4 text-center">
+                    <div class="footer-links">
+                        <a href="#"></a>
+                    </div>
+                </div>
+
+                <!-- Social -->
+                <div class="col-md-4 text-center text-md-end">
+                    <div class="footer-social">
+                        <a href='https://ko-fi.com/R5R81T0C2X' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-divider my-4"></div>
+
+            <p class="text-center text-white-50 small mb-0">
+                © 2026 Floatly. Crafted with care.
+            </p>
+        </div>
     </footer>
+
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="~/lib/bootstrap/js/bootstrap.min.js"></script>
