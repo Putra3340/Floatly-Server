@@ -429,3 +429,5 @@ FodyWeavers.xsd
 /wwwroot/uploads/video
 /Service/Exec/ffmpeg
 /wwwroot/uploads/yt
+/DFD.md
+/ERD.md
