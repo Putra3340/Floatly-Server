@@ -25,8 +25,8 @@ The system follows a typical **Model-View-Controller (MVC)** pattern, capable of
 
 ```mermaid
 graph TD
-    Client[Mobile/Web Client] -->|REST API / HTTPS| LoadBalancer[Reverse Proxy/IIS]
-    LoadBalancer --> WebApp[Floatly Server (ASP.NET Core)]
+    Client[Mobile/Web Client] -->|REST API / HTTPS| LoadBalancer[Reverse Proxy / IIS]
+    LoadBalancer --> WebApp["Floatly Server - ASP.NET Core"]
     
     subgraph "Floatly Server Internal"
         WebApp --> Controllers[Controllers Layer]
@@ -36,15 +36,13 @@ graph TD
         Services --> DB[EF Core Context]
     end
     
-    DB --> SQL[SQL Server / SQLite]
+    DB --> SQL[(SQL Server / SQLite)]
     YT --> YouTube[YouTube API]
     Controllers --> Midtrans[Midtrans Payment Gateway]
 
-    note right of Controllers
-        LikeController is deprecated.
-        Likes are handled via
-        Special Playlists in PlaylistController.
-    end
+    Controllers -.-> Note1["LikeController is deprecated.<br/>Likes are handled via<br/>Special Playlists in PlaylistController."]
+
+
 ```
 
 ## 4. Database Schema Design
