@@ -94,7 +94,7 @@ public static class YtDlpHelper
     }
     public static async Task DownloadBestAudioAsync(string url, string output)
     {
-        await RunAsync($"-f bestaudio -o \"{output}\" \"{url}\"");
+        await RunAsync($"-f bestaudio -o \"{output}\" \"{url}\" --js-runtimes node");
     }
 
     public static async Task DownloadVideoWithAudioAsync(
