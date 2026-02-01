@@ -18,7 +18,7 @@ namespace Floaty_Music.Service
 {
     public static class YoutubeService
     {
-        private static readonly YoutubeClient client = new YoutubeClient();
+        public static readonly YoutubeClient client = new YoutubeClient();
         private static readonly FloatlyContext db = new FloatlyContext();
 
         // Pending Download
