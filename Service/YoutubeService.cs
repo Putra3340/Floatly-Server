@@ -65,8 +65,8 @@ namespace Floaty_Music.Service
                 return;
             }
 
-
-            // check if video has higher than 30 minutes duration
+try{
+// check if video has higher than 30 minutes duration
             var videoInfo = await client.Videos.GetAsync(videoId);
             if (videoInfo.Duration.HasValue && videoInfo.Duration.Value.TotalMinutes > 30)
             {
@@ -75,6 +75,13 @@ namespace Floaty_Music.Service
                     pending.Remove(youtubeUrl);
                 return;
             }
+}catch (Exception ex)
+            {
+                lock (_lock)
+                    pending.Remove(youtubeUrl);
+                return;
+            }
+            
             // AUDIO
             var audio = manifest.GetAudioOnlyStreams()
                                 .GetWithHighestBitrate()

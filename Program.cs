@@ -35,6 +35,9 @@ builder.Services.AddSingleton<IImportPlaylistJobQueue>(
 builder.Services.AddHostedService(
     sp => sp.GetRequiredService<ImportPlaylistWorker>()
 );
+builder.Services.Configure<HostOptions>(o =>
+    o.BackgroundServiceExceptionBehavior =
+        BackgroundServiceExceptionBehavior.Ignore);
 
 
 builder.Services.AddSwaggerGen();
