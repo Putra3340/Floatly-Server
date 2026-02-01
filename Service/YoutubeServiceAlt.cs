@@ -41,16 +41,21 @@ namespace Floaty_Music.Service
                 var meta = await YtDlpHelper.GetMetadataAsync(youtubeUrl);
                 if (meta.Duration > 1800) return null; // > 30 min
 
-                // 🎵 audio
-                await YtDlpHelper.DownloadBestAudioAsync(youtubeUrl, audioPath);
+                var audioTask = YtDlpHelper.DownloadBestAudioAsync(youtubeUrl, audioPath);
 
-                // 🎥 low-res video
-                await YtDlpHelper.DownloadVideoWithAudioAsync(youtubeUrl, videoTempPath, maxHeight: 360);
-                await FFmpegHelper.ReencodeAsync(videoTempPath, videoPath);
+                var videoTask = Task.Run(async () =>
+                {
+                    await YtDlpHelper.DownloadVideoWithAudioAsync(
+                        youtubeUrl,
+                        videoTempPath,
+                        maxHeight: 360);
 
+                    await FFmpegHelper.ReencodeAsync(videoTempPath, videoPath);
+                });
 
-                // 🖼 thumbnail
-                await YtDlpHelper.DownloadThumbnailAsync(youtubeUrl, thumbPath);
+                var thumbTask = YtDlpHelper.DownloadThumbnailAsync(youtubeUrl, thumbPath);
+
+                await Task.WhenAll(audioTask, videoTask, thumbTask);
 
                 using var trx = await db.Database.BeginTransactionAsync();
 

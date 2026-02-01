@@ -320,7 +320,8 @@ namespace Floaty_Music.Controllers
                 {
                     streamurl = $"{Request.Scheme}://{Request.Host}/uploads/yt/{video.Video}";
                 }
-                else { streamurl = await YoutubeService.GetStreamVideoUrl(urlId); }
+                else
+                    return NotFound();
             }
             else
             {
