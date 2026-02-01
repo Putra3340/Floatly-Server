@@ -102,9 +102,8 @@ namespace Floaty_Music.Controllers
             if (anycontent.IsNullOrEmpty())
                 anycontent = "official music video";
 
-
-            // NOTE : WE STILL NEED TO FETCH FROM YOUTUBE API AS WELL
-            var list = await YoutubeService.SearchAsync(anycontent, 15);
+            // NOTE : WE STILL NEED TO FETCH FROM YOUTUBE API AS WELL. BUT WE USE LEGAL WAY
+            var list = await GYoutube.SearchAsync(anycontent, 15);
 
 
             List<ApiSong> combinedsonglist = new();

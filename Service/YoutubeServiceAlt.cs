@@ -28,6 +28,7 @@ namespace Floaty_Music.Service
 
                 var baseName = videoId;
                 var audioFile = baseName + ".m4a";
+                var lyricsFile = baseName + ".srt";
                 var videoFile = baseName + ".mp4";
                 var videoTempFile = baseName + "_temp.mp4";
                 var thumbFile = baseName;
@@ -55,7 +56,20 @@ namespace Floaty_Music.Service
 
                 var thumbTask = YtDlpHelper.DownloadThumbnailAsync(youtubeUrl, thumbPath);
 
+
+                // 1 FEBRUARY 2026 : WE NEED TO TURN OFF THE SUBTITLE UNTIL YOUTUBEEXPLODE IS BACK
+                //var subtitleTask = YtDlpHelper.DownloadSubtitlesAsync(youtubeUrl, GlobalConfiguration.YoutubePath);
+
                 await Task.WhenAll(audioTask, videoTask, thumbTask);
+                var lyricsList =
+                    YtDlpHelper.NormalizeDefaultSubtitles(
+                        GlobalConfiguration.YoutubePath,
+                        videoId
+                    );
+
+                lyricsFile = lyricsList == null
+                    ? null
+                    : $"{videoId}.srt";
 
                 using var trx = await db.Database.BeginTransactionAsync();
 
@@ -65,10 +79,11 @@ namespace Floaty_Music.Service
                     UrlId = baseName,
                     Music = audioFile,
                     Video = videoFile,
-                    Lyrics = baseName + ".srt",
+                    Lyrics = lyricsFile,
                     Thumbnail = thumbFile + ".webp",
                     AuthorName = meta.Uploader,
-                    CreatedAt = DateTime.UtcNow
+                    YoutubeLyrics = lyricsList, // 🌷 attach children
+                    CreatedAt = DateTime.Now
                 };
 
                 await db.YoutubeSongs.AddAsync(dbSong);
@@ -83,8 +98,6 @@ namespace Floaty_Music.Service
                 await db.SaveChangesAsync();
                 await trx.CommitAsync();
 
-                // 📝 subtitles (auto + manual)
-                //await YtDlpHelper.DownloadSubtitlesAsync(youtubeUrl, GlobalConfiguration.YoutubePath);
 
 
                 result = new ApiSongPlay
@@ -94,9 +107,9 @@ namespace Floaty_Music.Service
                     Music = httpurl + audioFile,
                     Cover = httpurl + thumbFile + ".webp",
                     Banner = httpurl + thumbFile + ".webp",
-                    Lyrics = httpurl + "empty.srt", // give default lyrics
+                    Lyrics = httpurl + (lyricsFile == null ? "empty.srt" : lyricsFile), // give default lyrics
                     MoviePath = httpurl + videoFile,
-                    UploadedBy = "YouTube",
+                    UploadedBy = meta.Uploader,
                     SongLength = (TimeSpan.FromSeconds(meta.Duration)) is TimeSpan d
                                     ? (d.Hours > 0
                                         ? d.ToString(@"hh\:mm\:ss")

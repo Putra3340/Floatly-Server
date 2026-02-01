@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Floaty_Music.Models;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -117,10 +118,75 @@ public static class YtDlpHelper
 
     public static async Task DownloadSubtitlesAsync(string url, string folder)
     {
-        await RunAsync(
-            $"--skip-download --write-subs --write-auto-subs " +
-            $"--sub-format srt -o \"{folder}\\%(id)s\" \"{url}\"");
+        Directory.CreateDirectory(folder);
+
+        string args =
+            "--no-playlist --skip-download " +
+            "--write-subs --write-auto-subs " +
+            "--sub-format srt " +
+            "--sub-langs en,id " +              // 🌷 reduce pressure
+            "--concurrent-fragments 1 " +       // 🕊 very important
+            "--sleep-requests 5 " +
+            "--sleep-interval 5 " +
+            "--max-sleep-interval 10 " +
+            "--ignore-errors " +                // 💖 don’t fail hard
+            "--no-warnings " +
+            "--js-runtimes node " +
+            $"-o \"{Path.Combine(folder, "%(id)s")}\" " +
+            $"\"{url}\"";
+
+
+        await RunAsync(args);
     }
+    public static List<YoutubeLyrics>? NormalizeDefaultSubtitles(string folder, string baseName)
+    {
+        var files = Directory.GetFiles(folder, $"{baseName}*.srt");
+        if (files.Length == 0) return null;
+
+        var lyricsList = new List<YoutubeLyrics>();
+        string? defaultTarget = null;
+
+        foreach (var file in files)
+        {
+            var name = Path.GetFileName(file).ToLower();
+
+            // 🌸 detect language
+            string lang =
+                name.Contains("en") ? "en" :
+                name.Contains("id") ? "id" :
+                "und";
+
+            bool isAuto = name.Contains("auto");
+
+            // 🌸 choose default subtitle (en / id)
+            if (lang == "en" || lang == "id")
+            {
+                var target = Path.Combine(folder, $"{baseName}.srt");
+
+                // prefer manual over auto
+                if (!File.Exists(target) || !isAuto)
+                {
+                    File.Copy(file, target, overwrite: true);
+                    defaultTarget = target;
+                }
+            }
+
+            lyricsList.Add(new YoutubeLyrics
+            {
+                FileName = Path.GetFileName(file),
+                LanguageCode = lang,
+                IsAuto = isAuto,
+                Language = lang == "en" ? "English" :
+                           lang == "id" ? "Indonesian" :
+                           "Unknown",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        return lyricsList;
+    }
+
+
     public sealed class YtMetadata
     {
         public string Id { get; set; }

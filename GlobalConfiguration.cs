@@ -28,6 +28,7 @@ namespace Floaty_Music
         public static string ServerDetail;
         public static string ServerKey;
         public static string ClientKey;
+        public static string YT_API_KEY;
 
         public static bool isSQLSERVER = false;
         public static bool isSQLITE = false;
@@ -47,6 +48,7 @@ namespace Floaty_Music
             TOKEN_EXPIRED_IN_DAYS = Env.GetString("TOKEN_EXPIRED_IN_DAYS", "");
             ServerStatus = Env.GetString("SERVER_MESSAGE", "");
             ServerDetail = Env.GetString("SERVER_DETAIL", "");
+            YT_API_KEY = Env.GetString("YT_API_KEY", "");
 
             if (!Directory.Exists(WebRootPath))
                 Directory.CreateDirectory(WebRootPath);
