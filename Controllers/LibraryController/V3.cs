@@ -143,24 +143,7 @@ namespace Floaty_Music.Controllers
                     PlayCount = ""
                 });
             }
-            var result = new
-            {
-                songs = combinedsonglist,
-                artists = artistlist.Select(x => new
-                {
-                    id = x.Id,
-                    name = x.Name,
-                    coverUrl = baseUrl + x.CoverImagePath,
-                }).ToList(),
-                albums = albumlist.Select(x => new
-                {
-                    id = x.Id,
-                    title = x.Title,
-                    artistName = x.Artist.Name,
-                    coverUrl = baseUrl + x.CoverImagePath
-                }).ToList()
-            };
-            return Ok(result);
+            return Ok(combinedsonglist);
         }
         [HttpGet("play/{id}")]
         public async Task<IActionResult> GetSong(string id, [FromQuery] string? token)

@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="DotNetEnv" Version="3.1.1" />
-    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.73.0.4029" />
+    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.73.0.4053" />
     <PackageReference Include="Isopoh.Cryptography.Argon2" Version="2.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />
@@ -35,7 +35,7 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.4" />
     <PackageReference Include="TagLibSharp" Version="2.3.0" />
     <PackageReference Include="Xabe.FFmpeg" Version="6.0.2" />
-    <PackageReference Include="YoutubeExplode" Version="6.5.6" />
+    <PackageReference Include="YoutubeExplode" Version="6.5.7" />
   </ItemGroup>
 
   <ItemGroup>
