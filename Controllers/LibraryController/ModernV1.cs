@@ -162,19 +162,11 @@ namespace Floaty_Music.Controllers.LibraryController
                     Console.WriteLine("Fetching from Database YT...");
                     var baseUrl = $"{Request.Scheme}://{Request.Host}/uploads/yt/";
 
-                    // check if lyrics empty
-                    if (songdb.Lyrics == null || songdb.Lyrics == "")
-                        songdb.Lyrics = "empty.srt";
-                    // check if there is no lyrics
-                    if (!System.IO.File.Exists(Path.Combine(GlobalConfiguration.YoutubePath, songdb.Lyrics)))
-                        songdb.Lyrics = "empty.srt";
-
                     song = new Song()
                     {
                         Id = id,
                         Name = songdb.Title ?? "Unknown Title",
                         ThumbnailUrl = baseUrl + songdb.Thumbnail,
-                        LyricsUrl = baseUrl + songdb.Lyrics,
                         Duration = "Unknown",
                         DurationValue = TimeSpan.FromSeconds((double)songdb.SongCounter.FirstOrDefault().MusicLength).Seconds,
                         PlayCount = (int)songdb.SongCounter.FirstOrDefault().TotalPlayed,
@@ -207,14 +199,12 @@ namespace Floaty_Music.Controllers.LibraryController
                 }
                 var streamTask = Measure(() => YoutubeService.StreamAudioAsync(id));
                 var videoTask = Measure(() => YoutubeService.GetVideoDetailsAsync(id));
-                var lyricsTask = Measure(() => YoutubeService.GetLyrics(id));
 #else // RELEASE
                 var streamTask = YoutubeService.GetStreamVideoUrl(id);
                 var videoTask = YoutubeService.GetVideoDetailsAsync(id);
-                var lyricsTask = YoutubeService.GetLyrics(id);
 #endif
 
-                await Task.WhenAll(streamTask, videoTask, lyricsTask);
+                await Task.WhenAll(streamTask, videoTask);
 
 #if DEBUG
                 var (streamurl, streamTime) = await streamTask;
@@ -227,34 +217,13 @@ namespace Floaty_Music.Controllers.LibraryController
 #else // RELEASE
                 var streamurl = await streamTask;
                 var video = await videoTask;
-                var lyrics = await lyricsTask;
 #endif
-
-                string lyricspath = $"{Request.Scheme}://{Request.Host}/empty.srt";
-                var priority = new[] { "English", "Indonesia", "Japan", "Korea" };
-                var firstlyrics = lyrics
-                    .OrderBy(l =>
-                    {
-                        int idx = Array.IndexOf(priority, l.Language);
-                        return idx == -1 ? int.MaxValue : idx; // unknown languages go last
-                    })
-                    .FirstOrDefault();
-                if (firstlyrics != null)
-                {
-                    string lyricname = await FileHelper.SaveTextAsync($"{id}.srt", firstlyrics.Content, FileHelper.UploadFolder.YT);
-                    if (lyricname == null || lyricname == "")
-                        lyricspath = $"{Request.Scheme}://{Request.Host}/empty.srt";
-                    else
-                        lyricspath = $"{Request.Scheme}://{Request.Host}/uploads/yt/" + lyricname;
-                    Debug.WriteLine(lyricspath);
-                }
 
                 song = new Song()
                 {
                     Id = id,
                     Name = video.Title,
                     ThumbnailUrl = video.Thumbnails.FirstOrDefault().Url,
-                    LyricsUrl = lyricspath, // give default lyrics
                     Duration = video.Duration is TimeSpan d
                             ? (d.Hours > 0
                                 ? d.ToString(@"hh\:mm\:ss")
@@ -290,7 +259,6 @@ namespace Floaty_Music.Controllers.LibraryController
                     ThumbnailUrl = $"{baseUrl}/cover/{songdb.CoverImagePath}",
                     Id = songdb.Id.ToString(),
                     Name = songdb.Title,
-                    LyricsUrl = songdb.LyricsFilePath != null ? $"{baseUrl}/lyrics/{songdb.LyricsFilePath}" : null,
                     VideoPlaybackUrl = songdb.MoviePath != null ? $"{baseUrl}/video/{songdb.MoviePath}" : null,
                     Duration = TimeSpan.FromSeconds((double)songdb.SongCounter.FirstOrDefault().MusicLength).ToString(@"mm\:ss"),
                     DurationValue = TimeSpan.FromSeconds((double)songdb.SongCounter.FirstOrDefault().MusicLength).Seconds,
@@ -322,19 +290,15 @@ namespace Floaty_Music.Controllers.LibraryController
             {
                 var song = await _context.YoutubeSongs
                 .Where(s => s.UrlId == urlId)
-                .Select(s => new
+                .Select(s => new Lyric()
                 {
-                    s.Id,
-                    s.UrlId,
-                    Lyrics = s.YoutubeLyrics.Select(l => new
+                    Id = s.Id.ToString(),
+                    Lyrics = s.YoutubeLyrics.Select(l => new LyricItem
                     {
                         Language = l.Language,
                         LanguageCode = l.LanguageCode,
-                        l.IsAuto,
-                        l.FileName,
-                        Content = System.IO.File.ReadAllText(
-                            Path.Combine(GlobalConfiguration.YoutubePath, l.FileName))
-                    })
+                        Text = System.IO.File.ReadAllText(Path.Combine(GlobalConfiguration.YoutubePath, l.FileName))
+                    }).ToList()
                 })
                 .FirstOrDefaultAsync();
 

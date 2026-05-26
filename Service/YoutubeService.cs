@@ -1,5 +1,6 @@
 ﻿using Floaty_Music.Models;
 using Floaty_Music.Models.ApiClient;
+using Floaty_Music.Models.Modern;
 using Floaty_Music.Utils;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
@@ -227,22 +228,52 @@ try{
         // ============================
         // GET ALL LYRICS (ALL SUBS)
         // ============================
-        public static async Task<List<string>> GetLyricsAsync(string youtubeUrl)
+        public static async Task<Lyric> GetLyricsAsync(string youtubeUrl)
         {
+            var client = new YoutubeClient();
+
             var videoId = VideoId.Parse(youtubeUrl);
             var manifest = await client.Videos.ClosedCaptions.GetManifestAsync(videoId);
 
-            var result = new List<string>();
+            var result = new Lyric
+            {
+                Id = videoId.Value
+            };
 
             foreach (var track in manifest.Tracks)
             {
                 var captions = await client.Videos.ClosedCaptions.GetAsync(track);
 
-                var text = string.Join("\n", track.Language.Name);
-                result.Add(text);
+                var sb = new StringBuilder();
+                int i = 1;
+
+                foreach (var c in captions.Captions)
+                {
+                    var start = c.Offset;
+                    var end = c.Offset + c.Duration;
+
+                    sb.AppendLine(i.ToString());
+                    sb.AppendLine($"{FormatTime(start)} --> {FormatTime(end)}");
+                    sb.AppendLine(c.Text);
+                    sb.AppendLine();
+
+                    i++;
+                }
+
+                result.Lyrics.Add(new Models.Modern.LyricItem
+                {
+                    Language = track.Language.Name,
+                    LanguageCode = track.Language.Code,
+                    Text = sb.ToString()
+                });
             }
 
             return result;
+        }
+
+        public static string FormatTime(TimeSpan time)
+        {
+            return $"{time.Hours:D2}:{time.Minutes:D2}:{time.Seconds:D2},{time.Milliseconds:D3}";
         }
 
         // USE THIS
@@ -395,12 +426,12 @@ try{
             var video = await client.Videos.GetAsync(videoId);
             return video;
         }
-        public static async Task<List<LyricItem>> GetLyrics(string yturl)
+        public static async Task<List<Models.ApiClient.LyricItem>> GetLyrics(string yturl)
         {
             var videoId = VideoId.Parse(yturl);
             var manifest = await client.Videos.ClosedCaptions.GetManifestAsync(videoId);
 
-            var result = new List<LyricItem>();
+            var result = new List<Models.ApiClient.LyricItem>();
 
             foreach (var track in manifest.Tracks)
             {
@@ -424,7 +455,7 @@ try{
                         $"{item.Text}\n\n";
                     i++;
                 }
-                result.Add(new LyricItem { Language = track.Language.Name, Content = text});
+                result.Add(new Models.ApiClient.LyricItem { Language = track.Language.Name, Content = text});
             }
             return result;
         }
