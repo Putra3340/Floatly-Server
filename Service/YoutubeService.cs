@@ -301,6 +301,9 @@ try{
                                 ? d.ToString(@"hh\:mm\:ss")
                                 : d.ToString(@"mm\:ss"))
                             : "Unknown",
+                        DurationValue = video.Duration.HasValue
+                            ? (int)video.Duration.Value.TotalSeconds
+                            : 0,
                         Thumbnail = video.Thumbnails
                             .GetWithHighestResolution()
                             .Url
@@ -432,6 +435,7 @@ try{
             public string Title { get; set; }
             public string Author { get; set; }
             public string Duration { get; set; }
+            public int DurationValue { get; set; }
             public string Thumbnail { get; set; }
         }
 

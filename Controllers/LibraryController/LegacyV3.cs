@@ -15,6 +15,7 @@ namespace Floaty_Music.Controllers
 {
     // V3 - Youtube Music Library API
     // BIG TODO : SECURE THIS API
+    // 26 May 2026 - Leaving this Api just for legacy support, will not add new features here, only critical bug fixes if needed
     [Route("api/library/v3")]
     [ApiController]
     public class LibraryV3Controller : ControllerBase

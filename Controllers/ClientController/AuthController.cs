@@ -136,6 +136,7 @@ namespace Floaty_Music.Controllers.ClientController
             Console.WriteLine("Sending Email..");
             string token = HashHelper.GenerateRandomLongToken();
             string verify_url = $"{Request.Scheme}://{Request.Host}/auth/desktop/verify-token?token={token}";
+            Console.WriteLine(verify_url);
             emailverifyreq.Add((DateTime.Now.AddMinutes(5), email, token)); // expires in 5 minutes, after 5 minutes user need to request again
             EmailService emailservice = new EmailService();
             await emailservice.SendEmailAsync(email, "Verify your email",
